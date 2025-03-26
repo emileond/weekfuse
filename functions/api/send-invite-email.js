@@ -45,7 +45,7 @@ export async function onRequestPost(context) {
     }
 
     try {
-        const addSubscriberUrl = 'https://listmonk.mailerfuse.com/api/subscribers';
+        const addSubscriberUrl = `${context.env.LISTMONK_URL}/api/subscribers`;;
 
         try {
             await ky.post(addSubscriberUrl, {
@@ -74,7 +74,7 @@ export async function onRequestPost(context) {
             }
         }
 
-        const sendEmailUrl = 'https://listmonk.mailerfuse.com/api/tx';
+        const sendEmailUrl = `${context.env.LISTMONK_URL}/api/tx`;;
 
         const response = await ky.post(sendEmailUrl, {
             headers: {
@@ -87,8 +87,7 @@ export async function onRequestPost(context) {
                 template_id: 4,
                 data: {
                     inviter_name: invited_by,
-                    workspace_name: 'CTSubly',
-                    invitation_link: 'https://mailerfuse.com',
+                    invitation_link: context.env.VITE_PUBLIC_URL,
                 },
                 content_type: 'html',
             },
@@ -100,10 +99,10 @@ export async function onRequestPost(context) {
         if (error.response) {
             // Handle non-successful responses
             const errorText = await error.response.text();
-            return Response.json(errorText, { status: error.response.status });
+            return Response.json({ error: errorText }, { status: error.response.status });
         } else {
             // Handle network or other errors
-            return Response.json('Internal Server Error', { status: 500 });
+            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
         }
     }
 }
