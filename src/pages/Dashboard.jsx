@@ -25,6 +25,7 @@ import {
     CardHeader,
     CardBody,
     Divider,
+    useDisclosure
 } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
@@ -50,11 +51,14 @@ import { useDarkMode } from '../hooks/theme/useDarkMode';
 import Paywall from '../components/marketing/Paywall';
 import { useForm } from 'react-hook-form';
 import ExportBtn from '../components/lists/ExportListBtn';
+import dayjs from 'dayjs';
+import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
 
 function DashboardPage() {
     const [currentWorkspace] = useCurrentWorkspace();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const {isOpen, onOpenChange} = useDisclosure()
     const [isFileUploading, setIsFileUploading] = useState(false);
     const [insufficientCredits, setInsufficientCredits] = useState(false);
     const [startNewList, setStartNewList] = useState(false);
@@ -239,47 +243,8 @@ function DashboardPage() {
         );
     }, []);
 
-    useEffect(() => {
-        if (!listsInProcess || !currentWorkspace?.workspace_id) return;
-
-        const subscriptions = listsInProcess?.map((list) =>
-            supabaseClient
-                .channel(list)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'lists',
-                        filter: `id=eq.${list}`,
-                    },
-                    (payload) => {
-                        if (payload?.new?.status !== 'processing') {
-                            (async () => {
-                                await queryClient.invalidateQueries({
-                                    queryKey: ['emailLists', currentWorkspace?.workspace_id],
-                                });
-                                setListsInProcess((prev) => prev.filter((id) => id !== list));
-                            })();
-                        }
-                    },
-                )
-                .subscribe(),
-        );
-        // Clean up on unmount or when listsInProcess changes
-        // Updated cleanup logic
-        return () => {
-            subscriptions?.forEach((subscription) => {
-                if (subscription) {
-                    // Explicitly remove the channel
-                    supabaseClient.removeChannel(subscription);
-                }
-            });
-        };
-    }, [currentWorkspace?.workspace_id, listsInProcess]);
 
     return (
-        <DropzoneUpload fullScreen onUpload={handleParse}>
             <AppLayout>
                 <Paywall
                     isOpen={insufficientCredits}
@@ -290,77 +255,17 @@ function DashboardPage() {
                     }}
                     feature="more credits"
                 />
-                <Modal
-                    placement="top-center"
-                    isOpen={startNewList}
-                    size="3xl"
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setStartNewList(false);
-                        }
-                    }}
-                >
-                    <ModalContent>
-                        <ModalHeader>
-                            <h2 className="font-semibold text-2xl">Verify a new list</h2>
-                        </ModalHeader>
-                        <ModalBody className="py-6">
-                            <div className="gap-3">
-                                <DropzoneUpload onUpload={handleParse} />
-                                <ol className="list-decimal text-sm flex flex-col gap-2 p-6">
-                                    <span className="font-semibold">Instructions</span>
-                                    <li>Upload your list as a CSV file.</li>
-                                    <li>
-                                        Ensure emails are in a single column (other columns are
-                                        allowed and won’t be affected).
-                                    </li>
-                                    <li>
-                                        We’ll notify you as soon as the verification process is
-                                        finished.
-                                    </li>
-                                </ol>
-                            </div>
-                        </ModalBody>
-                    </ModalContent>
-                </Modal>
-                <Modal
-                    placement="top-center"
-                    isDismissable={false}
-                    backdrop="blur"
-                    isOpen={isFileUploading}
-                    hideCloseButton
-                >
-                    <ModalContent>
-                        <ModalBody className="py-9 flex flex-col items-center">
-                            <h2 className="font-semibold text-2xl text-center">
-                                Getting things ready
-                            </h2>
-                            <p className="font-medium">This might take a moment, please wait...</p>
-                            <Image
-                                src={`/empty-states/${darkMode ? 'dark' : 'light'}/stack.svg`}
-                                alt="uploading"
-                                width={240}
-                                height={240}
-                            />
-                            <Progress
-                                size="sm"
-                                isIndeterminate
-                                aria-label="Processing..."
-                                className="max-w-md w-full"
-                            />
-                            <p className="font-medium text-sm text-default-500 mt-3">
-                                This alert will close automatically
-                            </p>
-                        </ModalBody>
-                    </ModalContent>
-                </Modal>
+                <NewTaskModal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                />
                 <PageLayout
                     maxW="4xl"
-                    title="Verify"
-                    description="Verify a single email or a list"
-                    primaryAction="New list"
+                    title="Today"
+                    description=''
+                    primaryAction="New task"
                     icon={<RiAddLine fontSize="1.1rem" />}
-                    onClick={() => setStartNewList(true)}
+                    onClick={onOpenChange}
                 >
                     <div className="flex flex-col gap-3">
                         <Tabs>
@@ -698,7 +603,6 @@ function DashboardPage() {
                     </div>
                 </PageLayout>
             </AppLayout>
-        </DropzoneUpload>
     );
 }
 

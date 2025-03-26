@@ -40,7 +40,7 @@ function Sidebar() {
       </nav>
       <div className="flex flex-col gap-6">
         <Divider />
-        <WorkspaceUsageCard />
+        {/*<WorkspaceUsageCard />*/}
         <UserMenu />
       </div>
     </div>

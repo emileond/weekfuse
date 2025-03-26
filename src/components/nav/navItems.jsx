@@ -10,13 +10,31 @@ const ICON_SIZE = '1.2rem'
 
 export const navItems = [
   {
-    name: 'Verify',
+    name: 'Today',
     path: '/dashboard',
     startContent: <RiMailCheckLine fontSize={ICON_SIZE} />,
     endContent: null,
   },
   {
-    name: 'API keys',
+    name: 'Plan',
+    path: '/keys',
+    startContent: <RiTerminalBoxLine fontSize={ICON_SIZE} />,
+    endContent: null,
+  },
+  {
+    name: 'Reflect',
+    path: '/keys',
+    startContent: <RiTerminalBoxLine fontSize={ICON_SIZE} />,
+    endContent: null,
+  },
+  {
+    name: 'Projects',
+    path: '/keys',
+    startContent: <RiTerminalBoxLine fontSize={ICON_SIZE} />,
+    endContent: null,
+  },
+  {
+    name: 'Notes',
     path: '/keys',
     startContent: <RiTerminalBoxLine fontSize={ICON_SIZE} />,
     endContent: null,

@@ -23,7 +23,7 @@ function PageLayout({
 
     return (
         <div
-            className={`min-h-screen h-full bg-content1 px-6 py-9 grow flex justify-center overflow-y-auto`}
+            className={`min-h-screen h-full bg-background px-6 py-9 grow flex justify-center overflow-y-auto`}
         >
             <div className={`w-full max-w-${maxW} flex flex-col gap-6`}>
                 <div>
