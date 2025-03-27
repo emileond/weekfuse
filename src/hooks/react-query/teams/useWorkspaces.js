@@ -10,7 +10,7 @@ const fetchWorkspaces = async (user) => {
       workspace_id,
       role,
       workspaces!workspace_members_workspace_id_fkey (
-        name, is_ltd, ltd_plan
+        name, is_ltd, ltd_plan, onboarded
       )
     `,
         )
@@ -28,6 +28,7 @@ const fetchWorkspaces = async (user) => {
         name: item.workspaces?.name,
         is_ltd: item.workspaces?.is_ltd,
         ltd_plan: item.workspaces?.ltd_plan,
+        onboarded: item.workspaces?.onboarded,
     }));
 
     return transformedData;

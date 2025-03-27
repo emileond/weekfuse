@@ -68,9 +68,11 @@ function SettingsPage() {
             const result = await ky
                 .post('/api/update-workspace', {
                     json: {
-                        workspaceId: id,
-                        name,
+                        updateData: {
+                            name,
+                        },
                         session: sessionData.session,
+                        workspaceId: id,
                     },
                 })
                 .json();

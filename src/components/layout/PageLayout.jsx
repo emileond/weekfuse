@@ -5,7 +5,7 @@ import { RiArrowLeftLine } from 'react-icons/ri';
 function PageLayout({
     children,
     maxW = '6xl',
-    title = 'Page',
+    title,
     description,
     primaryAction,
     icon,
@@ -34,7 +34,7 @@ function PageLayout({
                                     <RiArrowLeftLine fontSize="1.2rem" />
                                 </Button>
                             )}
-                            <h1 className="font-semibold mb-3">{title}</h1>
+                            {title && <h1 className="font-semibold mb-3">{title}</h1>}
                         </div>
                         <div className="flex gap-3">
                             {customElements}

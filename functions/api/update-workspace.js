@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 export async function onRequestPost(context) {
-    const { workspaceId, name, session } = await context.request.json();
+    const { updateData, session, workspaceId } = await context.request.json();
 
     // basic 400 error handling
-    if (!workspaceId || !name || !session) {
+    if (!workspaceId || !session || !updateData) {
         return Response.json({ error: 'Missing parameters' }, {
             status: 400,
         });
@@ -27,12 +27,13 @@ export async function onRequestPost(context) {
     // Update workspace
     const { data, error } = await supabase
         .from('workspaces')
-        .update({ name })
+        .update(updateData)
         .eq('id', workspaceId)
         .select()
         .single();
 
     if (error) {
+        console.log(error);
         return Response.json({ error: error.message }, {
             status: 500,
         });
