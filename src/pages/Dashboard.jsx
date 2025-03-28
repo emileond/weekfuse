@@ -3,19 +3,36 @@ import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
-import { useTodayTasks } from '../hooks/react-query/tasks/useTasks.js';
+import { useTasks } from '../hooks/react-query/tasks/useTasks.js';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Paywall from '../components/marketing/Paywall';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
-import TaskCard from '../components/tasks/TaskCard.jsx';
+import dayjs from 'dayjs';
+import DraggableList from '../components/tasks/DraggableList.jsx';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 function DashboardPage() {
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpenChange } = useDisclosure();
     const [insufficientCredits, setInsufficientCredits] = useState(false);
-    const { data: todayTasks } = useTodayTasks(currentWorkspace);
+    const { data: todayTasks } = useTasks(currentWorkspace, {
+        startDate: dayjs().startOf('day').toISOString(),
+        endDate: dayjs().endOf('day').toISOString(),
+    });
     const navigate = useNavigate();
+
+    const listDate = dayjs().startOf('day').tz(dayjs.tz.guess(), true).toISOString();
+
+    const [listKey, setListKey] = useState();
+
+    useEffect(() => {
+        setListKey(dayjs().toISOString());
+    }, [todayTasks]);
 
     return (
         <AppLayout>
@@ -28,7 +45,7 @@ function DashboardPage() {
                 }}
                 feature="more credits"
             />
-            <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} />
+            <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={new Date()} />
             <PageLayout
                 maxW="3xl"
                 title="Today"
@@ -39,9 +56,17 @@ function DashboardPage() {
             >
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-2">
-                        {todayTasks?.map((task) => (
-                            <TaskCard key={task.id} task={task} />
-                        ))}
+                        {todayTasks && (
+                            <DraggableList
+                                key={listKey}
+                                id={listDate}
+                                items={todayTasks}
+                                group="today-tasks"
+                            />
+                        )}
+                        {/*{todayTasks?.map((task) => (*/}
+                        {/*    <TaskCard key={task.id} task={task} />*/}
+                        {/*))}*/}
                     </div>
                 </div>
             </PageLayout>

@@ -20,7 +20,7 @@ import DatePicker from '../../components/form/DatePicker';
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
-    const [selectedDate, setSelectedDate] = useState(defaultDate || new Date()); // State to track selected date
+    const [selectedDate, setSelectedDate] = useState(defaultDate); // State to track selected date
 
     const {
         register,
@@ -36,7 +36,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                 task: {
                     name: data.name,
                     description: data.description,
-                    date: data.date ? dayjs(data.date).toISOString() : dayjs().toISOString(),
+                    date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                     workspace_id: currentWorkspace.workspace_id,
                     status: 'pending',
                 },
@@ -73,8 +73,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                             <DatePicker
                                 control={control}
                                 name="date"
-                                defaultValue={defaultDate || dayjs()}
-                                triggerText="Select Due Date"
+                                defaultValue={defaultDate}
                                 onChange={setSelectedDate}
                             />
                         </div>

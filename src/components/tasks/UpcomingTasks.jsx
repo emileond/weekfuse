@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
-import { Button } from '@heroui/react';
+import { Button, useDisclosure } from '@heroui/react';
 import { RiAddLine, RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
 import { useTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import DraggableList from './DraggableList.jsx';
 import timezone from 'dayjs/plugin/timezone'; // Import the timezone plugin
-import utc from 'dayjs/plugin/utc'; // Import the UTC plugin
+import utc from 'dayjs/plugin/utc';
+import NewTaskModal from './NewTaskModal.jsx'; // Import the UTC plugin
 
 // Extend dayjs with the plugins
 dayjs.extend(utc);
@@ -15,20 +16,42 @@ dayjs.extend(timezone);
 
 const UpcomingTasks = () => {
     const [currentWorkspace] = useCurrentWorkspace();
-    const { data: tasks } = useTasks(currentWorkspace);
-    const [isBacklogCollapsed, setIsBacklogCollapsed] = useState(false);
+    const [newTaskDate, setNewTaskDate] = useState(null);
+    const { isOpen, onOpenChange } = useDisclosure();
 
     // Create an array of 37 days starting from today (current week + one month)
     const days = useMemo(() => {
         const result = [];
-        for (let i = 0; i < 37; i++) {
+        for (let i = 0; i < 21; i++) {
             result.push(dayjs().add(i, 'day'));
         }
         return result;
     }, []);
 
+    const startDate = days[0]?.startOf('day').toISOString();
+    const endDate = days[days.length - 1]?.endOf('day').toISOString();
+
+    const { data: tasks } = useTasks(currentWorkspace, {
+        startDate,
+        endDate,
+    });
+
+    const [isBacklogCollapsed, setIsBacklogCollapsed] = useState(false);
+
+    const handleNewTask = (dateStr) => {
+        setNewTaskDate(dayjs(dateStr));
+        onOpenChange();
+    };
+
+    const [listKey, setListKey] = useState(null);
+
+    useEffect(() => {
+        setListKey(dayjs().toISOString());
+    }, [tasks]);
+
     return (
         <div>
+            <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={newTaskDate} />
             <div className="flex justify-between mb-2">
                 <p className="text-sm text-default-600">From Mar 12 - Apr 12</p>
                 <Button
@@ -74,11 +97,18 @@ const UpcomingTasks = () => {
                                     variant="light"
                                     startContent={<RiAddLine />}
                                     className="justify-start"
+                                    onPress={() => handleNewTask(dateStr)}
                                 >
                                     Add task
                                 </Button>
                                 {tasksForDay && (
-                                    <DraggableList id={dateStr} items={tasksForDay} group="tasks" />
+                                    <DraggableList
+                                        key={listKey}
+                                        id={dateStr}
+                                        items={tasksForDay}
+                                        group="tasks"
+                                        smallCards
+                                    />
                                 )}
                             </div>
                         );

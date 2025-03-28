@@ -1,15 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseClient } from '../../../lib/supabase';
-import dayjs from 'dayjs';
 
 // Fetch tasks for a specific workspace
-const fetchTasks = async ({ statusList, id, workspace_id }) => {
+const fetchTasks = async ({ statusList, id, workspace_id, startDate, endDate }) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
 
     if (id) {
         query = query.eq('id', id).single(); // Fetch single item
-    } else if (statusList) {
-        query = query.in('status', statusList); // Fetch multiple items
+    } else {
+        if (statusList) {
+            query = query.in('status', statusList); // Filter by status
+        }
+
+        if (startDate && endDate) {
+            query = query.gte('date', startDate).lte('date', endDate); // Filter by date range
+        }
+        query = query.order('order');
     }
 
     const { data, error } = await query;
@@ -21,50 +27,16 @@ const fetchTasks = async ({ statusList, id, workspace_id }) => {
     return data;
 };
 
-// Hook to fetch all tasks for a given workspace
-export const useTasks = (currentWorkspace) => {
+// Hook to fetch tasks with optional filters
+export const useTasks = (currentWorkspace, filters = {}) => {
     return useQuery({
-        queryKey: ['tasks', currentWorkspace?.workspace_id],
+        queryKey: ['tasks', currentWorkspace?.workspace_id, filters],
         queryFn: () =>
             fetchTasks({
                 workspace_id: currentWorkspace?.workspace_id,
-            }),
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided
-    });
-};
-
-const fetchTodayTasks = async ({ statusList, workspace_id }) => {
-    const todayStart = dayjs().startOf('day').toISOString(); // Start of today (00:00:00)
-    const todayEnd = dayjs().endOf('day').toISOString();
-
-    let query = supabaseClient
-        .from('tasks')
-        .select('*')
-        .eq('workspace_id', workspace_id)
-        .gte('date', todayStart) // Greater than or equal to start of today
-        .lte('date', todayEnd);
-
-    if (statusList) {
-        query = query.in('status', statusList); // Fetch multiple items
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-        throw new Error('Failed to fetch tasks');
-    }
-
-    return data;
-};
-
-// Hook to fetch all tasks for a given workspace
-export const useTodayTasks = (currentWorkspace) => {
-    return useQuery({
-        queryKey: ['todayTasks', currentWorkspace?.workspace_id],
-        queryFn: () =>
-            fetchTodayTasks({
-                workspace_id: currentWorkspace?.workspace_id,
+                statusList: filters.statusList,
+                startDate: filters.startDate,
+                endDate: filters.endDate,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided
@@ -77,7 +49,8 @@ const fetchBacklogTasks = async ({ workspace_id }) => {
         .select('*')
         .eq('workspace_id', workspace_id)
         .is('date', null)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .order('order');
 
     const { data, error } = await query;
 
@@ -119,6 +92,7 @@ export const useCreateTask = (currentWorkspace) => {
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
             queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
         },
     });
 };
@@ -144,6 +118,41 @@ export const useUpdateTask = (currentWorkspace) => {
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
             queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
+        },
+    });
+};
+
+// Function to update multiple tasks
+const updateMultipleTasks = async (tasks) => {
+    const updates = tasks.map((task) =>
+        supabaseClient.from('tasks').update(task.updates).eq('id', task.taskId),
+    );
+
+    // Execute all updates concurrently
+    const results = await Promise.all(updates);
+
+    // Handle errors if any
+    results.forEach((result, index) => {
+        if (result.error) {
+            console.error(`Failed to update task ${tasks[index].taskId}`, result.error);
+        }
+    });
+};
+
+// Hook to update multiple tasks
+export const useUpdateMultipleTasks = (currentWorkspace) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateMultipleTasks,
+        onError: (error) => {
+            console.error('Error updating tasks:', error);
+        },
+        onSuccess: () => {
+            // Invalidate and refetch the tasks query for the workspace
+            queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
         },
     });
 };
@@ -169,6 +178,7 @@ export const useDeleteTask = (currentWorkspace) => {
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
             queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
         },
     });
 };

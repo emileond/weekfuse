@@ -3,10 +3,18 @@ import { RiAddLine } from 'react-icons/ri';
 import { useBacklogTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import DraggableList from './DraggableList.jsx';
+import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 
 function BacklogPanel({ isBacklogCollapsed }) {
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: tasks } = useBacklogTasks(currentWorkspace);
+
+    const [listKey, setListKey] = useState(null);
+
+    useEffect(() => {
+        setListKey(dayjs().toISOString());
+    }, [tasks]);
 
     return (
         <div className={`${isBacklogCollapsed ? 'hidden' : 'basis-1/4'}`}>
@@ -23,7 +31,7 @@ function BacklogPanel({ isBacklogCollapsed }) {
                 >
                     Add task
                 </Button>
-                {tasks && <DraggableList id="backlog" items={tasks} group="tasks" />}
+                {tasks && <DraggableList key={listKey} id="backlog" items={tasks} group="tasks" />}
             </div>
         </div>
     );
