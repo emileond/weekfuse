@@ -18,6 +18,7 @@ const DraggableList = ({ id, items, group, smallCards }) => {
     const [listRef, state] = useDragAndDrop(items, {
         group,
         plugins: [animations()],
+        dragHandle: '.drag-handle',
         onDragend: async (e) => {
             const columnItems = e.values; // The items in the target column
             const newDate = e.parent.el.id; // The target list (backlog or a date)
@@ -53,7 +54,7 @@ const DraggableList = ({ id, items, group, smallCards }) => {
     return (
         <ul id={id} ref={listRef} className="flex flex-col gap-2 w-full h-full">
             {state.map((item) => (
-                <TaskCard key={item.id} task={item} isDnD={smallCards && true} />
+                <TaskCard key={item.id} task={item} sm={smallCards && true} />
             ))}
         </ul>
     );

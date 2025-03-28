@@ -8,32 +8,32 @@ import {
     Input,
     Textarea,
     Divider,
-    Checkbox,
 } from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import DatePicker from '../../components/form/DatePicker';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
+    const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
 
     const {
         register,
         handleSubmit,
         reset,
         setValue,
-        watch,
+        control,
         formState: { errors, isDirty },
     } = useForm({
         defaultValues: {
             name: task?.name || '',
             description: task?.description || '',
-            status: task?.status || 'pending',
-            date: task?.date ? dayjs(task.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+            date: task?.date ? new Date(task.date) : null,
         },
     });
 
@@ -42,17 +42,10 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         if (task) {
             setValue('name', task.name || '');
             setValue('description', task.description || '');
-            setValue('status', task.status || 'pending');
-            setValue('date', task.date ? dayjs(task.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'));
+            setValue('date', task.date ? new Date(task.date) : null);
+            setSelectedDate(task.date ? new Date(task.date) : null);
         }
     }, [task, setValue]);
-
-    const status = watch('status');
-    const isCompleted = status === 'completed';
-
-    const handleStatusToggle = () => {
-        setValue('status', isCompleted ? 'pending' : 'completed', { shouldDirty: true });
-    };
 
     const onSubmit = async (data) => {
         try {
@@ -62,7 +55,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                     name: data.name,
                     description: data.description,
                     status: data.status,
-                    date: data.date ? dayjs(data.date).toISOString() : dayjs().toISOString(),
+                    date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                 },
             });
             toast.success('Task updated successfully');
@@ -79,34 +72,26 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                     <ModalHeader className="flex flex-col gap-1">Task Details</ModalHeader>
                     <ModalBody>
                         <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Checkbox 
-                                    size="lg" 
-                                    isSelected={isCompleted}
-                                    onChange={handleStatusToggle}
-                                />
-                                <span className="text-sm text-default-500">
-                                    {isCompleted ? 'Completed' : 'Pending'}
-                                </span>
-                            </div>
                             <Input
                                 size="lg"
                                 {...register('name', { required: true })}
                                 label="Task name"
                                 isInvalid={!!errors.name}
                                 errorMessage="Task name is required"
-                                className={isCompleted ? 'line-through text-default-400' : ''}
                             />
                             <Textarea
                                 {...register('description')}
                                 label="Description"
                                 minRows={4}
                             />
-                            <Input
-                                type="date"
-                                {...register('date')}
-                                label="Due Date"
-                            />
+                            <div className="flex gap-2">
+                                <DatePicker
+                                    control={control}
+                                    name="date"
+                                    defaultValue={selectedDate}
+                                    onChange={setSelectedDate}
+                                />
+                            </div>
                             <input type="hidden" {...register('status')} />
                         </div>
                     </ModalBody>
@@ -122,9 +107,9 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            color="primary" 
-                            type="submit" 
+                        <Button
+                            color="primary"
+                            type="submit"
                             isLoading={isPending}
                             isDisabled={!isDirty}
                         >
