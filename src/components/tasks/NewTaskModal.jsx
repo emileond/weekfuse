@@ -6,20 +6,26 @@ import {
     ModalFooter,
     Button,
     Input,
-    Textarea, Divider,
+    Textarea,
+    Divider,
 } from '@heroui/react';
 import { useForm } from 'react-hook-form';
-import {useCreateTask} from '../../hooks/react-query/tasks/useTasks.js';
+import { useCreateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
+import dayjs from 'dayjs';
+import { useState } from 'react';
+import DatePicker from '../../components/form/DatePicker';
 
-const NewTaskModal = ({ isOpen, onOpenChange }) => {
+const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
+    const [selectedDate, setSelectedDate] = useState(defaultDate || new Date()); // State to track selected date
 
     const {
         register,
         handleSubmit,
+        control, // Use control for the Controller
         reset,
         formState: { errors },
     } = useForm();
@@ -28,11 +34,12 @@ const NewTaskModal = ({ isOpen, onOpenChange }) => {
         try {
             await createTask({
                 task: {
-                    title: data.title,
+                    name: data.name,
                     description: data.description,
+                    date: data.date ? dayjs(data.date).toISOString() : dayjs().toISOString(),
                     workspace_id: currentWorkspace.workspace_id,
-                    status: 'backlog',
-                }
+                    status: 'pending',
+                },
             });
             toast.success('Task created successfully');
             onOpenChange(false);
@@ -43,45 +50,54 @@ const NewTaskModal = ({ isOpen, onOpenChange }) => {
     };
 
     return (
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
-                <ModalContent>
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <ModalHeader className="flex flex-col gap-1">
-                            New Task
-                        </ModalHeader>
-                        <ModalBody>
-                            <div className="flex flex-col gap-4">
-                                <Input
-                                    size="lg"
-                                    {...register('title', { required: true })}
-                                    label="Task name"
-                                    isInvalid={!!errors.title}
-                                    errorMessage="Title is required"
-                                />
-                                <Textarea
-                                    size="lg"
-                                    {...register('description')}
-                                    label="Description"
-                                    minRows={2}
-                                />
-                            </div>
-                        </ModalBody>
-                        <Divider />
-                        <ModalFooter>
-                            <Button variant="light" onPress={() => {
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+            <ModalContent>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <ModalHeader className="flex flex-col gap-1">New Task</ModalHeader>
+                    <ModalBody>
+                        <div className="flex flex-col gap-4">
+                            <Input
+                                size="lg"
+                                {...register('name', { required: true })}
+                                label="Task name"
+                                isInvalid={!!errors.title}
+                                errorMessage="Title is required"
+                            />
+                            <Textarea
+                                {...register('description')}
+                                label="Description"
+                                minRows={2}
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <DatePicker
+                                control={control}
+                                name="date"
+                                defaultValue={defaultDate || dayjs()}
+                                triggerText="Select Due Date"
+                                onChange={setSelectedDate}
+                            />
+                        </div>
+                    </ModalBody>
+                    <Divider />
+                    <ModalFooter>
+                        <Button
+                            variant="light"
+                            onPress={() => {
                                 onOpenChange(false);
                                 reset();
-                            }} isDisabled={isPending}>
-                                Cancel
-                            </Button>
-                            <Button color="primary" type="submit" isLoading={isPending}>
-                                Create Task
-                            </Button>
-                        </ModalFooter>
-                    </form>
-                </ModalContent>
-            </Modal>
-
+                            }}
+                            isDisabled={isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button color="primary" type="submit" isLoading={isPending}>
+                            Create Task
+                        </Button>
+                    </ModalFooter>
+                </form>
+            </ModalContent>
+        </Modal>
     );
 };
 

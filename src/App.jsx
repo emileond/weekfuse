@@ -27,6 +27,7 @@ import AUPolicyPage from './pages/AUPolicyPage.jsx';
 import RoadmapPage from './pages/Roadmap.jsx';
 import FeatureRequestsPage from './pages/FeatureRequests.jsx';
 import FeatureRequestDetails from './pages/FeatureRequestDetails.jsx';
+import UpcomingPage from './pages/Upcoming.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -58,6 +59,14 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <DashboardPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/upcoming',
+            element: (
+                <ProtectedRoute>
+                    <UpcomingPage />
                 </ProtectedRoute>
             ),
         },

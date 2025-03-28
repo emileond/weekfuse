@@ -5,48 +5,32 @@ import { RiAddLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTodayTasks } from '../hooks/react-query/tasks/useTasks.js';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import Paywall from '../components/marketing/Paywall';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
-import TaskCard from '../components/tasks/TaskCard.jsx';
+import UpcomingTasks from '../components/tasks/UpcomingTasks.jsx';
 
-function DashboardPage() {
+function UpcomingPage() {
     const [currentWorkspace] = useCurrentWorkspace();
+    const { data: tasks } = useTodayTasks(currentWorkspace);
     const { isOpen, onOpenChange } = useDisclosure();
-    const [insufficientCredits, setInsufficientCredits] = useState(false);
-    const { data: todayTasks } = useTodayTasks(currentWorkspace);
     const navigate = useNavigate();
 
     return (
         <AppLayout>
-            <Paywall
-                isOpen={insufficientCredits}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setInsufficientCredits(false);
-                    }
-                }}
-                feature="more credits"
-            />
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} />
             <PageLayout
-                maxW="3xl"
-                title="Today"
-                description="your tasks for the day"
+                maxW="screen-2xl"
+                title="Upcoming"
+                description="These are the tasks that are scheduled for the upcoming days."
                 primaryAction="New task"
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
             >
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-2">
-                        {todayTasks?.map((task) => (
-                            <TaskCard key={task.id} task={task} />
-                        ))}
-                    </div>
+                    {tasks && <UpcomingTasks tasks={tasks} />}
                 </div>
             </PageLayout>
         </AppLayout>
     );
 }
 
-export default DashboardPage;
+export default UpcomingPage;

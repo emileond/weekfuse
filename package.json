@@ -11,6 +11,7 @@
     "dev:cf": "vite build && wrangler pages dev dist"
   },
   "dependencies": {
+    "@formkit/drag-and-drop": "^0.4.2",
     "@heroui/react": "^2.7.5",
     "@leeoniya/ufuzzy": "^1.0.18",
     "@mdx-js/rollup": "^3.1.0",
@@ -21,8 +22,8 @@
     "framer-motion": "^12.6.2",
     "ky": "^1.7.2",
     "mailcheck": "^1.1.1",
-    "papaparse": "^5.4.1",
     "react": "19.0.0",
+    "react-day-picker": "^9.6.3",
     "react-dom": "19.0.0",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.53.1",

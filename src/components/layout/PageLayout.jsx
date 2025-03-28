@@ -1,6 +1,7 @@
 import { Button } from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
 import { RiArrowLeftLine } from 'react-icons/ri';
+import UpcomingTasks from '../tasks/UpcomingTasks.jsx';
 
 function PageLayout({
     children,
