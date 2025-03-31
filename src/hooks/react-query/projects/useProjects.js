@@ -29,7 +29,7 @@ export const useProjects = (currentWorkspace = {}) => {
 
 // Function to create a new project
 const createProject = async ({ project }) => {
-    const { data, error } = await supabaseClient.from('projects').insert(project).select();
+    const { data, error } = await supabaseClient.from('projects').insert(project).select().single();
 
     if (error) {
         throw new Error('Failed to create project');

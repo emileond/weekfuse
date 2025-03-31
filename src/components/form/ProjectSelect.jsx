@@ -3,6 +3,7 @@ import CreatableSelect from './CreatableSelect';
 import { useProjects, useCreateProject } from '../../hooks/react-query/projects/useProjects';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { RiFolder3Line } from 'react-icons/ri';
+import { Spinner } from '@heroui/react';
 
 const ProjectSelect = ({
     label = 'Project',
@@ -16,7 +17,7 @@ const ProjectSelect = ({
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: projects, isLoading } = useProjects(currentWorkspace);
     const { mutateAsync: createProject } = useCreateProject(currentWorkspace);
-    const [selectedProject, setSelectedProject] = useState(defaultValue);
+    const [selectedProject, setSelectedProject] = useState();
 
     // Convert projects to options format for CreatableSelect
     const projectOptions = projects
@@ -36,8 +37,8 @@ const ProjectSelect = ({
             },
         });
 
-        // Return a temporary option for immediate UI update
-        // The actual project will be fetched when the query is invalidated
+        onChange(newProject);
+
         return {
             label: projectName,
             value: newProject.id,
@@ -64,22 +65,22 @@ const ProjectSelect = ({
         }
     }, [defaultValue, projects]);
 
-    return (
+    return isLoading ? (
+        <Spinner color="default" variant="wave" size="sm" />
+    ) : (
         <CreatableSelect
             label={label}
             placeholder={placeholder}
             options={projectOptions}
-            defaultValue={selectedProject}
+            defaultValue={projectOptions?.find((opt) => opt.value === defaultValue)}
             onChange={(value) => {
-                console.log(value);
-                // Find the selected project option
                 const option = projectOptions.find((opt) => opt.value === value);
                 setSelectedProject(option);
             }}
             onCreate={handleCreateProject}
             placement={placement}
             className={className}
-            disabled={disabled || isLoading}
+            disabled={disabled}
             icon={<RiFolder3Line fontSize="1rem" />}
         />
     );

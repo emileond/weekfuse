@@ -17,12 +17,14 @@ import dayjs from 'dayjs';
 import { useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
+import MilestoneSelect from '../form/MilestoneSelect.jsx';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
     const [selectedDate, setSelectedDate] = useState(defaultDate); // State to track selected date
     const [selectedProject, setSelectedProject] = useState(null); // State to track selected project
+    const [selectedMilestone, setSelectedMilestone] = useState(null); // State to track selected milestone
 
     const {
         register,
@@ -41,6 +43,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                     date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                     workspace_id: currentWorkspace.workspace_id,
                     project_id: selectedProject?.value || null,
+                    milestone_id: selectedMilestone?.value || null,
                     status: 'pending',
                 },
             });
@@ -48,6 +51,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
             onOpenChange(false);
             reset();
             setSelectedProject(null);
+            setSelectedMilestone(null);
         } catch (error) {
             toast.error(error.message || 'Failed to create task');
         }
@@ -81,6 +85,12 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                                 onChange={setSelectedDate}
                             />
                             <ProjectSelect onChange={setSelectedProject} />
+                            {selectedProject && (
+                                <MilestoneSelect
+                                    onChange={setSelectedMilestone}
+                                    projectId={selectedProject?.value}
+                                />
+                            )}
                         </div>
                     </ModalBody>
                     <Divider />
@@ -91,6 +101,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                                 onOpenChange(false);
                                 reset();
                                 setSelectedProject(null);
+                                setSelectedMilestone(null);
                             }}
                             isDisabled={isPending}
                         >

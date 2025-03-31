@@ -16,11 +16,15 @@ import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
 import { useEffect, useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
+import ProjectSelect from '../form/ProjectSelect.jsx';
+import MilestoneSelect from '../form/MilestoneSelect.jsx';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [selectedMilestone, setSelectedMilestone] = useState(null);
 
     const {
         register,
@@ -44,6 +48,16 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             setValue('description', task.description || '');
             setValue('date', task.date ? new Date(task.date) : null);
             setSelectedDate(task.date ? new Date(task.date) : null);
+
+            // Set initial project if task has one
+            if (task.project_id) {
+                setSelectedProject({ value: task.project_id });
+            }
+
+            // Set initial milestone if task has one
+            if (task.milestone_id) {
+                setSelectedMilestone({ value: task.milestone_id });
+            }
         }
     }, [task, setValue]);
 
@@ -54,8 +68,10 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 updates: {
                     name: data.name,
                     description: data.description,
-                    status: data.status,
+                    // status: data.status,
                     date: selectedDate ? dayjs(selectedDate).toISOString() : null,
+                    project_id: selectedProject?.value || null,
+                    milestone_id: selectedMilestone?.value || null,
                 },
             });
             toast.success('Task updated successfully');
@@ -91,6 +107,18 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                     defaultValue={selectedDate}
                                     onChange={setSelectedDate}
                                 />
+                                <ProjectSelect
+                                    defaultValue={task?.project_id}
+                                    onChange={setSelectedProject}
+                                />
+                                {selectedProject && (
+                                    <MilestoneSelect
+                                        key={selectedProject?.value}
+                                        defaultValue={task?.milestone_id}
+                                        onChange={setSelectedMilestone}
+                                        projectId={selectedProject?.value}
+                                    />
+                                )}
                             </div>
                             <input type="hidden" {...register('status')} />
                         </div>

@@ -8,7 +8,7 @@ import {
     ListboxItem,
     Divider,
 } from '@heroui/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { RiSearchLine, RiAddLine } from 'react-icons/ri';
 
 const CreatableSelect = ({
@@ -47,7 +47,6 @@ const CreatableSelect = ({
     };
 
     const handleCreate = async () => {
-        console.log(onCreate);
         if (typeof onCreate === 'function') {
             try {
                 const newOption = await onCreate(searchText);
@@ -65,19 +64,11 @@ const CreatableSelect = ({
         }
     };
 
-    useEffect(() => {
-        if (defaultValue && !selectedOption) {
-            const option = options.find((opt) => opt.value === defaultValue);
-            if (option) {
-                setSelectedOption(option);
-            }
-        }
-    }, [defaultValue, options]);
-
     const getDisplayText = () => {
         if (selectedOption) {
             return selectedOption.label;
         }
+
         return label;
     };
 
