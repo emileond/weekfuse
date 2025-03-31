@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import CreatableSelect from './CreatableSelect';
 import {
     useMilestones,
     useCreateMilestone,
 } from '../../hooks/react-query/milestones/useMilestones';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
-import { RiFlagLine } from 'react-icons/ri';
+import { RiFlag2Line } from 'react-icons/ri';
 import { Spinner } from '@heroui/react';
 
 const MilestoneSelect = ({
@@ -47,11 +47,14 @@ const MilestoneSelect = ({
             },
         });
 
-        onChange(newMilestone);
+        const newMapped = {
+            label: newMilestone.name,
+            value: newMilestone.id,
+        };
 
-        // Return a temporary option for immediate UI update
-        // The actual milestone will be fetched when the query is invalidated
-        return newMilestone;
+        onChange(newMapped);
+
+        return newMapped;
     };
 
     // Update parent component when selected milestone changes
@@ -61,23 +64,16 @@ const MilestoneSelect = ({
         }
     }, [selectedMilestone, onChange]);
 
-    // Set default value when milestones are loaded
+    // Reset selected milestone when projectId changes
     useEffect(() => {
-        if (defaultValue && milestones?.length) {
-            const milestone = milestones.find((m) => m.id === defaultValue);
-            if (milestone) {
-                setSelectedMilestone({
-                    label: milestone.name,
-                    value: milestone.id,
-                });
-            }
-        }
-    }, [defaultValue, milestones]);
+        setSelectedMilestone(null);
+    }, [projectId]);
 
     return isLoading ? (
         <Spinner color="default" variant="wave" size="sm" />
     ) : (
         <CreatableSelect
+            key={`milestone-select-${projectId}`}
             label={label}
             placeholder={placeholder}
             options={milestoneOptions}
@@ -90,7 +86,7 @@ const MilestoneSelect = ({
             placement={placement}
             className={className}
             disabled={disabled || !projectId}
-            icon={<RiFlagLine fontSize="1rem" />}
+            icon={<RiFlag2Line fontSize="1rem" />}
         />
     );
 };

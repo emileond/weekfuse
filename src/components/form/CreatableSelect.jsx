@@ -52,7 +52,6 @@ const CreatableSelect = ({
                 const newOption = await onCreate(searchText);
                 if (newOption) {
                     setSelectedOption(newOption);
-                    onChange && onChange(newOption.value);
                     setIsOpen(false);
                     setSearchText('');
                 }

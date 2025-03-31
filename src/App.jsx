@@ -28,6 +28,7 @@ import RoadmapPage from './pages/Roadmap.jsx';
 import FeatureRequestsPage from './pages/FeatureRequests.jsx';
 import FeatureRequestDetails from './pages/FeatureRequestDetails.jsx';
 import UpcomingPage from './pages/Upcoming.jsx';
+import ProjectsPage from './pages/Projects.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -135,6 +136,14 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <SettingsPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/projects',
+            element: (
+                <ProtectedRoute>
+                    <ProjectsPage />
                 </ProtectedRoute>
             ),
         },

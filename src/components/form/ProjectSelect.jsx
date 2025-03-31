@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import CreatableSelect from './CreatableSelect';
 import { useProjects, useCreateProject } from '../../hooks/react-query/projects/useProjects';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
-import { RiFolder3Line } from 'react-icons/ri';
+import { RiListCheck3 } from 'react-icons/ri';
 import { Spinner } from '@heroui/react';
 
 const ProjectSelect = ({
-    label = 'Project',
+    label = 'No project',
     placeholder = 'Search projects...',
     defaultValue = null,
     onChange,
@@ -37,12 +37,14 @@ const ProjectSelect = ({
             },
         });
 
-        onChange(newProject);
-
-        return {
+        const mappedNew = {
             label: projectName,
             value: newProject.id,
         };
+
+        onChange(mappedNew);
+
+        return mappedNew;
     };
 
     // Update parent component when selected project changes
@@ -51,19 +53,6 @@ const ProjectSelect = ({
             onChange(selectedProject);
         }
     }, [selectedProject, onChange]);
-
-    // Set default value when projects are loaded
-    useEffect(() => {
-        if (defaultValue && projects?.length) {
-            const project = projects.find((p) => p.id === defaultValue);
-            if (project) {
-                setSelectedProject({
-                    label: project.name,
-                    value: project.id,
-                });
-            }
-        }
-    }, [defaultValue, projects]);
 
     return isLoading ? (
         <Spinner color="default" variant="wave" size="sm" />
@@ -81,7 +70,7 @@ const ProjectSelect = ({
             placement={placement}
             className={className}
             disabled={disabled}
-            icon={<RiFolder3Line fontSize="1rem" />}
+            icon={<RiListCheck3 fontSize="1rem" />}
         />
     );
 };

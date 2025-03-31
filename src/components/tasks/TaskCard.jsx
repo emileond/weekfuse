@@ -18,6 +18,7 @@ import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import TaskDetailModal from './TaskDetailModal';
 import { useState } from 'react';
 import CreatableSelect from '../form/CreatableSelect.jsx';
+import EntityChip from '../common/EntityChip.jsx';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
@@ -117,6 +118,24 @@ const TaskCard = ({ task, sm }) => {
                             </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                    {task.project_id && (
+                        <EntityChip
+                            type="project"
+                            entityId={task.project_id}
+                            size="sm"
+                            variant="light"
+                        />
+                    )}
+                    {task.milestone_id && (
+                        <EntityChip
+                            type="milestone"
+                            entityId={task.milestone_id}
+                            size="sm"
+                            variant="light"
+                        />
+                    )}
                 </div>
             </div>
             <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />

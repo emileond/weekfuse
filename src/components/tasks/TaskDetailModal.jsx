@@ -32,7 +32,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         reset,
         setValue,
         control,
-        formState: { errors, isDirty },
+        formState: { errors },
     } = useForm({
         defaultValues: {
             name: task?.name || '',
@@ -63,21 +63,40 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
 
     const onSubmit = async (data) => {
         try {
-            await updateTask({
-                taskId: task.id,
-                updates: {
-                    name: data.name,
-                    description: data.description,
-                    // status: data.status,
-                    date: selectedDate ? dayjs(selectedDate).toISOString() : null,
-                    project_id: selectedProject?.value || null,
-                    milestone_id: selectedMilestone?.value || null,
-                },
-            });
-            toast.success('Task updated successfully');
-            onOpenChange(false);
+            // Create the updates object
+            const updates = {
+                name: data.name,
+                description: data.description,
+                // status: data.status,
+                date: selectedDate ? dayjs(selectedDate).toISOString() : null,
+                project_id: selectedProject?.value || null,
+                milestone_id: selectedMilestone?.value || null,
+            };
+
+            // Check if the data has actually changed
+            const hasChanged =
+                updates.name !== (task.name || '') ||
+                updates.description !== (task.description || '') ||
+                (updates.date !== (task.date || null) &&
+                    (updates.date === null ||
+                        task.date === null ||
+                        dayjs(updates.date).format('YYYY-MM-DD') !==
+                            dayjs(task.date).format('YYYY-MM-DD'))) ||
+                updates.project_id !== (task.project_id || null) ||
+                updates.milestone_id !== (task.milestone_id || null);
+
+            // Only make the database call if the data has changed
+            if (hasChanged) {
+                await updateTask({
+                    taskId: task.id,
+                    updates,
+                });
+            }
+            toast.success('Task updated');
         } catch (error) {
             toast.error(error.message || 'Failed to update task');
+        } finally {
+            onOpenChange();
         }
     };
 
@@ -114,7 +133,11 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                 {selectedProject && (
                                     <MilestoneSelect
                                         key={selectedProject?.value}
-                                        defaultValue={task?.milestone_id}
+                                        defaultValue={
+                                            selectedProject?.value === task?.project_id
+                                                ? task?.milestone_id
+                                                : null
+                                        }
                                         onChange={setSelectedMilestone}
                                         projectId={selectedProject?.value}
                                     />
@@ -135,12 +158,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                         >
                             Cancel
                         </Button>
-                        <Button
-                            color="primary"
-                            type="submit"
-                            isLoading={isPending}
-                            isDisabled={!isDirty}
-                        >
+                        <Button color="primary" type="submit" isLoading={isPending}>
                             Save Changes
                         </Button>
                     </ModalFooter>

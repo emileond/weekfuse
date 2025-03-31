@@ -81,7 +81,7 @@ const UpcomingTasks = () => {
                         return (
                             <div
                                 key={dateStr}
-                                className={`flex flex-col gap-2 bg-content1 border-1 rounded-xl p-2 h-[80vh] min-w-[250px] flex-shrink-0 snap-center `}
+                                className={`flex flex-col gap-2 bg-content1 border-1 rounded-xl p-2 h-[80vh] min-w-[250px] w-[75vw] sm:w-[50vw] md:w-[20vw] lg:w-[12vw] md flex-shrink-0 snap-center `}
                             >
                                 <div
                                     className={`p-2 border-b-2 ${isToday ? 'border-secondary' : 'border-default'}`}
