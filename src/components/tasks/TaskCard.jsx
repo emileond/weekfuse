@@ -17,7 +17,7 @@ import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useT
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import TaskDetailModal from './TaskDetailModal';
 import { useState } from 'react';
-import CreatableSelect from '../form/CreatableSelectExample.jsx';
+import CreatableSelect from '../form/CreatableSelect.jsx';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
@@ -149,6 +149,7 @@ const TaskCard = ({ task, sm }) => {
                     <ModalBody>
                         <p className="mb-4">Select a list to move this task to:</p>
                         <CreatableSelect
+                            label="Select project"
                             options={[
                                 {
                                     label: 'option x',

@@ -12,41 +12,33 @@ import { useState, useEffect, useRef } from 'react';
 import { RiSearchLine, RiAddLine } from 'react-icons/ri';
 
 const CreatableSelect = ({
-    label = 'Select an option',
+    label,
     placeholder = 'Search...',
     options = [],
     defaultValue = null,
     onChange,
-    onCreateOption,
+    onCreate,
     placement = 'bottom',
     className = '',
     disabled = false,
+    icon,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [selectedOption, setSelectedOption] = useState(defaultValue);
     const inputRef = useRef(null);
 
-    useEffect(() => {
-        if (isOpen && inputRef.current) {
-            setTimeout(() => {
-                inputRef.current.focus();
-            }, 100);
-        }
-    }, [isOpen]);
-
     // Filter options based on search text
-    const filteredOptions = options.filter((option) =>
-        option.label.toLowerCase().includes(searchText.toLowerCase()),
-    );
+    const filteredOptions = options.filter((option) => {
+        if (searchText?.length) {
+            return option.label.toLowerCase().includes(searchText.toLowerCase());
+        } else {
+            return options;
+        }
+    });
 
     // Ensure all options are valid before rendering
     const validOptions = filteredOptions.filter((option) => option && option.value && option.label);
-
-    // Check if the search text exactly matches any option and get the matching option
-    const exactMatch = options.find(
-        (option) => option.label.toLowerCase() === searchText.toLowerCase(),
-    );
 
     const handleSelect = (option) => {
         setSelectedOption(option);
@@ -54,10 +46,22 @@ const CreatableSelect = ({
         setSearchText('');
     };
 
-    const handleCreate = () => {
-        if (onCreateOption && searchText.trim()) {
-            const newOption = onCreateOption(searchText.trim());
-            handleSelect(newOption);
+    const handleCreate = async () => {
+        console.log(onCreate);
+        if (typeof onCreate === 'function') {
+            try {
+                const newOption = await onCreate(searchText);
+                if (newOption) {
+                    setSelectedOption(newOption);
+                    onChange && onChange(newOption.value);
+                    setIsOpen(false);
+                    setSearchText('');
+                }
+            } catch (error) {
+                console.error('Error creating option:', error);
+            }
+        } else {
+            console.error('onCreate is not a function');
         }
     };
 
@@ -90,14 +94,18 @@ const CreatableSelect = ({
             className={className}
         >
             <PopoverTrigger>
-                <Button
-                    variant="bordered"
-                    className="w-full justify-between"
-                    disabled={disabled}
-                    onPress={() => setIsOpen(true)}
-                >
-                    {getDisplayText()}
-                </Button>
+                <div>
+                    <Button
+                        size="sm"
+                        variant="light"
+                        className="text-default-600"
+                        startContent={icon}
+                        disabled={disabled}
+                        onPress={() => setIsOpen(true)}
+                    >
+                        {getDisplayText()}
+                    </Button>
+                </div>
             </PopoverTrigger>
             <PopoverContent className="p-0 w-[300px]">
                 <div className="w-full p-2">
@@ -119,9 +127,9 @@ const CreatableSelect = ({
                             <div className="p-2 text-center text-default-400">No options found</div>
                         }
                     >
-                        {validOptions?.map((option) => (
+                        {validOptions?.map((option, index) => (
                             <ListboxItem
-                                key={option.value} // Ensure key is a string/primitive value
+                                key={option.value}
                                 onPress={() => {
                                     handleSelect(option);
                                     onChange && onChange(option.value);
@@ -130,21 +138,15 @@ const CreatableSelect = ({
                                 {option.label}
                             </ListboxItem>
                         ))}
-                        {searchText?.trim() && exactMatch === undefined && (
-                            <>
-                                {validOptions.length > 0 && <Divider className="my-2" />}
-                                <ListboxItem
-                                    key="create-option"
-                                    onPress={() => {
-                                        handleCreate();
-                                        onChange && onChange(searchText.trim());
-                                    }}
-                                    startContent={<RiAddLine />}
-                                    className="text-primary"
-                                >
-                                    Create "{searchText.trim()}"
-                                </ListboxItem>
-                            </>
+                        {searchText?.trim() && onCreate && (
+                            <ListboxItem
+                                key="create-option"
+                                onPress={() => handleCreate()}
+                                startContent={<RiAddLine />}
+                                className="text-primary"
+                            >
+                                {`Create "${searchText?.trim()}"`}
+                            </ListboxItem>
                         )}
                     </Listbox>
                 </div>

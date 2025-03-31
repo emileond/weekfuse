@@ -16,11 +16,13 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
+import ProjectSelect from '../form/ProjectSelect.jsx';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
     const [selectedDate, setSelectedDate] = useState(defaultDate); // State to track selected date
+    const [selectedProject, setSelectedProject] = useState(null); // State to track selected project
 
     const {
         register,
@@ -38,12 +40,14 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                     description: data.description,
                     date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                     workspace_id: currentWorkspace.workspace_id,
+                    project_id: selectedProject?.value || null,
                     status: 'pending',
                 },
             });
             toast.success('Task created successfully');
             onOpenChange(false);
             reset();
+            setSelectedProject(null);
         } catch (error) {
             toast.error(error.message || 'Failed to create task');
         }
@@ -76,6 +80,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                                 defaultValue={defaultDate}
                                 onChange={setSelectedDate}
                             />
+                            <ProjectSelect onChange={setSelectedProject} />
                         </div>
                     </ModalBody>
                     <Divider />
@@ -85,6 +90,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                             onPress={() => {
                                 onOpenChange(false);
                                 reset();
+                                setSelectedProject(null);
                             }}
                             isDisabled={isPending}
                         >
