@@ -27,7 +27,7 @@ const DatePicker = ({ control, name, defaultValue, trigger, placement = 'bottom'
     }, [selectedDate]);
 
     useEffect(() => {
-        if (selectedDate && onChange) {
+        if (onChange) {
             onChange(selectedDate);
         }
     }, [selectedDate]);
