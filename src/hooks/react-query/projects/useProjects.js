@@ -27,6 +27,31 @@ export const useProjects = (currentWorkspace = {}) => {
     });
 };
 
+const fetchTaskCountByProject = async ({ project_id }) => {
+    const { data, error } = await supabaseClient.rpc('get_project_task_count', {
+        p_project_id: project_id,
+    });
+
+    if (error) {
+        throw new Error('Error fetching task count:', error);
+    }
+
+    return data;
+};
+
+// Hook to fetch task count
+export const useTaskCountByProject = (project_id) => {
+    return useQuery({
+        queryKey: ['taskCountByProject', project_id],
+        queryFn: () =>
+            fetchTaskCountByProject({
+                project_id: project_id,
+            }),
+        staleTime: 1000 * 60 * 15, // 15 minutes
+        enabled: !!project_id, // Only fetch if workspace_id is provided
+    });
+};
+
 // Function to create a new project
 const createProject = async ({ project }) => {
     const { data, error } = await supabaseClient.from('projects').insert(project).select().single();

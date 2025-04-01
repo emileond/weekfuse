@@ -1,36 +1,19 @@
-import {
-    Avatar,
-    CardHeader,
-    Chip,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownTrigger,
-    Progress,
-    Tab,
-    Tabs,
-    useDisclosure,
-} from '@heroui/react';
+import { Tab, Tabs } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
-import { RiAddLine, RiListCheck3, RiFlag2Line } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useProjects } from '../hooks/react-query/projects/useProjects.js';
 import { useMilestones } from '../hooks/react-query/milestones/useMilestones.js';
-import { useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import Paywall from '../components/marketing/Paywall';
-import { Card, CardBody, CardFooter, Button } from '@heroui/react';
-import { Link } from 'react-router-dom';
-import { Accordion, AccordionItem } from '@heroui/accordion';
+import ProjectCard from '../components/projects/ProjectCard.jsx';
+import MilestoneCard from '../components/milestones/MilestoneCard.jsx';
 
 function ProjectsPage() {
     const [currentWorkspace] = useCurrentWorkspace();
-    const { isOpen, onOpenChange } = useDisclosure();
     const [insufficientCredits, setInsufficientCredits] = useState(false);
     const { data: projects } = useProjects(currentWorkspace);
     const { data: milestones } = useMilestones(currentWorkspace);
-    const navigate = useNavigate();
 
     // Group milestones by project
     const milestonesByProject = useMemo(() => {
@@ -70,35 +53,7 @@ function ProjectsPage() {
                     <Tab key="projects" title="Projects">
                         <div className="flex flex-col gap-3">
                             {projects?.map((project) => (
-                                <Card
-                                    key={project.id}
-                                    shadow="none"
-                                    className="w-full border-1 border-default-200"
-                                >
-                                    <CardBody>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex gap-2 items-center text-default-500">
-                                                <RiListCheck3 fontSize="1.2rem" />
-                                                <div>
-                                                    <p className="font-medium text-default-900">
-                                                        {project.name}
-                                                    </p>
-                                                    <p className="text-sm">123 Tasks</p>
-                                                </div>
-                                            </div>
-                                            <Dropdown>
-                                                <DropdownTrigger>
-                                                    <Button size="sm" isIconOnly>
-                                                        A
-                                                    </Button>
-                                                </DropdownTrigger>
-                                                <DropdownMenu>
-                                                    <DropdownItem>Delete</DropdownItem>
-                                                </DropdownMenu>
-                                            </Dropdown>
-                                        </div>
-                                    </CardBody>
-                                </Card>
+                                <ProjectCard key={project.id} project={project} />
                             ))}
                         </div>
                     </Tab>
@@ -114,96 +69,16 @@ function ProjectsPage() {
                                         if (projectMilestones.length === 0) return null;
 
                                         return (
-                                            <div
-                                                key={project.id}
-                                                // title={
-                                                //     <div className="flex items-center gap-2">
-                                                //         <RiListCheck3 fontSize="1.2rem" />
-                                                //         <Chip size="sm" variant="flat" color="primary">
-                                                //             {projectMilestones.length}
-                                                //         </Chip>
-                                                //     </div>
-                                                // }
-                                            >
+                                            <div key={project.id}>
                                                 <span className="text-sm font-medium">
                                                     {project.name}
                                                 </span>
                                                 <div className="flex flex-col gap-3 pl-3 py-3">
                                                     {projectMilestones.map((milestone) => (
-                                                        <Card
+                                                        <MilestoneCard
                                                             key={milestone.id}
-                                                            shadow="none"
-                                                            className="w-full border-1 border-default-200"
-                                                        >
-                                                            <CardHeader>
-                                                                <div className="w-full flex justify-between">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <RiFlag2Line
-                                                                            fontSize="1rem"
-                                                                            className="text-primary"
-                                                                        />
-                                                                        <span>
-                                                                            {milestone.name}
-                                                                        </span>
-                                                                    </div>
-                                                                    <Dropdown>
-                                                                        <DropdownTrigger>
-                                                                            <Button
-                                                                                size="sm"
-                                                                                isIconOnly
-                                                                            >
-                                                                                ...
-                                                                            </Button>
-                                                                        </DropdownTrigger>
-                                                                        <DropdownMenu>
-                                                                            <DropdownItem>
-                                                                                Delete
-                                                                            </DropdownItem>
-                                                                        </DropdownMenu>
-                                                                    </Dropdown>
-                                                                </div>
-                                                            </CardHeader>
-                                                            <CardBody>
-                                                                <Progress
-                                                                    size="sm"
-                                                                    color="success"
-                                                                    value={Math.random(10, 100)}
-                                                                    maxValue={1}
-                                                                />
-                                                                <div className="flex items-center justify-between pt-1">
-                                                                    <div className="flex gap-3 py-1 items-center">
-                                                                        <Chip
-                                                                            size="sm"
-                                                                            variant="light"
-                                                                            className="text-default-500"
-                                                                        >
-                                                                            68% complete
-                                                                        </Chip>
-                                                                        <Chip
-                                                                            size="sm"
-                                                                            variant="light"
-                                                                            className="text-default-500"
-                                                                        >
-                                                                            29 open
-                                                                        </Chip>
-                                                                        <Chip
-                                                                            size="sm"
-                                                                            variant="light"
-                                                                            className="text-default-500"
-                                                                        >
-                                                                            29 closed
-                                                                        </Chip>
-                                                                    </div>
-
-                                                                    <Link
-                                                                        to="#"
-                                                                        className="text-sm font-medium text-primary hover:text-primary-600"
-                                                                    >
-                                                                        View tasks
-                                                                    </Link>
-                                                                </div>
-                                                            </CardBody>
-                                                        </Card>
+                                                            milestone={milestone}
+                                                        />
                                                     ))}
                                                 </div>
                                             </div>

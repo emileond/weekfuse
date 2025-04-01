@@ -18,7 +18,7 @@ const DraggableList = ({ id, items, group, smallCards }) => {
     const [listRef, state] = useDragAndDrop(items, {
         group,
         plugins: [animations()],
-        dragHandle: '.drag-handle',
+        // dragHandle: '.drag-handle',
         onDragend: async (e) => {
             const columnItems = e.values; // The items in the target column
             const newDate = e.parent.el.id; // The target list (backlog or a date)

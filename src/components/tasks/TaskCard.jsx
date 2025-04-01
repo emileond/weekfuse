@@ -79,11 +79,11 @@ const TaskCard = ({ task, sm }) => {
         <>
             <div
                 id={task.id}
-                className="w-full border-1 border-content3 rounded-xl p-3 bg-content1 hover:bg-content2/50 transition-bg duration-300 ease-in-out hover:cursor-pointer"
+                className="w-full border-1 border-content3 rounded-xl p-3 bg-content1 hover:bg-content2/50 transition-bg duration-300 ease-in-out cursor-grabbing hover:cursor-pointer"
                 onClick={onOpenChange}
             >
                 <div className="flex justify-between items-center">
-                    <div className="flex gap-1 grow items-center drag-handle">
+                    <div className="flex gap-1 grow items-center">
                         <Checkbox
                             size={sm ? 'md' : 'lg'}
                             isSelected={isCompleted}

@@ -32,6 +32,31 @@ export const useMilestones = (currentWorkspace = {}, project_id = null) => {
     });
 };
 
+const fetchTaskCountByMilestone = async ({ milestone_id }) => {
+    const { data, error } = await supabaseClient.rpc('get_milestone_task_counts', {
+        p_milestone_id: milestone_id,
+    });
+
+    if (error) {
+        throw new Error('Error fetching task count:', error);
+    }
+
+    return data;
+};
+
+// Hook to fetch task count
+export const useTaskCountByMilestone = (milestone_id) => {
+    return useQuery({
+        queryKey: ['taskCountByMilestone', milestone_id],
+        queryFn: () =>
+            fetchTaskCountByMilestone({
+                milestone_id: milestone_id,
+            }),
+        staleTime: 1000 * 60 * 15, // 15 minutes
+        enabled: !!milestone_id, // Only fetch if workspace_id is provided
+    });
+};
+
 // Function to create a new milestone
 const createMilestone = async ({ milestone }) => {
     const { data, error } = await supabaseClient
