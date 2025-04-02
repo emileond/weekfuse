@@ -6,7 +6,6 @@ import {
     ModalFooter,
     Button,
     Input,
-    Textarea,
     Divider,
 } from '@heroui/react';
 import { useForm } from 'react-hook-form';
@@ -18,6 +17,7 @@ import { useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
+import SimpleEditor from '../form/SimpleEditor.jsx';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -63,27 +63,23 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <ModalHeader className="flex flex-col gap-1">New Task</ModalHeader>
                     <ModalBody>
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-6">
                             <Input
                                 size="lg"
                                 {...register('name', { required: true })}
-                                label="Task name"
+                                label="Task"
                                 isInvalid={!!errors.title}
                                 errorMessage="Title is required"
                             />
-                            <Textarea
-                                {...register('description')}
-                                label="Description"
-                                minRows={2}
-                            />
+                            {/*<SimpleEditor*/}
+                            {/*    // control={control}*/}
+                            {/*    name="description"*/}
+                            {/*    label="Description"*/}
+                            {/*    // minRows={2}*/}
+                            {/*/>*/}
                         </div>
                         <div className="flex gap-2">
-                            <DatePicker
-                                control={control}
-                                name="date"
-                                defaultValue={defaultDate}
-                                onChange={setSelectedDate}
-                            />
+                            <DatePicker defaultValue={defaultDate} onChange={setSelectedDate} />
                             <ProjectSelect onChange={setSelectedProject} />
                             {selectedProject && (
                                 <MilestoneSelect

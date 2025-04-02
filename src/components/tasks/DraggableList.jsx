@@ -44,7 +44,6 @@ const DraggableList = ({ id, items, group, smallCards }) => {
             // Call the bulk update function
             try {
                 await updateMultipleTasks(tasksToUpdate);
-                console.log('All tasks updated successfully');
             } catch (error) {
                 console.error('Error updating tasks:', error);
             }

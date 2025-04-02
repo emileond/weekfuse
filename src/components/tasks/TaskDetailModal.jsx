@@ -6,7 +6,6 @@ import {
     ModalFooter,
     Button,
     Input,
-    Textarea,
     Divider,
 } from '@heroui/react';
 import dayjs from 'dayjs';
@@ -18,11 +17,13 @@ import { useEffect, useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
+import SimpleEditor from '../form/SimpleEditor.jsx';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
+    const [description, setDescription] = useState(task.description);
     const [selectedProject, setSelectedProject] = useState(null);
     const [selectedMilestone, setSelectedMilestone] = useState(null);
 
@@ -45,7 +46,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     useEffect(() => {
         if (task) {
             setValue('name', task.name || '');
-            setValue('description', task.description || '');
             setValue('date', task.date ? new Date(task.date) : null);
             setSelectedDate(task.date ? new Date(task.date) : null);
 
@@ -66,7 +66,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             // Create the updates object
             const updates = {
                 name: data.name,
-                description: data.description,
+                description: description,
                 // status: data.status,
                 date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                 project_id: selectedProject?.value || null,
@@ -106,23 +106,22 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <ModalHeader className="flex flex-col gap-1">Task Details</ModalHeader>
                     <ModalBody>
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-6">
                             <Input
                                 size="lg"
+                                variant="bordered"
                                 {...register('name', { required: true })}
-                                label="Task name"
+                                label="Task"
                                 isInvalid={!!errors.name}
                                 errorMessage="Task name is required"
                             />
-                            <Textarea
-                                {...register('description')}
+                            <SimpleEditor
                                 label="Description"
-                                minRows={4}
+                                defaultContent={task?.description || null}
+                                onChange={setDescription}
                             />
                             <div className="flex gap-2">
                                 <DatePicker
-                                    control={control}
-                                    name="date"
                                     defaultValue={selectedDate}
                                     onChange={setSelectedDate}
                                 />

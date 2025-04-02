@@ -12,13 +12,14 @@ import {
     ModalFooter,
     Button,
 } from '@heroui/react';
-import { RiMoreLine } from 'react-icons/ri';
+import { RiCalendarCloseLine, RiMoreLine } from 'react-icons/ri';
 import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import TaskDetailModal from './TaskDetailModal';
 import { useState } from 'react';
 import CreatableSelect from '../form/CreatableSelect.jsx';
 import EntityChip from '../common/EntityChip.jsx';
+import dayjs from 'dayjs';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
@@ -37,6 +38,10 @@ const TaskCard = ({ task, sm }) => {
         onOpen: onMoveModalOpen,
         onClose: onMoveModalClose,
     } = useDisclosure();
+
+    const taskDate = dayjs(task?.date);
+    const today = dayjs().startOf('day');
+    const isOverdue = taskDate.isBefore(today);
 
     const handleStatusToggle = async () => {
         setIsCompleted(!isCompleted);
@@ -97,6 +102,14 @@ const TaskCard = ({ task, sm }) => {
                             {task.name}
                         </span>
                     </div>
+                    {isOverdue && (
+                        <span className="text-xs font-medium text-danger px-6 flex items-center gap-1">
+                            <RiCalendarCloseLine fontSize="1rem" />
+                            {Intl.DateTimeFormat(navigator.language, {
+                                dateStyle: 'medium',
+                            }).format(new Date(task?.date))}
+                        </span>
+                    )}
                     <Dropdown isOpen={isMenuOpen} onOpenChange={onMenuOpenChange}>
                         <DropdownTrigger>
                             <div
@@ -119,24 +132,26 @@ const TaskCard = ({ task, sm }) => {
                         </DropdownMenu>
                     </Dropdown>
                 </div>
-                <div className="flex gap-3 justify-end pt-2">
-                    {task.project_id && (
-                        <EntityChip
-                            type="project"
-                            entityId={task.project_id}
-                            size="sm"
-                            variant="light"
-                        />
-                    )}
-                    {task.milestone_id && (
-                        <EntityChip
-                            type="milestone"
-                            entityId={task.milestone_id}
-                            size="sm"
-                            variant="light"
-                        />
-                    )}
-                </div>
+                {(task.project_id || task.milestone_id) && (
+                    <div className="flex gap-3 justify-end pt-2">
+                        {task.project_id && (
+                            <EntityChip
+                                type="project"
+                                entityId={task.project_id}
+                                size="sm"
+                                variant="light"
+                            />
+                        )}
+                        {task.milestone_id && (
+                            <EntityChip
+                                type="milestone"
+                                entityId={task.milestone_id}
+                                size="sm"
+                                variant="light"
+                            />
+                        )}
+                    </div>
+                )}
             </div>
             <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
 

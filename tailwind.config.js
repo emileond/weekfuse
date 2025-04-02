@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 const { heroui } = require('@heroui/react');
+const typography = require('@tailwindcss/typography');
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -13,6 +14,7 @@ export default {
     },
     darkMode: 'class',
     plugins: [
+        typography,
         heroui({
             themes: {
                 light: {

@@ -15,6 +15,10 @@ const fetchTasks = async ({ statusList, id, workspace_id, startDate, endDate }) 
         if (startDate && endDate) {
             query = query.gte('date', startDate).lte('date', endDate); // Filter by date range
         }
+
+        if (!startDate && endDate) {
+            query = query.lte('date', endDate); // Filter by date range
+        }
         query = query.order('order');
     }
 
