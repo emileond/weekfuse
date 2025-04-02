@@ -18,6 +18,7 @@ import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
+import { RiCheckboxCircleLine } from 'react-icons/ri';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -120,15 +121,17 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                 defaultContent={task?.description || null}
                                 onChange={setDescription}
                             />
-                            <div className="flex gap-2">
-                                <DatePicker
-                                    defaultValue={selectedDate}
-                                    onChange={setSelectedDate}
-                                />
-                                <ProjectSelect
-                                    defaultValue={task?.project_id}
-                                    onChange={setSelectedProject}
-                                />
+                            <div className="flex items-center justify-between pb-1">
+                                <div className="flex gap-2">
+                                    <DatePicker
+                                        defaultValue={selectedDate}
+                                        onChange={setSelectedDate}
+                                    />
+                                    <ProjectSelect
+                                        defaultValue={task?.project_id}
+                                        onChange={setSelectedProject}
+                                    />
+                                </div>
                                 {selectedProject && (
                                     <MilestoneSelect
                                         key={selectedProject?.value}
@@ -141,8 +144,16 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         projectId={selectedProject?.value}
                                     />
                                 )}
+                                {task.status === 'completed' && task.completed_at && (
+                                    <div className="flex gap-1 text-xs text-default-500 font-medium">
+                                        <RiCheckboxCircleLine fontSize="1rem" />
+                                        Completed on{' '}
+                                        {Intl.DateTimeFormat(navigator.language, {
+                                            dateStyle: 'medium',
+                                        }).format(new Date(task.completed_at))}
+                                    </div>
+                                )}
                             </div>
-                            <input type="hidden" {...register('status')} />
                         </div>
                     </ModalBody>
                     <Divider />

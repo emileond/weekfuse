@@ -46,10 +46,12 @@ const TaskCard = ({ task, sm }) => {
     const handleStatusToggle = async () => {
         setIsCompleted(!isCompleted);
         try {
+            const newStatus = task.status === 'completed' ? 'pending' : 'completed';
             await updateTask({
                 taskId: task.id,
                 updates: {
-                    status: task.status === 'completed' ? 'pending' : 'completed',
+                    status: newStatus,
+                    completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
                 },
             });
         } catch (error) {
