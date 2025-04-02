@@ -25,6 +25,7 @@
     "@tiptap/react": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
     "@trigger.dev/sdk": "3.3.17",
+    "canvas-confetti": "^1.9.3",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.6.2",
     "ky": "^1.7.2",

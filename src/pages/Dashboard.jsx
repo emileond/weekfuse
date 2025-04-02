@@ -4,7 +4,7 @@ import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTasks, useUpdateMultipleTasks } from '../hooks/react-query/tasks/useTasks.js';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Paywall from '../components/marketing/Paywall';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
 import dayjs from 'dayjs';
@@ -15,6 +15,7 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 import TaskCard from '../components/tasks/TaskCard.jsx';
 import DatePicker from '../components/form/DatePicker.jsx';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -34,6 +35,7 @@ function DashboardPage() {
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
     const listDate = dayjs().startOf('day').tz(dayjs.tz.guess(), true).toISOString();
     const [listKey, setListKey] = useState();
+    const confettiShownRef = useRef(false);
 
     const hasOVerdueTasks = overdueTasks?.length > 0;
 
@@ -56,6 +58,26 @@ function DashboardPage() {
 
     useEffect(() => {
         setListKey(dayjs().toISOString());
+    }, [todayTasks]);
+
+    useEffect(() => {
+        // Check if there are tasks for today and all of them are completed
+        if (todayTasks && todayTasks.length > 0) {
+            const allTasksCompleted = todayTasks.every((task) => task.status === 'completed');
+
+            // If all tasks are completed and confetti hasn't been shown yet, show confetti
+            if (allTasksCompleted && !confettiShownRef.current) {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.2 },
+                });
+                confettiShownRef.current = true;
+            } else if (!allTasksCompleted) {
+                // Reset the ref if not all tasks are completed
+                confettiShownRef.current = false;
+            }
+        }
     }, [todayTasks]);
 
     return (

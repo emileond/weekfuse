@@ -12,7 +12,7 @@ import {
     ModalFooter,
     Button,
 } from '@heroui/react';
-import { RiCalendarCloseLine, RiMoreLine } from 'react-icons/ri';
+import { RiCalendarCloseLine, RiCheckboxCircleFill, RiMoreLine } from 'react-icons/ri';
 import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import TaskDetailModal from './TaskDetailModal';
@@ -20,6 +20,8 @@ import { useState } from 'react';
 import CreatableSelect from '../form/CreatableSelect.jsx';
 import EntityChip from '../common/EntityChip.jsx';
 import dayjs from 'dayjs';
+import toast from 'react-hot-toast';
+import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
@@ -45,8 +47,8 @@ const TaskCard = ({ task, sm }) => {
 
     const handleStatusToggle = async () => {
         setIsCompleted(!isCompleted);
+        const newStatus = task.status === 'completed' ? 'pending' : 'completed';
         try {
-            const newStatus = task.status === 'completed' ? 'pending' : 'completed';
             await updateTask({
                 taskId: task.id,
                 updates: {
@@ -57,6 +59,20 @@ const TaskCard = ({ task, sm }) => {
         } catch (error) {
             setIsCompleted(!isCompleted);
             console.error('Error toggling task status:', error);
+        } finally {
+            if (newStatus === 'completed') {
+                const randomMessage =
+                    taskCompletedMessages[Math.floor(Math.random() * taskCompletedMessages.length)];
+                toast.success(randomMessage.message, {
+                    duration: 5000,
+                    icon: randomMessage?.icon || (
+                        <RiCheckboxCircleFill className="text-success" fontSize="2rem" />
+                    ),
+                    style: {
+                        fontWeight: 500,
+                    },
+                });
+            }
         }
     };
 
