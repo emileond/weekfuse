@@ -95,8 +95,14 @@ export const useCreateTask = (currentWorkspace) => {
         mutationFn: createTask,
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
-            queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
-            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['tasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
         },
     });
 };
@@ -121,8 +127,14 @@ export const useUpdateTask = (currentWorkspace) => {
         },
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
-            queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
-            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['tasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
         },
     });
 };
@@ -155,8 +167,14 @@ export const useUpdateMultipleTasks = (currentWorkspace) => {
         },
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
-            queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
-            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['tasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
         },
     });
 };
@@ -181,8 +199,14 @@ export const useDeleteTask = (currentWorkspace) => {
         },
         onSuccess: () => {
             // Invalidate and refetch the tasks query for the workspace
-            queryClient.invalidateQueries(['tasks', currentWorkspace?.workspace_id]);
-            queryClient.invalidateQueries(['backlogTasks', currentWorkspace?.workspace_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['tasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                exact: true,
+            });
         },
     });
 };

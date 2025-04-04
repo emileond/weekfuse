@@ -103,7 +103,7 @@ const UpcomingTasks = () => {
                                 </Button>
                                 {tasksForDay && (
                                     <DraggableList
-                                        key={listKey}
+                                        // key={listKey}
                                         id={dateStr}
                                         items={tasksForDay}
                                         group="tasks"
