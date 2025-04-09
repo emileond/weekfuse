@@ -124,21 +124,17 @@ function ProjectsPage() {
                     {projects?.length > 0 ? (
                         <div className="flex flex-col gap-4">
                             {projects?.map((project) => (
-                                <div 
-                                    key={project.id}
-                                    className="border rounded-lg overflow-hidden"
-                                >
+                                <div key={project.id} className="border rounded-lg overflow-hidden">
                                     <div className="w-full flex items-center gap-3 justify-between p-3 bg-default-50">
                                         <div className="flex items-center gap-2">
-                                            <Link 
-                                                to={`/projects/${project.id}/tasks`} 
+                                            <Link
+                                                to={`/projects/${project.id}/tasks`}
                                                 className="text-sm font-medium hover:text-primary-600"
                                             >
                                                 {project.name}
                                             </Link>
                                             <span className="text-xs text-default-500">
-                                                ({taskCountsByProject[project.id] || 0}{' '}
-                                                tasks)
+                                                ({taskCountsByProject[project.id] || 0} tasks)
                                             </span>
                                         </div>
                                         <Dropdown>
@@ -147,15 +143,11 @@ function ProjectsPage() {
                                                     size="sm"
                                                     variant="flat"
                                                     isIconOnly
-                                                    startContent={
-                                                        <RiMoreLine fontSize="1.2rem" />
-                                                    }
+                                                    startContent={<RiMoreLine fontSize="1.2rem" />}
                                                 />
                                             </DropdownTrigger>
                                             <DropdownMenu
-                                                onAction={(key) =>
-                                                    handleAction(key, project.id)
-                                                }
+                                                onAction={(key) => handleAction(key, project.id)}
                                             >
                                                 <DropdownItem key="edit">Edit</DropdownItem>
                                                 <DropdownItem
@@ -169,7 +161,7 @@ function ProjectsPage() {
                                             </DropdownMenu>
                                         </Dropdown>
                                     </div>
-                                    <div className="flex flex-col gap-3 pl-3 py-3">
+                                    <div className="flex flex-col gap-3 p-3">
                                         {(milestonesByProject[project.id] || [])?.length > 0 ? (
                                             (milestonesByProject[project.id] || [])?.map(
                                                 (milestone) => (

@@ -1,13 +1,16 @@
 import { useParams } from 'react-router-dom';
-import { useDisclosure, Tabs, Tab } from '@heroui/react';
+import { useDisclosure, Tabs, Tab, Progress, Chip, Badge } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTasks } from '../hooks/react-query/tasks/useTasks.js';
-import { useProjects } from '../hooks/react-query/projects/useProjects.js';
-import { useMilestones } from '../hooks/react-query/milestones/useMilestones.js';
-import { useState, useEffect } from 'react';
+import { useProjects, useTaskCountByProject } from '../hooks/react-query/projects/useProjects.js';
+import {
+    useMilestones,
+    useTaskCountByMilestone,
+} from '../hooks/react-query/milestones/useMilestones.js';
+import { useState, useEffect, useMemo } from 'react';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
 import TaskCard from '../components/tasks/TaskCard.jsx';
 
@@ -33,6 +36,24 @@ function ProjectTasksPage() {
     // Fetch milestone details if milestoneId is provided
     const { data: milestones } = useMilestones(currentWorkspace);
     const milestone = milestones?.find((m) => m.id === milestoneId);
+
+    // Fetch task counts for the project or milestone
+    const { data: projectTaskCount } = useTaskCountByProject(projectId);
+    const { data: milestoneTaskCount } = useTaskCountByMilestone(milestoneId);
+
+    // Calculate task counts and percentages
+    const taskCount = useMemo(() => {
+        if (milestoneId && milestoneTaskCount) {
+            return milestoneTaskCount;
+        } else if (projectId && projectTaskCount) {
+            return projectTaskCount;
+        }
+        return { total: 0, pending: 0, completed: 0 };
+    }, [milestoneId, projectId, milestoneTaskCount, projectTaskCount]);
+
+    const completedPercentage = useMemo(() => {
+        return taskCount.total > 0 ? Math.round((taskCount.completed / taskCount.total) * 100) : 0;
+    }, [taskCount]);
 
     // Set page title and description based on the project or milestone
     useEffect(() => {
@@ -62,8 +83,39 @@ function ProjectTasksPage() {
                 onClick={onOpenChange}
             >
                 <div className="flex flex-col mt-3">
+                    {milestone && (
+                        <div className="mb-4">
+                            <Progress
+                                aria-label="Milestone progress"
+                                size="sm"
+                                color="success"
+                                maxValue={taskCount.total}
+                                value={taskCount.completed}
+                            />
+                            <div className="flex items-center justify-between pt-1">
+                                <div className="flex gap-3 py-1 items-center">
+                                    <Chip size="sm" variant="light" className="text-default-500">
+                                        {completedPercentage}%
+                                    </Chip>
+                                    <Chip size="sm" variant="light" className="text-default-500">
+                                        {taskCount.pending} pending
+                                    </Chip>
+                                    <Chip size="sm" variant="light" className="text-default-500">
+                                        {taskCount.completed} completed
+                                    </Chip>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <Tabs selectedKey={activeTab} onSelectionChange={setActiveTab}>
-                        <Tab key="open" title="Open">
+                        <Tab
+                            key="open"
+                            title={
+                                <>
+                                    Open <Chip size="sm">{taskCount.pending || 0}</Chip>
+                                </>
+                            }
+                        >
                             {tasks && tasks.length > 0 ? (
                                 <div className="flex flex-col gap-2 mt-2">
                                     {tasks.map((task) => (
@@ -78,7 +130,14 @@ function ProjectTasksPage() {
                                 </div>
                             )}
                         </Tab>
-                        <Tab key="closed" title="Closed">
+                        <Tab
+                            key="closed"
+                            title={
+                                <>
+                                    Closed <Chip size="sm">{taskCount.completed || 0}</Chip>
+                                </>
+                            }
+                        >
                             {tasks && tasks.length > 0 ? (
                                 <div className="flex flex-col gap-3 mt-3">
                                     {tasks.map((task) => (

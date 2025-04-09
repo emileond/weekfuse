@@ -38,7 +38,7 @@ export const navItems = [
     },
     {
         name: 'Notes',
-        path: '/keys',
+        path: '/notes',
         startContent: <RiTerminalBoxLine fontSize={ICON_SIZE} />,
         endContent: null,
     },

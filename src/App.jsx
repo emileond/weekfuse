@@ -30,6 +30,7 @@ import FeatureRequestDetails from './pages/FeatureRequestDetails.jsx';
 import UpcomingPage from './pages/Upcoming.jsx';
 import ProjectsPage from './pages/Projects.jsx';
 import ProjectTasksPage from './pages/ProjectTasks.jsx';
+import NotesPage from './pages/Notes.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -161,6 +162,14 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <ProjectTasksPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/notes',
+            element: (
+                <ProtectedRoute>
+                    <NotesPage />
                 </ProtectedRoute>
             ),
         },
