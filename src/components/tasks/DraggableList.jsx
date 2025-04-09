@@ -22,8 +22,14 @@ const DraggableList = ({ id, items, group, smallCards }) => {
         dropZoneClass: 'bg-default text-default-500 opacity-30',
         plugins: [animations()],
         onDragend: async (e) => {
-            // return console.log(e);
-            // console.log(e.values);
+            const itemIndex = e?.draggedNode?.data.index;
+            const itemId = e?.draggedNode?.data?.value?.id;
+            const itemDate = e?.draggedNode?.data?.value?.date
+                ? dayjs(e?.draggedNode?.data?.value?.date)
+                      ?.tz(dayjs.tz.guess(), true)
+                      ?.toISOString()
+                : null;
+
             const columnItems = e.values; // The items in the target column
             const newDate = e.parent.el.id; // The target list (backlog or a date)
 
@@ -33,18 +39,36 @@ const DraggableList = ({ id, items, group, smallCards }) => {
                 updatedDate = dayjs(newDate)
                     .startOf('day')
                     .tz(dayjs.tz.guess(), true)
-                    .toISOString(); // Set the new date in UTC
+                    .toISOString();
             }
 
-            // Prepare the tasks to be updated
-            const tasksToUpdate = columnItems.map((item, index) => ({
-                taskId: item.id,
-                updates: {
-                    date: updatedDate, // The new date for the task
-                    order: index, // The unique order value based on its position in the column
-                },
-            }));
+            // if item date and target date are the same, return
+            if (itemDate === updatedDate) return;
 
+            let tasksToUpdate = null;
+
+            // Prepare the tasks to be updated
+            if (updatedDate) {
+                // only update all items in the column if is a day col
+                tasksToUpdate = columnItems.map((item, index) => ({
+                    taskId: item.id,
+                    updates: {
+                        date: updatedDate,
+                        order: index,
+                    },
+                }));
+            } else {
+                // otherwise is going to the backlog, so only update the dragged item
+                tasksToUpdate = [
+                    {
+                        taskId: itemId,
+                        updates: {
+                            date: null,
+                            order: itemIndex,
+                        },
+                    },
+                ];
+            }
             // Call the bulk update function
             try {
                 await updateMultipleTasks(tasksToUpdate);
@@ -55,7 +79,7 @@ const DraggableList = ({ id, items, group, smallCards }) => {
     });
 
     useEffect(() => {
-        if (listItems.length === items.length) return;
+        // if (listItems.length === items.length) return;
         updateListItems(items);
     }, [items]);
 

@@ -12,12 +12,6 @@ function BacklogPanel({ isBacklogCollapsed }) {
     const { data: tasks } = useBacklogTasks(currentWorkspace);
     const { isOpen, onOpenChange } = useDisclosure();
 
-    const [listKey, setListKey] = useState(null);
-
-    useEffect(() => {
-        setListKey(dayjs().toISOString());
-    }, [tasks]);
-
     return (
         <div className={`${isBacklogCollapsed ? 'hidden' : 'basis-1/4'} `}>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={null} />
@@ -36,15 +30,7 @@ function BacklogPanel({ isBacklogCollapsed }) {
                     Add task
                 </Button>
                 <div className="overflow-y-auto">
-                    {tasks && (
-                        <DraggableList
-                            key={listKey}
-                            id="backlog"
-                            items={tasks}
-                            group="tasks"
-                            smallCards
-                        />
-                    )}
+                    {tasks && <DraggableList id="backlog" items={tasks} group="tasks" smallCards />}
                 </div>
             </div>
         </div>

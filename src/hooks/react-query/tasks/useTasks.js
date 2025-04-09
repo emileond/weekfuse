@@ -94,14 +94,14 @@ export const useCreateTask = (currentWorkspace) => {
     return useMutation({
         mutationFn: createTask,
         onSuccess: () => {
-            // Invalidate and refetch the tasks query for the workspace
+            // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
-                queryKey: ['tasks', currentWorkspace?.workspace_id],
-                exact: true,
+                queryKey: ['tasks'],
+                refetchType: 'all',
             });
             queryClient.invalidateQueries({
-                queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
-                exact: true,
+                queryKey: ['backlogTasks'],
+                refetchType: 'all',
             });
         },
     });
@@ -126,14 +126,14 @@ export const useUpdateTask = (currentWorkspace) => {
             console.error('Error updating task:', error);
         },
         onSuccess: () => {
-            // Invalidate and refetch the tasks query for the workspace
+            // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
                 queryKey: ['tasks', currentWorkspace?.workspace_id],
-                exact: true,
+                refetchType: 'all',
             });
             queryClient.invalidateQueries({
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
-                exact: true,
+                refetchType: 'all',
             });
         },
     });
@@ -166,14 +166,14 @@ export const useUpdateMultipleTasks = (currentWorkspace) => {
             console.error('Error updating tasks:', error);
         },
         onSuccess: () => {
-            // Invalidate and refetch the tasks query for the workspace
+            // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
                 queryKey: ['tasks', currentWorkspace?.workspace_id],
-                exact: true,
+                refetchType: 'all',
             });
             queryClient.invalidateQueries({
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
-                exact: true,
+                refetchType: 'all',
             });
         },
     });
@@ -198,14 +198,14 @@ export const useDeleteTask = (currentWorkspace) => {
             console.error('Error deleting task:', error);
         },
         onSuccess: () => {
-            // Invalidate and refetch the tasks query for the workspace
+            // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
                 queryKey: ['tasks', currentWorkspace?.workspace_id],
-                exact: true,
+                refetchType: 'all',
             });
             queryClient.invalidateQueries({
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
-                exact: true,
+                refetchType: 'all',
             });
         },
     });

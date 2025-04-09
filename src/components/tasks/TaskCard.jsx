@@ -46,8 +46,11 @@ const TaskCard = ({ task, sm }) => {
     const isOverdue = taskDate.isBefore(today);
 
     const handleStatusToggle = async () => {
-        setIsCompleted(!isCompleted);
-        const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+        // Determine new value by inverting the current state
+        const newCompleted = !isCompleted;
+        setIsCompleted(newCompleted);
+        const newStatus = newCompleted ? 'completed' : 'pending';
+
         try {
             await updateTask({
                 taskId: task.id,
@@ -57,7 +60,8 @@ const TaskCard = ({ task, sm }) => {
                 },
             });
         } catch (error) {
-            setIsCompleted(!isCompleted);
+            // If there is an error, revert the state change (you might need to do more error handling)
+            setIsCompleted(!newCompleted);
             console.error('Error toggling task status:', error);
         } finally {
             if (newStatus === 'completed') {

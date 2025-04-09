@@ -1,4 +1,4 @@
-import { Button, Input, useDisclosure } from '@heroui/react';
+import { useDisclosure } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
@@ -34,7 +34,6 @@ function DashboardPage() {
     });
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
     const listDate = dayjs().startOf('day').tz(dayjs.tz.guess(), true).toISOString();
-    const [listKey, setListKey] = useState();
     const confettiShownRef = useRef(false);
 
     const hasOVerdueTasks = overdueTasks?.length > 0;
@@ -55,10 +54,6 @@ function DashboardPage() {
             console.error('Error updating tasks:', error);
         }
     };
-
-    useEffect(() => {
-        setListKey(dayjs().toISOString());
-    }, [todayTasks]);
 
     useEffect(() => {
         // Check if there are tasks for today and all of them are completed
@@ -133,12 +128,7 @@ function DashboardPage() {
                             </Accordion>
                         )}
                         {todayTasks && (
-                            <DraggableList
-                                // key={listKey}
-                                id={listDate}
-                                items={todayTasks}
-                                group="today-tasks"
-                            />
+                            <DraggableList id={listDate} items={todayTasks} group="today-tasks" />
                         )}
                     </div>
                 </div>

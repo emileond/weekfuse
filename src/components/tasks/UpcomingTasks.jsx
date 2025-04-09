@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { Button, useDisclosure } from '@heroui/react';
@@ -42,12 +42,6 @@ const UpcomingTasks = () => {
         setNewTaskDate(dayjs(dateStr));
         onOpenChange();
     };
-
-    const [listKey, setListKey] = useState(null);
-
-    useEffect(() => {
-        setListKey(dayjs().toISOString());
-    }, [tasks]);
 
     return (
         <div>
@@ -103,7 +97,6 @@ const UpcomingTasks = () => {
                                 </Button>
                                 {tasksForDay && (
                                     <DraggableList
-                                        // key={listKey}
                                         id={dateStr}
                                         items={tasksForDay}
                                         group="tasks"
