@@ -104,6 +104,7 @@ const ProjectCard = ({ project }) => {
                         <Dropdown isOpen={isMenuOpen} onOpenChange={onMenuOpenChange}>
                             <DropdownTrigger>
                                 <Button
+                                    size="sm"
                                     variant="flat"
                                     isIconOnly
                                     onPress={onMenuOpenChange}

@@ -102,15 +102,18 @@ const MilestoneCard = ({ milestone }) => {
     return (
         <>
             <Card key={milestone.id} shadow="none" className="w-full border-1 border-default-200">
-                <CardHeader>
+                <CardHeader className="pb-0">
                     <div className="w-full flex justify-between">
                         <div className="flex items-center gap-2">
                             <RiFlag2Line fontSize="1rem" className="text-primary" />
-                            <span>{milestone.name}</span>
+                            <Link to={`/milestones/${milestone.id}/tasks`} className="hover:text-primary-600">
+                                <span>{milestone.name}</span>
+                            </Link>
                         </div>
                         <Dropdown isOpen={isMenuOpen} onOpenChange={onMenuOpenChange}>
                             <DropdownTrigger>
                                 <Button
+                                    size="sm"
                                     variant="flat"
                                     isIconOnly
                                     onPress={onMenuOpenChange}
@@ -151,13 +154,6 @@ const MilestoneCard = ({ milestone }) => {
                                 {completedCount} completed
                             </Chip>
                         </div>
-
-                        <Link
-                            to="#"
-                            className="text-sm font-medium text-primary hover:text-primary-600"
-                        >
-                            View tasks
-                        </Link>
                     </div>
                 </CardBody>
             </Card>

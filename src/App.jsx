@@ -29,6 +29,7 @@ import FeatureRequestsPage from './pages/FeatureRequests.jsx';
 import FeatureRequestDetails from './pages/FeatureRequestDetails.jsx';
 import UpcomingPage from './pages/Upcoming.jsx';
 import ProjectsPage from './pages/Projects.jsx';
+import ProjectTasksPage from './pages/ProjectTasks.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -144,6 +145,22 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <ProjectsPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/projects/:projectId/tasks',
+            element: (
+                <ProtectedRoute>
+                    <ProjectTasksPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/milestones/:milestoneId/tasks',
+            element: (
+                <ProtectedRoute>
+                    <ProjectTasksPage />
                 </ProtectedRoute>
             ),
         },

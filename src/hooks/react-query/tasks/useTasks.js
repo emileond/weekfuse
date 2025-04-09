@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseClient } from '../../../lib/supabase';
 
 // Fetch tasks for a specific workspace
-const fetchTasks = async ({ statusList, id, workspace_id, startDate, endDate }) => {
+const fetchTasks = async ({ statusList, id, workspace_id, startDate, endDate, project_id, milestone_id }) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
 
     if (id) {
@@ -19,6 +19,15 @@ const fetchTasks = async ({ statusList, id, workspace_id, startDate, endDate }) 
         if (!startDate && endDate) {
             query = query.lte('date', endDate); // Filter by date range
         }
+
+        if (project_id) {
+            query = query.eq('project_id', project_id); // Filter by project
+        }
+
+        if (milestone_id) {
+            query = query.eq('milestone_id', milestone_id); // Filter by milestone
+        }
+
         query = query.order('order');
     }
 
@@ -41,6 +50,8 @@ export const useTasks = (currentWorkspace, filters = {}) => {
                 statusList: filters.statusList,
                 startDate: filters.startDate,
                 endDate: filters.endDate,
+                project_id: filters.project_id,
+                milestone_id: filters.milestone_id,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided

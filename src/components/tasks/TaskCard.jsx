@@ -43,7 +43,7 @@ const TaskCard = ({ task, sm }) => {
 
     const taskDate = dayjs(task?.date);
     const today = dayjs().startOf('day');
-    const isOverdue = taskDate.isBefore(today);
+    const isOverdue = taskDate.isBefore(today) && task.status === 'pending';
 
     const handleStatusToggle = async () => {
         // Determine new value by inverting the current state
