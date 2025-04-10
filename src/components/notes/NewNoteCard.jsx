@@ -5,9 +5,9 @@ import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import toast from 'react-hot-toast';
 import { useCreateNote } from '../../hooks/react-query/notes/useNotes.js';
 
-const NewNoteCard = () => {
+const NewNoteCard = ({ onCancel, onSuccess }) => {
     const [currentWorkspace] = useCurrentWorkspace();
-    const [noteData, setNoteData] = useState({ title: 'Untitled Note', content: '' });
+    const [noteData, setNoteData] = useState({ title: '', content: '' });
     const [isSaving, setIsSaving] = useState(false);
 
     // Create note mutation
@@ -37,6 +37,7 @@ const NewNoteCard = () => {
                 onSuccess: () => {
                     toast.success('Note saved successfully!');
                     setIsSaving(false);
+                    onSuccess();
                 },
                 onError: (error) => {
                     toast.error('Failed to save note: ' + error.message);
@@ -69,7 +70,10 @@ const NewNoteCard = () => {
                 />
             </CardBody>
             <Divider />
-            <CardFooter className="flex text-justify">
+            <CardFooter className="flex justify-between">
+                <Button size="sm" variant="light" onPress={onCancel} isDisabled={isSaving}>
+                    Cancel
+                </Button>
                 <Button size="sm" color="primary" onPress={handleSave} isLoading={isSaving}>
                     Save
                 </Button>

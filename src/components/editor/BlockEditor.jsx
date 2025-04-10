@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Typography from '@tiptap/extension-typography';
@@ -79,6 +79,14 @@ const BlockEditor = ({
             }
         },
     });
+
+    // Set focus to the end of the editor when it becomes editable
+    useEffect(() => {
+        if (editor && isEditable) {
+            // Focus the editor and move cursor to the end
+            editor.commands.focus('end');
+        }
+    }, [editor, isEditable]);
 
     if (!editor) {
         return null;

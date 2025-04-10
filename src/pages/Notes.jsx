@@ -13,6 +13,14 @@ const Notes = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [parent] = useAutoAnimate();
 
+    const handleOnCancel = () => {
+        setIsOpen(false);
+    };
+    
+    const handleOnNewNote = () => {
+        setIsOpen(false);
+    };
+
     return (
         <AppLayout>
             <PageLayout
@@ -22,10 +30,24 @@ const Notes = () => {
                 primaryAction="New note"
             >
                 <div ref={parent} className="flex flex-col gap-3 py-6">
-                    {isOpen && <NewNoteCard />}
-                    {notes?.map((note) => (
-                        <NoteCard note={note} />
-                    ))}
+                    {isOpen && (
+                        <NewNoteCard onCancel={handleOnCancel} onSuccess={handleOnNewNote} />
+                    )}
+                    {notes
+                        ?.sort((a, b) => {
+                            // First sort by pinned status (pinned notes first)
+                            if (a.is_pinned && !b.is_pinned) return -1;
+                            if (!a.is_pinned && b.is_pinned) return 1;
+                            // Then sort by created_at (newest first)
+                            return new Date(b.created_at) - new Date(a.created_at);
+                        })
+                        .map((note) => (
+                            <NoteCard
+                                key={note.id}
+                                note={note}
+                                currentWorkspace={currentWorkspace}
+                            />
+                        ))}
                 </div>
             </PageLayout>
         </AppLayout>
