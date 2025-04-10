@@ -19,17 +19,16 @@ import {
     ModalFooter,
     Button,
     Checkbox,
-    useToast,
 } from '@heroui/react';
 import { useUser } from '../hooks/react-query/user/useUser.js';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import { useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 function IntegrationsPage() {
     const { user, session } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const [searchParams, setSearchParams] = useSearchParams();
-    const toast = useToast();
 
     // State for GitHub integration
     const [githubStatus, setGithubStatus] = useState('inactive');
@@ -300,7 +299,7 @@ function IntegrationsPage() {
                     </Link>
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {integrations.map((integration) => (
+                    {integrations?.map((integration) => (
                         <IntegrationCard
                             key={integration.id}
                             id={integration.id}

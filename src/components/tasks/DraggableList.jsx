@@ -84,7 +84,7 @@ const DraggableList = ({ id, items, group, smallCards }) => {
     }, [items]);
 
     return (
-        <ul id={id} ref={listRef} className="flex flex-col gap-2 w-full h-full">
+        <ul id={id} ref={listRef} className="flex flex-col gap-2 w-full h-full overflow-y-auto">
             {listItems?.map((item) => (
                 <TaskCard key={item?.id} task={item} sm={smallCards && true} />
             ))}

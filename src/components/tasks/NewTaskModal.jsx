@@ -19,12 +19,16 @@ import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
 
-const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
+const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defaultMilestone }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
     const [selectedDate, setSelectedDate] = useState(defaultDate); // State to track selected date
-    const [selectedProject, setSelectedProject] = useState(null); // State to track selected project
-    const [selectedMilestone, setSelectedMilestone] = useState(null); // State to track selected milestone
+    const [selectedProject, setSelectedProject] = useState(
+        defaultProject ? { value: defaultProject } : null,
+    ); // State to track selected project
+    const [selectedMilestone, setSelectedMilestone] = useState(
+        defaultMilestone ? { value: defaultMilestone } : null,
+    ); // State to track selected milestone
 
     const {
         register,
@@ -80,11 +84,15 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate }) => {
                         </div>
                         <div className="flex gap-2">
                             <DatePicker defaultValue={defaultDate} onChange={setSelectedDate} />
-                            <ProjectSelect onChange={setSelectedProject} />
-                            {selectedProject && (
+                            <ProjectSelect
+                                onChange={setSelectedProject}
+                                defaultValue={defaultProject}
+                            />
+                            {(selectedProject || defaultProject) && (
                                 <MilestoneSelect
                                     onChange={setSelectedMilestone}
-                                    projectId={selectedProject?.value}
+                                    projectId={selectedProject?.value || defaultProject}
+                                    defaultValue={defaultMilestone}
                                 />
                             )}
                         </div>

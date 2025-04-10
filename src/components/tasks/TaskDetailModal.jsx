@@ -131,19 +131,19 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         defaultValue={task?.project_id}
                                         onChange={setSelectedProject}
                                     />
+                                    {selectedProject && (
+                                        <MilestoneSelect
+                                            key={selectedProject?.value}
+                                            defaultValue={
+                                                selectedProject?.value === task?.project_id
+                                                    ? task?.milestone_id
+                                                    : null
+                                            }
+                                            onChange={setSelectedMilestone}
+                                            projectId={selectedProject?.value}
+                                        />
+                                    )}
                                 </div>
-                                {selectedProject && (
-                                    <MilestoneSelect
-                                        key={selectedProject?.value}
-                                        defaultValue={
-                                            selectedProject?.value === task?.project_id
-                                                ? task?.milestone_id
-                                                : null
-                                        }
-                                        onChange={setSelectedMilestone}
-                                        projectId={selectedProject?.value}
-                                    />
-                                )}
                                 {task.status === 'completed' && task.completed_at && (
                                     <div className="flex gap-1 text-xs text-default-500 font-medium">
                                         <RiCheckboxCircleLine fontSize="1rem" />

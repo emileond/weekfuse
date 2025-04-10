@@ -28,7 +28,7 @@ export const useProjects = (currentWorkspace = {}) => {
 };
 
 const fetchTaskCountByProject = async ({ project_id }) => {
-    const { data, error } = await supabaseClient.rpc('get_project_task_count', {
+    const { data, error } = await supabaseClient.rpc('get_project_task_counts', {
         p_project_id: project_id,
     });
 

@@ -19,7 +19,7 @@ const fetchMilestones = async ({ workspace_id, project_id }) => {
 };
 
 // Hook to fetch milestones
-export const useMilestones = (currentWorkspace = {}, project_id = null) => {
+export const useMilestones = (currentWorkspace, project_id = null) => {
     return useQuery({
         queryKey: ['milestones', currentWorkspace?.workspace_id, project_id],
         queryFn: () =>

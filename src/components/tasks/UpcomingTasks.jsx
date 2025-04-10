@@ -2,13 +2,18 @@ import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { Button, useDisclosure } from '@heroui/react';
-import { RiAddLine, RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri';
+import {
+    RiAddLine,
+    RiExpandLeftLine,
+    RiContractRightLine,
+    RiArchiveStackLine,
+} from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
 import { useTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import DraggableList from './DraggableList.jsx';
 import timezone from 'dayjs/plugin/timezone'; // Import the timezone plugin
 import utc from 'dayjs/plugin/utc';
-import NewTaskModal from './NewTaskModal.jsx'; // Import the UTC plugin
+import NewTaskModal from './NewTaskModal.jsx';
 
 // Extend dayjs with the plugins
 dayjs.extend(utc);
@@ -44,21 +49,28 @@ const UpcomingTasks = () => {
     };
 
     return (
-        <div>
+        <>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={newTaskDate} />
             <div className="flex justify-between mb-2">
                 <p className="text-sm text-default-600">From Mar 12 - Apr 12</p>
                 <Button
                     size="sm"
-                    variant="faded"
+                    variant="flat"
                     onPress={() => setIsBacklogCollapsed(!isBacklogCollapsed)}
-                    startContent={isBacklogCollapsed ? <RiArrowDownSLine /> : <RiArrowUpSLine />}
+                    startContent={
+                        isBacklogCollapsed ? (
+                            <RiExpandLeftLine fontSize="1rem" />
+                        ) : (
+                            <RiContractRightLine fontSize="1rem" />
+                        )
+                    }
+                    className="text-default-600 hover:text-default-700"
                 >
                     {isBacklogCollapsed ? 'Show backlog' : 'Hide backlog'}
                 </Button>
             </div>
-            <div className="flex gap-3">
-                <div className="basis-3/4 grow flex gap-4 pb-4 overflow-x-auto snap-x">
+            <div className="flex gap-3 h-[82vh]">
+                <div className="basis-2/3 xl:basis-3/4 grow flex gap-4 overflow-x-auto snap-x ">
                     {days.map((day) => {
                         const dateStr = day.format('YYYY-MM-DD'); // Column date
                         const isToday = day.isSame(dayjs(), 'day');
@@ -75,7 +87,7 @@ const UpcomingTasks = () => {
                         return (
                             <div
                                 key={dateStr}
-                                className={`flex flex-col gap-2 bg-content1 border-1 rounded-xl p-2 h-[80vh] min-w-[250px] w-[75vw] sm:w-[50vw] md:w-[20vw] lg:w-[12vw] md flex-shrink-0 snap-center `}
+                                className={`flex flex-col gap-2 bg-content1 border-1 rounded-xl p-2  min-w-[250px] w-[75vw] sm:w-[50vw] md:w-[20vw] lg:w-[12vw] md flex-shrink-0 snap-center overflow-y-hidden`}
                             >
                                 <div
                                     className={`p-2 border-b-2 ${isToday ? 'border-secondary' : 'border-default'}`}
@@ -109,7 +121,7 @@ const UpcomingTasks = () => {
                 </div>
                 <BacklogPanel isBacklogCollapsed={isBacklogCollapsed} />
             </div>
-        </div>
+        </>
     );
 };
 

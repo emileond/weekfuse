@@ -21,7 +21,7 @@ export const taskCompletedMessages = [
     { message: 'Unstoppable as ever', icon: '💪' },
     { message: 'Another task, another win', icon: '🥇' },
     { message: 'The day is yours', icon: '💫' },
-    { message: "You're making magic happen, one task at the time 🪄", icon: '🪄' },
+    { message: 'Making magic happen, one task at the time', icon: '🪄' },
     { message: 'Done! Next level: world domination', icon: '✅' },
     { message: 'Small wins lead to big victories', icon: '🚀' },
     { message: "You didn't just do it. You owned it.", icon: '💪' },
@@ -31,4 +31,5 @@ export const taskCompletedMessages = [
     { message: "And that's how it's done. Mic drop.", icon: '🎤' },
     { message: 'You just made procrastination cry in defeat' },
     { message: 'Boom!', icon: '💥' },
+    { message: 'SIUUUU!!', icon: '⚽️' },
 ];

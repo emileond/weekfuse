@@ -1,14 +1,8 @@
-import { useDisclosure } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
-import { RiAddLine } from 'react-icons/ri';
-import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
-import { useNavigate } from 'react-router-dom';
 import UpcomingTasks from '../components/tasks/UpcomingTasks.jsx';
 
 function UpcomingPage() {
-    const navigate = useNavigate();
-
     return (
         <AppLayout>
             <PageLayout

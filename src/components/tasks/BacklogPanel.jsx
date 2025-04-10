@@ -1,10 +1,8 @@
 import { Button, useDisclosure } from '@heroui/react';
-import { RiAddLine } from 'react-icons/ri';
+import { RiAddLine, RiArchiveStackLine } from 'react-icons/ri';
 import { useBacklogTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import DraggableList from './DraggableList.jsx';
-import { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
 import NewTaskModal from './NewTaskModal.jsx';
 
 function BacklogPanel({ isBacklogCollapsed }) {
@@ -13,11 +11,15 @@ function BacklogPanel({ isBacklogCollapsed }) {
     const { isOpen, onOpenChange } = useDisclosure();
 
     return (
-        <div className={`${isBacklogCollapsed ? 'hidden' : 'basis-1/4'} `}>
+        <div
+            className={`${isBacklogCollapsed ? 'basis-0 opacity-0' : 'basis-1/3 xl:basis-1/4 opacity-100'} shadow-2xl rounded-xl transition-all duration-200 overflow-hidden`}
+        >
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={null} />
-            <div className="bg-content2 border-1 border-default rounded-xl p-4 h-[80vh] flex flex-col ">
+            <div className="bg-content2 border-1 border-default rounded-xl p-4 flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Backlog</h3>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700">
+                        <RiArchiveStackLine fontSize="1.24rem" /> Backlog
+                    </h3>
                 </div>
                 <Button
                     size="sm"
@@ -29,9 +31,7 @@ function BacklogPanel({ isBacklogCollapsed }) {
                 >
                     Add task
                 </Button>
-                <div className="overflow-y-auto">
-                    {tasks && <DraggableList id="backlog" items={tasks} group="tasks" smallCards />}
-                </div>
+                {tasks && <DraggableList id="backlog" items={tasks} group="tasks" smallCards />}
             </div>
         </div>
     );

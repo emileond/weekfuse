@@ -1,177 +1,113 @@
 import {
     Button,
-    Card,
-    CardBody,
     Dropdown,
     DropdownItem,
     DropdownMenu,
     DropdownTrigger,
     useDisclosure,
-    Modal,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalFooter,
-    Input,
 } from '@heroui/react';
-import { RiListCheck3, RiMoreLine } from 'react-icons/ri';
+import { RiMoreLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
-import {
-    useUpdateProject,
-    useDeleteProject,
-    useTaskCountByProject,
-} from '../../hooks/react-query/projects/useProjects.js';
-import { useForm } from 'react-hook-form';
+import { useTaskCountByProject } from '../../hooks/react-query/projects/useProjects.js';
+
+import { Link } from 'react-router-dom';
+import { useMilestones } from '../../hooks/react-query/milestones/useMilestones.js';
+import MilestoneCard from '../milestones/MilestoneCard.jsx';
 import toast from 'react-hot-toast';
+import UpdateProjectModal from './UpdateProjectModal.jsx';
+import DeleteProjectConfirmationDialog from './DeleteProjectConfirmationDialog.jsx';
 
 const ProjectCard = ({ project }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: taskCount } = useTaskCountByProject(project?.id);
-    const { mutateAsync: updateProject } = useUpdateProject(currentWorkspace);
-    const { mutateAsync: deleteProject } = useDeleteProject(currentWorkspace);
-    const { isOpen: isMenuOpen, onOpenChange: onMenuOpenChange } = useDisclosure();
-    const {
-        isOpen: isEditModalOpen,
-        onOpen: onEditModalOpen,
-        onClose: onEditModalClose,
-    } = useDisclosure();
-    const {
-        isOpen: isDeleteModalOpen,
-        onOpen: onDeleteModalOpen,
-        onClose: onDeleteModalClose,
-    } = useDisclosure();
+    const { data: milestones } = useMilestones(currentWorkspace, project?.id);
 
     const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm({
-        defaultValues: {
-            name: project.name,
-        },
-    });
+        isOpen: isUpdateProjectModalOpen,
+        onOpen: onUpdateProjectModalOpen,
+        onOpenChange: onUpdateProjectModalOpenChange,
+    } = useDisclosure();
+    const {
+        isOpen: isDeleteConfirmationOpen,
+        onOpen: onDeleteConfirmationOpen,
+        onOpenChange: onDeleteConfirmationOpenChange,
+    } = useDisclosure();
 
     const handleAction = (key) => {
         switch (key) {
             case 'edit':
-                onEditModalOpen();
+                // Open the update project modal
+                onUpdateProjectModalOpen();
                 break;
             case 'delete':
-                onDeleteModalOpen();
+                // Open the delete confirmation dialog
+                onDeleteConfirmationOpen();
                 break;
             default:
                 null;
         }
     };
 
-    const handleEdit = async (data) => {
-        try {
-            await updateProject({
-                projectId: project.id,
-                updates: {
-                    name: data.name,
-                },
-            });
-            toast('Project updated');
-            onEditModalClose();
-        } catch (error) {
-            toast.error(error.message || 'Failed to update project');
-        }
-    };
-
-    const handleDelete = async () => {
-        try {
-            await deleteProject({ projectId: project.id });
-            toast('Project deleted');
-            onDeleteModalClose();
-        } catch (error) {
-            toast.error(error.message || 'Failed to delete project');
-        }
-    };
-
     return (
         <>
-            <Card key={project.id} shadow="none" className="w-full border-1 border-default-200">
-                <CardBody>
-                    <div className="flex items-center justify-between">
-                        <div className="flex gap-2 items-center text-default-500">
-                            <RiListCheck3 fontSize="1.2rem" />
-                            <div>
-                                <p className="font-medium text-default-900">{project.name}</p>
-                                <p className="text-sm">{taskCount} tasks</p>
-                            </div>
-                        </div>
-                        <Dropdown isOpen={isMenuOpen} onOpenChange={onMenuOpenChange}>
-                            <DropdownTrigger>
-                                <Button
-                                    size="sm"
-                                    variant="flat"
-                                    isIconOnly
-                                    onPress={onMenuOpenChange}
-                                    startContent={<RiMoreLine fontSize="1.2rem" />}
-                                />
-                            </DropdownTrigger>
-                            <DropdownMenu onAction={(key) => handleAction(key)}>
-                                <DropdownItem key="edit">Edit</DropdownItem>
-                                <DropdownItem
-                                    key="delete"
-                                    className="text-danger"
-                                    variant="flat"
-                                    color="danger"
-                                >
-                                    Delete
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </Dropdown>
+            <UpdateProjectModal
+                isOpen={isUpdateProjectModalOpen}
+                onOpenChange={onUpdateProjectModalOpenChange}
+                project={project}
+            />
+            <DeleteProjectConfirmationDialog
+                isOpen={isDeleteConfirmationOpen}
+                onOpenChange={onDeleteConfirmationOpenChange}
+                project={project}
+            />
+            <div key={project.id} className="border rounded-lg overflow-hidden">
+                <div className="w-full flex items-center gap-3 justify-between p-3 bg-default-50">
+                    <div className="flex items-center gap-2">
+                        <Link
+                            to={`/projects/${project.id}/tasks`}
+                            className="text-sm font-medium hover:text-primary-600"
+                        >
+                            {project.name}
+                        </Link>
+                        <span className="text-xs text-default-500">
+                            Open tasks: {taskCount?.pending}
+                        </span>
                     </div>
-                </CardBody>
-            </Card>
-
-            {/* Edit Modal */}
-            <Modal isOpen={isEditModalOpen} onClose={onEditModalClose}>
-                <ModalContent>
-                    <form onSubmit={handleSubmit(handleEdit)}>
-                        <ModalHeader>Edit Project</ModalHeader>
-                        <ModalBody>
-                            <Input
-                                label="Project name"
-                                {...register('name', { required: true })}
-                                isInvalid={!!errors.name}
-                                errorMessage="Project name is required"
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <Button
+                                size="sm"
+                                variant="flat"
+                                isIconOnly
+                                startContent={<RiMoreLine fontSize="1.2rem" />}
                             />
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button variant="flat" onPress={onEditModalClose}>
-                                Cancel
-                            </Button>
-                            <Button color="primary" type="submit">
-                                Update
-                            </Button>
-                        </ModalFooter>
-                    </form>
-                </ModalContent>
-            </Modal>
-
-            {/* Delete Confirmation Modal */}
-            <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
-                <ModalContent>
-                    <ModalHeader>Delete Project</ModalHeader>
-                    <ModalBody>
-                        <p>
-                            Are you sure you want to delete "{project.name}"? This action cannot be
-                            undone.
-                        </p>
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="flat" onPress={onDeleteModalClose}>
-                            Cancel
-                        </Button>
-                        <Button color="danger" onPress={handleDelete}>
-                            Delete
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
+                        </DropdownTrigger>
+                        <DropdownMenu onAction={(key) => handleAction(key, project.id)}>
+                            <DropdownItem key="edit">Edit</DropdownItem>
+                            <DropdownItem
+                                key="delete"
+                                className="text-danger"
+                                variant="flat"
+                                color="danger"
+                            >
+                                Delete
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                </div>
+                <div className="flex flex-col gap-3 p-3">
+                    {milestones?.map((milestone) => (
+                        <MilestoneCard key={milestone.id} milestone={milestone} />
+                    ))}
+                    {!milestones && (
+                        <div className="text-center py-3">
+                            <p className="text-default-500 text-sm">
+                                No milestones for this project yet.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
         </>
     );
 };
