@@ -1,0 +1,41 @@
+/* Fix for lists having too much margin at beginning/end */
+.ProseMirror ul,
+.ProseMirror ol {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Fix for task lists */
+.ProseMirror ul[data-type="taskList"] {
+    list-style: none;
+    padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25em;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+    flex: 0 0 auto;
+    margin-right: 0.5em;
+    user-select: none;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+    flex: 1 1 auto;
+}
+
+/* Ensure checkbox and label are on the same line */
+.ProseMirror ul[data-type="taskList"] li {
+    flex-direction: row;
+}
+
+.ProseMirror ol > li > p, .ProseMirror ul > li > p {
+    margin: 0;
+}
+
+.ProseMirror p {
+    margin-bottom: .25em;
+}

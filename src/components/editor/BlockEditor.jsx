@@ -18,8 +18,9 @@ import { RiDraggable } from 'react-icons/ri';
 import TextMenu from './menus/TextMenu';
 import LinkMenu from './menus/LinkMenu';
 
-// Add styles for placeholder
+// Add styles for placeholder and fixes
 import './editor.css';
+import './editor-fixes.css';
 
 const BlockEditor = ({
     defaultContent = '',

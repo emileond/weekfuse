@@ -6,8 +6,19 @@ import Highlight from '@tiptap/extension-highlight';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 
+// Import editor fixes
+import '../editor/editor-fixes.css';
+
 const SimpleEditor = ({ defaultContent = '', label, onChange }) => {
-    const extensions = [StarterKit.configure(), Typography, Highlight, TaskList, TaskItem];
+    const extensions = [
+        StarterKit.configure(),
+        Typography,
+        Highlight,
+        TaskList,
+        TaskItem.configure({
+            nested: true,
+        }),
+    ];
     const content = JSON.parse(defaultContent);
 
     const editor = useEditor({
