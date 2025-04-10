@@ -21,7 +21,7 @@ import {
 } from '@heroui/react';
 import { RiShutDownLine, RiEqualizer3Fill, RiLoginCircleLine } from 'react-icons/ri';
 
-function IntegrationCard({ name, id, status, description, hasConfigOptions }) {
+function IntegrationCard({ name, id, status, description, hasConfigOptions, icon, onConnect, onDisconnect, onConfigure }) {
     const BTN_ICON_SIZE = '1rem';
 
     // Modal for connect action
@@ -47,17 +47,29 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions }) {
 
     // Handle connect action
     const handleConnect = () => {
-        onConnectModalOpen();
+        if (onConnect) {
+            onConnect();
+        } else {
+            onConnectModalOpen();
+        }
     };
 
     // Handle disconnect action
     const handleDisconnect = () => {
-        onDisconnectModalOpen();
+        if (onDisconnect) {
+            onDisconnect();
+        } else {
+            onDisconnectModalOpen();
+        }
     };
 
     // Handle configure action
     const handleConfigure = () => {
-        onConfigDrawerOpen();
+        if (onConfigure) {
+            onConfigure();
+        } else {
+            onConfigDrawerOpen();
+        }
     };
 
     // Determine status chip color
@@ -78,7 +90,11 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions }) {
                 <CardHeader className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <div className="text-2xl">
-                            <Image alt="logo" src={`/integrations/${id}.png`} width={32} />
+                            {id === 'github' ? (
+                                icon
+                            ) : (
+                                <Image alt="logo" src={`/integrations/${id}.png`} width={32} />
+                            )}
                         </div>
                         <h3 className="text-lg font-semibold">{name}</h3>
                     </div>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Typography from '@tiptap/extension-typography';
@@ -21,9 +21,13 @@ import LinkMenu from './menus/LinkMenu';
 // Add styles for placeholder
 import './editor.css';
 
-const BlockEditor = ({ defaultContent = '', label, onChange, placeholder = 'Start typing...' }) => {
-    const [isEditable, setIsEditable] = useState(true);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const BlockEditor = ({
+    defaultContent = '',
+    label,
+    onChange,
+    placeholder = 'Start typing...',
+    isEditable = true,
+}) => {
     const menuContainerRef = useRef(null);
 
     // Parse default content or use empty document
@@ -85,14 +89,20 @@ const BlockEditor = ({ defaultContent = '', label, onChange, placeholder = 'Star
             {label && (
                 <span className="block text-small font-medium text-foreground pb-1.5">{label}</span>
             )}
-            <DragHandle editor={editor} tippyOptions={{}}>
-                <RiDraggable fontSize="1.2rem" />
-            </DragHandle>
+            {isEditable && (
+                <DragHandle editor={editor} tippyOptions={{}}>
+                    <RiDraggable fontSize="1.2rem" />
+                </DragHandle>
+            )}
             <EditorContent editor={editor} />
 
             {/* Menus */}
-            <LinkMenu editor={editor} appendTo={menuContainerRef} />
-            <TextMenu editor={editor} />
+            {isEditable && (
+                <>
+                    <LinkMenu editor={editor} appendTo={menuContainerRef} />
+                    <TextMenu editor={editor} />
+                </>
+            )}
         </div>
     );
 };
