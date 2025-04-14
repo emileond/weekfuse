@@ -154,7 +154,7 @@ const TaskCard = ({ task, sm }) => {
                         </DropdownMenu>
                     </Dropdown>
                 </div>
-                {(task.project_id || task.milestone_id) && (
+                {(task.project_id || task.milestone_id || task.tags || task.tag_id) && (
                     <div className="flex gap-3 justify-end pt-2">
                         {task.project_id && (
                             <EntityChip
@@ -168,6 +168,21 @@ const TaskCard = ({ task, sm }) => {
                             <EntityChip
                                 type="milestone"
                                 entityId={task.milestone_id}
+                                size="sm"
+                                variant="light"
+                            />
+                        )}
+                        {task.tags && Array.isArray(task.tags) && task.tags.length > 0 ? (
+                            <EntityChip
+                                type="tag"
+                                entityId={task.tags}
+                                size="sm"
+                                variant="light"
+                            />
+                        ) : task.tag_id && (
+                            <EntityChip
+                                type="tag"
+                                entityId={task.tag_id}
                                 size="sm"
                                 variant="light"
                             />

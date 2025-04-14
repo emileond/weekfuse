@@ -2,7 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseClient } from '../../../lib/supabase';
 
 // Fetch tasks for a specific workspace
-const fetchTasks = async ({ statusList, id, workspace_id, startDate, endDate, project_id, milestone_id }) => {
+const fetchTasks = async ({
+    statusList,
+    id,
+    workspace_id,
+    startDate,
+    endDate,
+    project_id,
+    milestone_id,
+}) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
 
     if (id) {
@@ -123,6 +131,7 @@ const updateTask = async ({ taskId, updates }) => {
     const { error } = await supabaseClient.from('tasks').update(updates).eq('id', taskId);
 
     if (error) {
+        console.error(error);
         throw new Error('Failed to update task');
     }
 };

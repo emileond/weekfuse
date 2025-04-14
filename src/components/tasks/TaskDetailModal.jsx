@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
+import TagSelect from '../form/TagSelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
 import { RiCheckboxCircleLine } from 'react-icons/ri';
 
@@ -27,6 +28,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [description, setDescription] = useState(task.description);
     const [selectedProject, setSelectedProject] = useState(null);
     const [selectedMilestone, setSelectedMilestone] = useState(null);
+    const [selectedTags, setSelectedTags] = useState([]);
 
     const {
         register,
@@ -43,24 +45,33 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         },
     });
 
-    // Update form values when task changes
+    // Reset form when modal opens/closes
     useEffect(() => {
-        if (task) {
-            setValue('name', task.name || '');
-            setValue('date', task.date ? new Date(task.date) : null);
+        if (isOpen && task) {
+            // Reset form with task values when modal opens
+            reset({
+                name: task.name || '',
+                date: task.date ? new Date(task.date) : null,
+            });
+            setDescription(task.description || '');
             setSelectedDate(task.date ? new Date(task.date) : null);
 
             // Set initial project if task has one
-            if (task.project_id) {
-                setSelectedProject({ value: task.project_id });
-            }
+            setSelectedProject(task.project_id ? { value: task.project_id } : null);
 
             // Set initial milestone if task has one
-            if (task.milestone_id) {
-                setSelectedMilestone({ value: task.milestone_id });
+            setSelectedMilestone(task.milestone_id ? { value: task.milestone_id } : null);
+
+            // Set initial tags if task has them
+            if (task.tags && Array.isArray(task.tags)) {
+                setSelectedTags(task.tags);
+            } else if (task.tags) {
+                setSelectedTags([task.tags]);
+            } else {
+                setSelectedTags([]);
             }
         }
-    }, [task, setValue]);
+    }, [isOpen, task, reset]);
 
     const onSubmit = async (data) => {
         try {
@@ -72,9 +83,24 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                 project_id: selectedProject?.value || null,
                 milestone_id: selectedMilestone?.value || null,
+                tags: selectedTags.length > 0 ? selectedTags : null,
             };
 
             // Check if the data has actually changed
+            // Helper function to compare tags arrays
+            const areTagsEqual = (tags1, tags2) => {
+                if (!tags1 && !tags2) return true;
+                if (!tags1 || !tags2) return false;
+                if (!Array.isArray(tags1) || !Array.isArray(tags2)) return false;
+                if (tags1.length !== tags2.length) return false;
+
+                // Sort both arrays to ensure consistent comparison
+                const sortedTags1 = [...tags1].sort();
+                const sortedTags2 = [...tags2].sort();
+
+                return sortedTags1.every((tag, index) => tag === sortedTags2[index]);
+            };
+
             const hasChanged =
                 updates.name !== (task.name || '') ||
                 updates.description !== (task.description || '') ||
@@ -84,7 +110,8 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                         dayjs(updates.date).format('YYYY-MM-DD') !==
                             dayjs(task.date).format('YYYY-MM-DD'))) ||
                 updates.project_id !== (task.project_id || null) ||
-                updates.milestone_id !== (task.milestone_id || null);
+                updates.milestone_id !== (task.milestone_id || null) ||
+                !areTagsEqual(updates.tags, task.tags);
 
             // Only make the database call if the data has changed
             if (hasChanged) {
@@ -143,6 +170,11 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                             projectId={selectedProject?.value}
                                         />
                                     )}
+                                    <TagSelect
+                                        defaultValue={task?.tags || task?.tag_id}
+                                        onChange={setSelectedTags}
+                                        multiple={true}
+                                    />
                                 </div>
                                 {task.status === 'completed' && task.completed_at && (
                                     <div className="flex gap-1 text-xs text-default-500 font-medium">
