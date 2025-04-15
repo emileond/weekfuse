@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import { toUTC } from '../utils/dateUtils';
 import ky from 'ky';
+import { Octokit } from 'octokit';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -46,24 +47,36 @@ export const githubSync = schedules.task({
         // Process each integration
         for (const integration of integrations) {
             try {
-                // Use the existing access token
-                let accessToken = integration.access_token;
+                logger.log(`Refreshing access_token`);
+                const res = await ky
+                    .post('https://github.com/login/oauth/access_token', {
+                        searchParams: {
+                            client_id: process.env.GITHUB_CLIENT_ID,
+                            client_secret: process.env.GITHUB_CLIENT_SECRET,
+                            grant_type: 'refresh_token',
+                            refresh_token: integration.refresh_token,
+                        },
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    })
+                    .json();
 
-                // If we need to refresh the token, we would do it here
-                // GitHub's OAuth implementation doesn't support the standard refresh token flow
-                // Instead, we'll use the existing access token which should be long-lived
+                if (res.error) {
+                    logger.error('Failed to refresh access token');
+                    await supabase
+                        .from('workspace_integrations')
+                        .update({
+                            status: 'error',
+                        })
+                        .eq('id', integration.id);
+                }
 
-                // If the token is invalid or expired, we'll catch it in the API call and mark this integration as failed
+                const { access_token, refresh_token } = res;
 
-                // Fetch issues assigned to the user
-                const issuesResponse = await ky.get('https://api.github.com/user/issues', {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'User-Agent': 'Weekfuse',
-                    },
-                });
+                const octokit = new Octokit({ auth: access_token });
 
-                const issuesData = await issuesResponse.json();
+                const issuesData = await octokit.paginate('GET /issues?state=open');
 
                 // Process and store issues
                 if (issuesData && Array.isArray(issuesData)) {
@@ -83,6 +96,7 @@ export const githubSync = schedules.task({
                                 workspace_id: integration.workspace_id,
                                 integration_source: 'github',
                                 external_id: issue.id,
+                                external_data: issue,
                                 created_at: issue.created_at,
                             },
                             {
@@ -98,29 +112,40 @@ export const githubSync = schedules.task({
 
                     results.forEach((result, index) => {
                         if (result.error) {
-                            logger.error(`Upsert error for issue ${issuesData[index].id}: ${result.error.message}`);
+                            logger.error(
+                                `Upsert error for issue ${issuesData[index].id}: ${result.error.message}`,
+                            );
                             issueFailCount++;
                         } else {
                             issueSuccessCount++;
                         }
                     });
 
-                    logger.log(`Processed ${issuesData.length} issues for workspace ${integration.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`);
+                    logger.log(
+                        `Processed ${issuesData.length} issues for workspace ${integration.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`,
+                    );
                 }
 
                 // Update the last_sync timestamp
                 await supabase
                     .from('workspace_integrations')
                     .update({
+                        access_token,
+                        refresh_token,
                         last_sync: toUTC(),
                     })
                     .eq('id', integration.id);
 
                 syncedCount++;
-                logger.log(`Successfully synced GitHub integration for workspace ${integration.workspace_id}`);
+                logger.log(
+                    `Successfully synced GitHub integration for workspace ${integration.workspace_id}`,
+                );
             } catch (error) {
+                console.log(error);
                 failedCount++;
-                logger.error(`Error syncing GitHub integration for workspace ${integration.workspace_id}: ${error.message}`);
+                logger.error(
+                    `Error syncing GitHub integration for workspace ${integration.workspace_id}: ${error.message}`,
+                );
             }
         }
 

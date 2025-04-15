@@ -7,6 +7,7 @@ import {
     RiSettingsLine,
     RiCalendarScheduleLine,
     RiBriefcase2Line,
+    RiBookletLine,
 } from 'react-icons/ri';
 
 const ICON_SIZE = '1.2rem';
@@ -25,21 +26,21 @@ export const navItems = [
         endContent: null,
     },
     {
-        name: 'Reflect',
-        path: '/reflect',
-        startContent: <RiQuillPenAiLine fontSize={ICON_SIZE} />,
-        endContent: null,
-    },
-    {
         name: 'Projects',
         path: '/projects',
         startContent: <RiBriefcase2Line fontSize={ICON_SIZE} />,
         endContent: null,
     },
     {
+        name: 'Reflect',
+        path: '/reflect',
+        startContent: <RiQuillPenAiLine fontSize={ICON_SIZE} />,
+        endContent: null,
+    },
+    {
         name: 'Notes',
         path: '/notes',
-        startContent: <RiTerminalBoxLine fontSize={ICON_SIZE} />,
+        startContent: <RiBookletLine fontSize={ICON_SIZE} />,
         endContent: null,
     },
     {

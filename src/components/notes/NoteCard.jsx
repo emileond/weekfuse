@@ -153,7 +153,7 @@ const NoteCard = ({ note, currentWorkspace }) => {
                                             updates: { is_pinned: !note.is_pinned },
                                         });
                                     }}
-                                    className={`${note.is_pinned ? 'text-primary' : 'text-default-500 hover:text-default-700'}`}
+                                    className={`${note.is_pinned ? 'text-orange-500' : 'text-default-500 hover:text-default-700'}`}
                                 >
                                     {note.is_pinned ? (
                                         <RiPushpinFill fontSize="1rem" />

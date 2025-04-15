@@ -1,7 +1,7 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
 import { toUTC } from '../../../src/utils/dateUtils.js';
-import { App } from 'octokit';
+import { App, Octokit } from 'octokit';
 
 // Handle DELETE requests for disconnecting GitHub integration
 export async function onRequestDelete(context) {
@@ -107,15 +107,19 @@ export async function onRequestPost(context) {
             );
         }
 
-        // Fetch issues assigned to the user
-        const issuesResponse = await ky.get('https://api.github.com/user/issues?state=open', {
-            headers: {
-                Authorization: `Bearer ${tokenData.access_token}`,
-                'User-Agent': 'emileond',
-            },
-        });
+        const octokit = new Octokit({ auth: tokenData.access_token });
 
-        const issuesData = await issuesResponse.json();
+        const issuesData = await octokit.paginate('GET /issues?state=open');
+
+        // Fetch issues assigned to the user
+        // const issuesResponse = await ky.get('https://api.github.com/user/issues?state=open', {
+        //     headers: {
+        //         Authorization: `Bearer ${tokenData.access_token}`,
+        //         'User-Agent': 'emileond',
+        //     },
+        // });
+        //
+        // const issuesData = await issuesResponse.json();
 
         // Process and store issues (simplified for now)
         if (issuesData && Array.isArray(issuesData)) {
