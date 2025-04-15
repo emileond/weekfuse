@@ -18,8 +18,8 @@ export const githubSync = schedules.task({
     run: async () => {
         logger.log('Starting GitHub sync task');
 
-        // Calculate the timestamp for 12 hours ago
-        const twelveHoursAgo = dayjs().subtract(12, 'hours').toISOString();
+        // Calculate the timestamp for 8 hours ago in UTC
+        const timeRange = dayjs().utc().subtract(8, 'hours').toISOString();
 
         // Fetch active workspace integrations that need syncing
         const { data: integrations, error: fetchError } = await supabase
@@ -27,7 +27,7 @@ export const githubSync = schedules.task({
             .select('*')
             .eq('type', 'github')
             .eq('status', 'active')
-            .lt('last_sync', twelveHoursAgo);
+            .lt('last_sync', timeRange);
 
         if (fetchError) {
             logger.error(`Error fetching GitHub integrations: ${fetchError.message}`);

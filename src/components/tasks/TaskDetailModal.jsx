@@ -7,6 +7,7 @@ import {
     Button,
     Input,
     Divider,
+    Checkbox,
 } from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
@@ -19,18 +20,22 @@ import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
-import { RiCheckboxCircleLine } from 'react-icons/ri';
+import { RiCheckboxCircleFill, RiCheckboxCircleLine } from 'react-icons/ri';
 import IntegrationSourceIcon from './IntegrationSourceIcon.jsx';
 import TaskIntegrationPanel from './TaskIntegrationPanel.jsx';
+import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
+    const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
     const [description, setDescription] = useState(task.description);
     const [selectedProject, setSelectedProject] = useState(null);
     const [selectedMilestone, setSelectedMilestone] = useState(null);
     const [selectedTags, setSelectedTags] = useState([]);
+
+    const isExternal = !!task?.integration_source;
 
     const {
         register,
@@ -73,13 +78,47 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         }
     }, [isOpen, task, reset]);
 
+    const handleStatusToggle = async () => {
+        // Determine new value by inverting the current state
+        const newCompleted = !isCompleted;
+        setIsCompleted(newCompleted);
+        const newStatus = newCompleted ? 'completed' : 'pending';
+
+        try {
+            await updateTask({
+                taskId: task.id,
+                updates: {
+                    status: newStatus,
+                    completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
+                },
+            });
+        } catch (error) {
+            // If there is an error, revert the state change (you might need to do more error handling)
+            setIsCompleted(!newCompleted);
+            console.error('Error toggling task status:', error);
+        } finally {
+            if (newStatus === 'completed') {
+                const randomMessage =
+                    taskCompletedMessages[Math.floor(Math.random() * taskCompletedMessages.length)];
+                toast.success(randomMessage.message, {
+                    duration: 5000,
+                    icon: randomMessage?.icon || (
+                        <RiCheckboxCircleFill className="text-success" fontSize="2rem" />
+                    ),
+                    style: {
+                        fontWeight: 500,
+                    },
+                });
+            }
+        }
+    };
+
     const onSubmit = async (data) => {
         try {
             // Create the updates object
             const updates = {
                 name: data.name,
                 description: description,
-                // status: data.status,
                 date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                 project_id: selectedProject?.value || null,
                 milestone_id: selectedMilestone?.value || null,
@@ -129,34 +168,40 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     };
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            size={task?.integration_source ? '5xl' : '3xl'}
-        >
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size={isExternal ? '5xl' : '3xl'}>
             <ModalContent>
                 <div className="flex gap-6">
                     <form onSubmit={handleSubmit(onSubmit)} className="basis-2/3 grow">
                         <ModalBody className="pt-6">
                             <div className="flex flex-col gap-6 ">
-                                <Input
-                                    size="lg"
-                                    variant="underlined"
-                                    {...register('name', { required: true })}
-                                    label="Task"
-                                    color="primary"
-                                    isInvalid={!!errors.name}
-                                    errorMessage="Task name is required"
-                                    classNames={{
-                                        inputWrapper: 'shadow-none border-0',
-                                        input: 'text-xl font-medium',
-                                        label: 'text-default-600 font-normal',
-                                    }}
-                                />
+                                <div className="flex">
+                                    <Checkbox
+                                        size="lg"
+                                        defaultSelected={isCompleted}
+                                        onValueChange={handleStatusToggle}
+                                    />
+
+                                    <Input
+                                        size="lg"
+                                        variant={isExternal ? 'bordered' : 'underlined'}
+                                        {...register('name', { required: true })}
+                                        label="Task"
+                                        color="primary"
+                                        isInvalid={!!errors.name}
+                                        errorMessage="Task name is required"
+                                        isReadOnly={isExternal}
+                                        classNames={{
+                                            inputWrapper: 'shadow-none border-0',
+                                            input: 'text-xl font-medium',
+                                            label: 'text-default-600 font-normal',
+                                        }}
+                                    />
+                                </div>
                                 <SimpleEditor
                                     label="Description"
                                     defaultContent={task?.description || null}
                                     onChange={setDescription}
+                                    isEditable={!isExternal}
                                 />
                                 <div className="flex items-center justify-between pb-1">
                                     <div className="flex gap-2">

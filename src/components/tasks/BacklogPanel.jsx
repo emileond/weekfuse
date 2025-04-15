@@ -12,7 +12,7 @@ function BacklogPanel({ isBacklogCollapsed }) {
 
     return (
         <div
-            className={`${isBacklogCollapsed ? 'basis-0 opacity-0' : 'basis-1/3 xl:basis-1/4 opacity-100'} shadow-2xl rounded-xl transition-all duration-200 overflow-hidden`}
+            className={`${isBacklogCollapsed ? 'basis-0 opacity-0' : 'basis-1/3 opacity-100'} shadow-2xl rounded-xl transition-all duration-200 overflow-hidden`}
         >
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={null} />
             <div className="bg-content2 border-1 border-default rounded-xl p-4 flex flex-col h-full">

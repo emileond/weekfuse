@@ -70,7 +70,7 @@ const UpcomingTasks = () => {
                 </Button>
             </div>
             <div className="flex gap-3 h-[82vh]">
-                <div className="basis-2/3 xl:basis-3/4 grow flex gap-4 overflow-x-auto snap-x ">
+                <div className="basis-2/3 grow flex gap-4 overflow-x-auto snap-x ">
                     {days.map((day) => {
                         const dateStr = day.format('YYYY-MM-DD'); // Column date
                         const isToday = day.isSame(dayjs(), 'day');

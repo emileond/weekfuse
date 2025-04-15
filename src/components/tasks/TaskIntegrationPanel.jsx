@@ -11,7 +11,13 @@ import {
     DropdownItem,
     DropdownSection,
 } from '@heroui/react';
-import { RiArrowDownSLine, RiGitRepositoryLine } from 'react-icons/ri';
+import {
+    RiArrowDownSLine,
+    RiCheckboxBlankCircleFill,
+    RiCheckboxBlankCircleLine,
+    RiCheckboxCircleLine,
+    RiGitRepositoryLine,
+} from 'react-icons/ri';
 import { colorContrast } from '../../utils/colorContrast.js';
 import ky from 'ky';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
@@ -68,6 +74,19 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
                                         <Button
                                             size="sm"
                                             variant="flat"
+                                            startContent={
+                                                external_data?.state === 'open' ? (
+                                                    <RiCheckboxBlankCircleLine
+                                                        className="text-default-500"
+                                                        fontSize=".8rem"
+                                                    />
+                                                ) : (
+                                                    <RiCheckboxCircleLine
+                                                        className="text-default-500"
+                                                        fontSize=".8rem"
+                                                    />
+                                                )
+                                            }
                                             endContent={<RiArrowDownSLine fontSize="1rem" />}
                                         >
                                             {external_data?.state}
@@ -112,6 +131,7 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
                             <div className="flex flex-wrap gap-1">
                                 {external_data?.labels?.map((label) => (
                                     <Chip
+                                        key={label.id}
                                         size="sm"
                                         style={{
                                             background: `#${label?.color}cc`,
@@ -151,28 +171,25 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
 
 const TaskIntegrationPanel = ({ source, external_id, external_data }) => {
     return (
-        <>
-            <div className="w-[1px] bg-content3"></div>
-            <div className="flex flex-col gap-6 basis-1/3 pr-6 pt-6 pb-6">
-                <h4 className="font-semibold flex gap-1">
-                    <IntegrationSourceIcon type={source} /> {source}
-                    <Link
-                        className="font-medium text-blue-700"
-                        isExternal
-                        showAnchorIcon
-                        href={external_data?.html_url}
-                    >
-                        #{external_data?.number}
-                    </Link>
-                </h4>
-                <Divider />
-                <TaskIntegrationDetails
-                    source={source}
-                    external_data={external_data}
-                    external_id={external_id}
-                />
-            </div>
-        </>
+        <div className="flex flex-col gap-6 bg-content2 basis-1/3 p-6 border-l-1 border-default-200">
+            <h4 className="font-semibold flex gap-1">
+                <IntegrationSourceIcon type={source} /> {source}
+                <Link
+                    className="font-medium text-blue-700"
+                    isExternal
+                    showAnchorIcon
+                    href={external_data?.html_url}
+                >
+                    #{external_data?.number}
+                </Link>
+            </h4>
+            <Divider />
+            <TaskIntegrationDetails
+                source={source}
+                external_data={external_data}
+                external_id={external_id}
+            />
+        </div>
     );
 };
 

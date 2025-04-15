@@ -16,7 +16,7 @@ import { RiCalendarCloseLine, RiCheckboxCircleFill, RiMoreLine } from 'react-ico
 import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import TaskDetailModal from './TaskDetailModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CreatableSelect from '../form/CreatableSelect.jsx';
 import EntityChip from '../common/EntityChip.jsx';
 import dayjs from 'dayjs';
@@ -45,6 +45,11 @@ const TaskCard = ({ task, sm }) => {
     const taskDate = dayjs(task?.date);
     const today = dayjs().startOf('day');
     const isOverdue = taskDate.isBefore(today) && task.status === 'pending';
+
+    // Update isCompleted state when task.status changes
+    useEffect(() => {
+        setIsCompleted(task?.status === 'completed');
+    }, [task.status]);
 
     const handleStatusToggle = async () => {
         // Determine new value by inverting the current state

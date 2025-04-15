@@ -9,7 +9,7 @@ import TaskList from '@tiptap/extension-task-list';
 // Import editor fixes
 import '../editor/editor-fixes.css';
 
-const SimpleEditor = ({ defaultContent = '', label, onChange }) => {
+const SimpleEditor = ({ defaultContent = '', label, onChange, isEditable = true }) => {
     const extensions = [
         StarterKit.configure(),
         Typography,
@@ -24,9 +24,10 @@ const SimpleEditor = ({ defaultContent = '', label, onChange }) => {
     const editor = useEditor({
         extensions,
         content,
+        editable: isEditable,
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 rounded-lg border-2 border-default-200 hover:border-default-300 max-w-full',
+                class: `prose dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
             },
         },
         onBlur: ({ editor }) => {
