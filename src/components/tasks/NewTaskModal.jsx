@@ -13,7 +13,7 @@ import { useCreateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
@@ -64,38 +64,48 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
         }
     };
 
+    useEffect(() => {
+        reset();
+    }, [onOpenChange]);
+
     return (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
             <ModalContent>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <ModalHeader className="flex flex-col gap-1">New Task</ModalHeader>
-                    <ModalBody>
+                    <ModalBody className="pt-4">
                         <div className="flex flex-col gap-6">
                             <Input
                                 size="lg"
+                                variant="underlined"
+                                color="primary"
                                 {...register('name', {
                                     required: true,
                                 })}
                                 label="Task"
-                                isInvalid={!!errors.title}
-                                errorMessage="Title is required"
                                 autoFocus
+                                isInvalid={!!errors.name}
+                                errorMessage="Title is required"
+                                classNames={{
+                                    inputWrapper: 'shadow-none border-0',
+                                    input: 'text-xl font-medium',
+                                    label: 'text-default-600 font-normal',
+                                }}
                             />
-                        </div>
-                        <div className="flex gap-2">
-                            <DatePicker defaultValue={defaultDate} onChange={setSelectedDate} />
-                            <ProjectSelect
-                                onChange={setSelectedProject}
-                                defaultValue={defaultProject}
-                            />
-                            {(selectedProject || defaultProject) && (
-                                <MilestoneSelect
-                                    onChange={setSelectedMilestone}
-                                    projectId={selectedProject?.value || defaultProject}
-                                    defaultValue={defaultMilestone}
+                            <div className="flex gap-2">
+                                <DatePicker defaultValue={defaultDate} onChange={setSelectedDate} />
+                                <ProjectSelect
+                                    onChange={setSelectedProject}
+                                    defaultValue={defaultProject}
                                 />
-                            )}
-                            <TagSelect onChange={setSelectedTags} multiple={true} />
+                                {(selectedProject || defaultProject) && (
+                                    <MilestoneSelect
+                                        onChange={setSelectedMilestone}
+                                        projectId={selectedProject?.value || defaultProject}
+                                        defaultValue={defaultMilestone}
+                                    />
+                                )}
+                                <TagSelect onChange={setSelectedTags} multiple={true} />
+                            </div>
                         </div>
                     </ModalBody>
                     <Divider />

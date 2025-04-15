@@ -108,7 +108,7 @@ export async function onRequestPost(context) {
         }
 
         // Fetch issues assigned to the user
-        const issuesResponse = await ky.get('https://api.github.com/user/issues', {
+        const issuesResponse = await ky.get('https://api.github.com/user/issues?state=open', {
             headers: {
                 Authorization: `Bearer ${tokenData.access_token}`,
                 'User-Agent': 'emileond',
@@ -135,6 +135,7 @@ export async function onRequestPost(context) {
                         workspace_id: workspace_id,
                         integration_source: 'github',
                         external_id: issue.id,
+                        external_data: issue,
                         created_at: issue.created_at,
                     },
                     {

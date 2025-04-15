@@ -26,7 +26,7 @@ const SimpleEditor = ({ defaultContent = '', label, onChange }) => {
         content,
         editorProps: {
             attributes: {
-                class: 'prose prose-sm focus:outline-none w-full min-w-[620px] min-h-24 bg-content1 p-3 rounded-lg border-2 border-default-200 hover:border-default-300',
+                class: 'prose dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 rounded-lg border-2 border-default-200 hover:border-default-300 max-w-full',
             },
         },
         onBlur: ({ editor }) => {

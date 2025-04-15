@@ -20,6 +20,8 @@ import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
 import { RiCheckboxCircleLine } from 'react-icons/ri';
+import IntegrationSourceIcon from './IntegrationSourceIcon.jsx';
+import TaskIntegrationPanel from './TaskIntegrationPanel.jsx';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -34,8 +36,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         register,
         handleSubmit,
         reset,
-        setValue,
-        control,
         formState: { errors },
     } = useForm({
         defaultValues: {
@@ -129,82 +129,100 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+        <Modal
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            size={task?.integration_source ? '5xl' : '3xl'}
+        >
             <ModalContent>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <ModalHeader className="flex flex-col gap-1">Task Details</ModalHeader>
-                    <ModalBody>
-                        <div className="flex flex-col gap-6">
-                            <Input
-                                size="lg"
-                                variant="bordered"
-                                {...register('name', { required: true })}
-                                label="Task"
-                                isInvalid={!!errors.name}
-                                errorMessage="Task name is required"
-                            />
-                            <SimpleEditor
-                                label="Description"
-                                defaultContent={task?.description || null}
-                                onChange={setDescription}
-                            />
-                            <div className="flex items-center justify-between pb-1">
-                                <div className="flex gap-2">
-                                    <DatePicker
-                                        defaultValue={selectedDate}
-                                        onChange={setSelectedDate}
-                                    />
-                                    <ProjectSelect
-                                        defaultValue={task?.project_id}
-                                        onChange={setSelectedProject}
-                                    />
-                                    {selectedProject && (
-                                        <MilestoneSelect
-                                            key={selectedProject?.value}
-                                            defaultValue={
-                                                selectedProject?.value === task?.project_id
-                                                    ? task?.milestone_id
-                                                    : null
-                                            }
-                                            onChange={setSelectedMilestone}
-                                            projectId={selectedProject?.value}
+                <div className="flex gap-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="basis-2/3 grow">
+                        <ModalBody className="pt-6">
+                            <div className="flex flex-col gap-6 ">
+                                <Input
+                                    size="lg"
+                                    variant="underlined"
+                                    {...register('name', { required: true })}
+                                    label="Task"
+                                    color="primary"
+                                    isInvalid={!!errors.name}
+                                    errorMessage="Task name is required"
+                                    classNames={{
+                                        inputWrapper: 'shadow-none border-0',
+                                        input: 'text-xl font-medium',
+                                        label: 'text-default-600 font-normal',
+                                    }}
+                                />
+                                <SimpleEditor
+                                    label="Description"
+                                    defaultContent={task?.description || null}
+                                    onChange={setDescription}
+                                />
+                                <div className="flex items-center justify-between pb-1">
+                                    <div className="flex gap-2">
+                                        <DatePicker
+                                            defaultValue={selectedDate}
+                                            onChange={setSelectedDate}
                                         />
-                                    )}
-                                    <TagSelect
-                                        defaultValue={task?.tags || task?.tag_id}
-                                        onChange={setSelectedTags}
-                                        multiple={true}
-                                    />
-                                </div>
-                                {task.status === 'completed' && task.completed_at && (
-                                    <div className="flex gap-1 text-xs text-default-500 font-medium">
-                                        <RiCheckboxCircleLine fontSize="1rem" />
-                                        Completed on{' '}
-                                        {Intl.DateTimeFormat(navigator.language, {
-                                            dateStyle: 'medium',
-                                        }).format(new Date(task.completed_at))}
+                                        <ProjectSelect
+                                            defaultValue={task?.project_id}
+                                            onChange={setSelectedProject}
+                                        />
+                                        {selectedProject && (
+                                            <MilestoneSelect
+                                                key={selectedProject?.value}
+                                                defaultValue={
+                                                    selectedProject?.value === task?.project_id
+                                                        ? task?.milestone_id
+                                                        : null
+                                                }
+                                                onChange={setSelectedMilestone}
+                                                projectId={selectedProject?.value}
+                                            />
+                                        )}
+                                        <TagSelect
+                                            defaultValue={task?.tags || task?.tag_id}
+                                            onChange={setSelectedTags}
+                                            multiple={true}
+                                        />
                                     </div>
-                                )}
+                                    {task.status === 'completed' && task.completed_at && (
+                                        <div className="flex gap-1 text-xs text-default-500 font-medium">
+                                            <RiCheckboxCircleLine fontSize="1rem" />
+                                            Completed on{' '}
+                                            {Intl.DateTimeFormat(navigator.language, {
+                                                dateStyle: 'medium',
+                                            }).format(new Date(task.completed_at))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </ModalBody>
-                    <Divider />
-                    <ModalFooter>
-                        <Button
-                            variant="light"
-                            onPress={() => {
-                                onOpenChange(false);
-                                reset();
-                            }}
-                            isDisabled={isPending}
-                        >
-                            Cancel
-                        </Button>
-                        <Button color="primary" type="submit" isLoading={isPending}>
-                            Save Changes
-                        </Button>
-                    </ModalFooter>
-                </form>
+                        </ModalBody>
+                        <Divider />
+                        <ModalFooter>
+                            <Button
+                                variant="light"
+                                onPress={() => {
+                                    onOpenChange(false);
+                                    reset();
+                                }}
+                                isDisabled={isPending}
+                            >
+                                Cancel
+                            </Button>
+                            <Button color="primary" type="submit" isLoading={isPending}>
+                                Save Changes
+                            </Button>
+                        </ModalFooter>
+                    </form>
+                    {task?.integration_source && (
+                        <TaskIntegrationPanel
+                            source={task.integration_source}
+                            external_id={task?.external_id}
+                            external_data={task?.external_data}
+                        />
+                    )}
+                </div>
             </ModalContent>
         </Modal>
     );
