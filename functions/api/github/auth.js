@@ -111,16 +111,6 @@ export async function onRequestPost(context) {
 
         const issuesData = await octokit.paginate('GET /issues?state=open');
 
-        // Fetch issues assigned to the user
-        // const issuesResponse = await ky.get('https://api.github.com/user/issues?state=open', {
-        //     headers: {
-        //         Authorization: `Bearer ${tokenData.access_token}`,
-        //         'User-Agent': 'emileond',
-        //     },
-        // });
-        //
-        // const issuesData = await issuesResponse.json();
-
         // Process and store issues (simplified for now)
         if (issuesData && Array.isArray(issuesData)) {
             const upsertPromises = issuesData.map((issue) =>
