@@ -64,7 +64,7 @@ export async function onRequestPost(context) {
                 client_id: context.env.GITHUB_CLIENT_ID,
                 client_secret: context.env.GITHUB_CLIENT_SECRET,
                 code: code,
-                redirect_uri: 'http://localhost:8788/integrations',
+                redirect_uri: 'https://weekfuse.com/integrations',
             },
             headers: {
                 Accept: 'application/json',
