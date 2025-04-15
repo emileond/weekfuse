@@ -42,7 +42,7 @@ function ProjectsPage() {
             >
                 <div className="flex flex-col gap-6 mt-3">
                     {projects?.map((project) => (
-                        <ProjectCard project={project} />
+                        <ProjectCard key={project.id} project={project} />
                     ))}
                 </div>
             </PageLayout>

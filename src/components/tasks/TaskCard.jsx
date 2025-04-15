@@ -22,6 +22,7 @@ import EntityChip from '../common/EntityChip.jsx';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
+import IntegrationSourceIcon from './IntegrationSourceIcon.jsx';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
@@ -154,7 +155,11 @@ const TaskCard = ({ task, sm }) => {
                         </DropdownMenu>
                     </Dropdown>
                 </div>
-                {(task.project_id || task.milestone_id || task.tags || task.tag_id) && (
+                {(task.project_id ||
+                    task.milestone_id ||
+                    task.tags ||
+                    task.tag_id ||
+                    task.integration_source) && (
                     <div className="flex gap-3 justify-end pt-2">
                         {task.project_id && (
                             <EntityChip
@@ -173,19 +178,19 @@ const TaskCard = ({ task, sm }) => {
                             />
                         )}
                         {task.tags && Array.isArray(task.tags) && task.tags.length > 0 ? (
-                            <EntityChip
-                                type="tag"
-                                entityId={task.tags}
-                                size="sm"
-                                variant="light"
-                            />
-                        ) : task.tag_id && (
-                            <EntityChip
-                                type="tag"
-                                entityId={task.tag_id}
-                                size="sm"
-                                variant="light"
-                            />
+                            <EntityChip type="tag" entityId={task.tags} size="sm" variant="light" />
+                        ) : (
+                            task.tag_id && (
+                                <EntityChip
+                                    type="tag"
+                                    entityId={task.tag_id}
+                                    size="sm"
+                                    variant="light"
+                                />
+                            )
+                        )}
+                        {task.integration_source && (
+                            <IntegrationSourceIcon type={task.integration_source} />
                         )}
                     </div>
                 )}

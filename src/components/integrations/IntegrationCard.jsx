@@ -18,10 +18,24 @@ import {
     DrawerFooter,
     Image,
     Divider,
+    Spinner,
+    Skeleton,
 } from '@heroui/react';
 import { RiShutDownLine, RiEqualizer3Fill, RiLoginCircleLine } from 'react-icons/ri';
 
-function IntegrationCard({ name, id, status, description, hasConfigOptions, icon, onConnect, onDisconnect, onConfigure }) {
+function IntegrationCard({
+    id,
+    icon,
+    name,
+    description,
+    status,
+    isLoading,
+    isPending,
+    onConnect,
+    onDisconnect,
+    hasConfigOptions,
+    onConfigure,
+}) {
     const BTN_ICON_SIZE = '1rem';
 
     // Modal for connect action
@@ -56,11 +70,7 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
 
     // Handle disconnect action
     const handleDisconnect = () => {
-        if (onDisconnect) {
-            onDisconnect();
-        } else {
-            onDisconnectModalOpen();
-        }
+        onDisconnectModalOpen();
     };
 
     // Handle configure action
@@ -77,6 +87,8 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
         switch (status) {
             case 'active':
                 return 'success';
+            case 'error':
+                return 'danger';
             case 'soon':
                 return 'primary';
             default:
@@ -98,14 +110,26 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
                         </div>
                         <h3 className="text-lg font-semibold">{name}</h3>
                     </div>
-                    {(status === 'active' || status === 'soon') && (
-                        <Chip variant="flat" color={getStatusChipColor()} size="sm">
-                            {status === 'active' ? 'Active' : 'Coming Soon'}
-                        </Chip>
+                    {isLoading ? (
+                        <Spinner size="sm" color="default" variant="wave" aria-label="loading" />
+                    ) : (
+                        <>
+                            {status !== 'inactive' && (
+                                <Skeleton isLoaded={!isPending}>
+                                    <Chip variant="flat" color={getStatusChipColor()} size="sm">
+                                        {status?.toLocaleString()}
+                                    </Chip>
+                                </Skeleton>
+                            )}
+                        </>
                     )}
                 </CardHeader>
                 <CardBody className="py-3">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ">{description}</p>
+                    <Skeleton isLoaded={!isPending}>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ">
+                            {description}
+                        </p>
+                    </Skeleton>
                 </CardBody>
                 {status !== 'soon' && (
                     <>
@@ -131,6 +155,7 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
                                         color="danger"
                                         onPress={handleDisconnect}
                                         startContent={<RiShutDownLine fontSize={BTN_ICON_SIZE} />}
+                                        isDisabled={isLoading}
                                     >
                                         Disconnect
                                     </Button>
@@ -141,6 +166,7 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
                                     size="sm"
                                     onPress={handleConnect}
                                     startContent={<RiLoginCircleLine fontSize={BTN_ICON_SIZE} />}
+                                    isLoading={isLoading}
                                 >
                                     Connect
                                 </Button>
@@ -172,21 +198,22 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
             {/* Disconnect Confirmation Dialog */}
             <Modal isOpen={isDisconnectModalOpen} onClose={onDisconnectModalClose}>
                 <ModalContent>
-                    <ModalHeader>Disconnect {name}</ModalHeader>
+                    <ModalHeader>Disconnect integration</ModalHeader>
                     <ModalBody>
-                        <p>
-                            Are you sure you want to disconnect from {name}? This action cannot be
-                            undone.
-                        </p>
+                        <p>Are you sure you want to disconnect from {name}?</p>
                     </ModalBody>
                     <ModalFooter>
-                        <Button variant="flat" onPress={onDisconnectModalClose}>
+                        <Button variant="light" onPress={onDisconnectModalClose}>
                             Cancel
                         </Button>
                         <Button
                             color="danger"
-                            onPress={onDisconnectModalClose}
-                            startContent={<RiShutDownLine fontSize={BTN_ICON_SIZE} />}
+                            onPress={() => {
+                                if (onDisconnect) {
+                                    onDisconnect();
+                                }
+                                onDisconnectModalClose();
+                            }}
                         >
                             Disconnect
                         </Button>
@@ -203,10 +230,10 @@ function IntegrationCard({ name, id, status, description, hasConfigOptions, icon
                         {/* Configuration form would go here */}
                     </DrawerBody>
                     <DrawerFooter>
-                        <Button variant="flat" onPress={onConfigDrawerClose}>
+                        <Button variant="flat" onPress={onConfigDrawerClose} isDisabled={isLoading}>
                             Cancel
                         </Button>
-                        <Button color="primary" onPress={onConfigDrawerClose}>
+                        <Button color="primary" onPress={onConfigDrawerClose} isLoading={isLoading}>
                             Save
                         </Button>
                     </DrawerFooter>

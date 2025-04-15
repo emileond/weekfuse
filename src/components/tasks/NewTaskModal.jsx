@@ -13,12 +13,11 @@ import { useCreateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
-import SimpleEditor from '../form/SimpleEditor.jsx';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defaultMilestone }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -31,22 +30,10 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
         defaultMilestone ? { value: defaultMilestone } : null,
     ); // State to track selected milestone
     const [selectedTags, setSelectedTags] = useState([]); // State to track selected tags
-    const nameInputRef = useRef(null); // Ref for the name input field
-
-    // Auto-focus on the name input when the modal opens
-    useEffect(() => {
-        if (isOpen && nameInputRef.current) {
-            // Use setTimeout to ensure the input is rendered and visible
-            setTimeout(() => {
-                nameInputRef.current.focus();
-            }, 100);
-        }
-    }, [isOpen]);
 
     const {
         register,
         handleSubmit,
-        control, // Use control for the Controller
         reset,
         formState: { errors },
     } = useForm();
@@ -86,26 +73,14 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                         <div className="flex flex-col gap-6">
                             <Input
                                 size="lg"
-                                {...register('name', { 
+                                {...register('name', {
                                     required: true,
-                                    // Use React Hook Form's ref callback to get access to the input element
-                                    shouldUnregister: true
                                 })}
-                                // Use a callback ref to combine React Hook Form's ref with our focus ref
-                                ref={(e) => {
-                                    // This ensures both refs work together
-                                    nameInputRef.current = e;
-                                }}
                                 label="Task"
                                 isInvalid={!!errors.title}
                                 errorMessage="Title is required"
+                                autoFocus
                             />
-                            {/*<SimpleEditor*/}
-                            {/*    // control={control}*/}
-                            {/*    name="description"*/}
-                            {/*    label="Description"*/}
-                            {/*    // minRows={2}*/}
-                            {/*/>*/}
                         </div>
                         <div className="flex gap-2">
                             <DatePicker defaultValue={defaultDate} onChange={setSelectedDate} />

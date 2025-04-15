@@ -1,155 +1,168 @@
+import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
+import { toUTC } from '../../../src/utils/dateUtils.js';
+import { App } from 'octokit';
 
-// GitHub OAuth endpoints
-const GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize';
-const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
+// Handle DELETE requests for disconnecting GitHub integration
+export async function onRequestDelete(context) {
+    try {
+        const body = await context.request.json();
+        const { installation_id } = body;
 
-// Handle GET requests for initiating GitHub OAuth flow
-export async function onRequestGet(context) {
-    const { searchParams } = new URL(context.request.url);
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    
-    // Initialize Supabase client
-    const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
-    
-    // If code is present, this is a callback from GitHub
-    if (code) {
-        return handleCallback(context, code, state, supabase);
+        if (!installation_id) {
+            return Response.json(
+                { success: false, error: 'Missing installation_id' },
+                { status: 400 },
+            );
+        }
+
+        try {
+            const app = new App({
+                appId: context.env.GITHUB_APP_ID,
+                privateKey: context.env.GITHUB_PRIVATE_KEY,
+            });
+
+            const octokit = await app.getInstallationOctokit(installation_id);
+
+            await octokit.request(`DELETE /app/installations/${installation_id}`);
+
+            console.log(`Successfully revoked GitHub installation: ${installation_id}`);
+        } catch (revokeError) {
+            console.error('Error revoking GitHub installation:', revokeError);
+            return Response.error();
+        }
+
+        return Response.json({ success: true });
+    } catch (error) {
+        console.error('Error disconnecting GitHub integration:', error);
+        return Response.json(
+            {
+                success: false,
+                error: 'Internal server error',
+            },
+            { status: 500 },
+        );
     }
-    
-    // Otherwise, initiate the OAuth flow
-    return initiateOAuth(context, supabase);
 }
 
-// Initiate the OAuth flow by redirecting to GitHub
-async function initiateOAuth(context, supabase) {
-    // Generate a random state value for security
-    const state = crypto.randomUUID();
-    
-    // Get the user ID from the session
-    const authHeader = context.request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    const token = authHeader.split(' ')[1];
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Store the state in the database for verification later
-    const { error: stateError } = await supabase
-        .from('github_oauth_states')
-        .insert([{ state, user_id: user.id }]);
-    
-    if (stateError) {
-        return Response.json({ error: 'Failed to store OAuth state' }, { status: 500 });
-    }
-    
-    // Redirect to GitHub OAuth page
-    const redirectUrl = new URL(GITHUB_AUTH_URL);
-    redirectUrl.searchParams.append('client_id', context.env.GITHUB_CLIENT_ID);
-    redirectUrl.searchParams.append('redirect_uri', `${context.env.BASE_URL}/api/github/auth`);
-    redirectUrl.searchParams.append('state', state);
-    redirectUrl.searchParams.append('scope', 'repo');
-    
-    return Response.redirect(redirectUrl.toString(), 302);
-}
-
-// Handle the callback from GitHub after user authorization
-async function handleCallback(context, code, state, supabase) {
-    // Verify the state parameter to prevent CSRF attacks
-    const { data: stateData, error: stateError } = await supabase
-        .from('github_oauth_states')
-        .select('user_id')
-        .eq('state', state)
-        .single();
-    
-    if (stateError || !stateData) {
-        return Response.json({ error: 'Invalid OAuth state' }, { status: 400 });
-    }
-    
-    // Exchange the code for an access token
-    const tokenResponse = await fetch(GITHUB_TOKEN_URL, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            client_id: context.env.GITHUB_CLIENT_ID,
-            client_secret: context.env.GITHUB_CLIENT_SECRET,
-            code,
-            redirect_uri: `${context.env.BASE_URL}/api/github/auth`
-        })
-    });
-    
-    const tokenData = await tokenResponse.json();
-    
-    if (!tokenData.access_token) {
-        return Response.json({ error: 'Failed to obtain access token' }, { status: 500 });
-    }
-    
-    // Store the access token in the database
-    const { error: tokenError } = await supabase
-        .from('github_integrations')
-        .upsert([{
-            user_id: stateData.user_id,
-            access_token: tokenData.access_token,
-            token_type: tokenData.token_type,
-            scope: tokenData.scope
-        }], { onConflict: 'user_id' });
-    
-    if (tokenError) {
-        return Response.json({ error: 'Failed to store access token' }, { status: 500 });
-    }
-    
-    // Clean up the state entry
-    await supabase
-        .from('github_oauth_states')
-        .delete()
-        .eq('state', state);
-    
-    // Redirect back to the integrations page
-    return Response.redirect(`${context.env.BASE_URL}/integrations?github_connected=true`, 302);
-}
-
-// Handle POST requests for disconnecting GitHub integration
+// Handle POST requests for initiating GitHub OAuth flow
 export async function onRequestPost(context) {
-    const { action } = await context.request.json();
-    
-    if (action !== 'disconnect') {
-        return Response.json({ error: 'Invalid action' }, { status: 400 });
+    const body = await context.request.json();
+    const { code, workspace_id, installation_id } = body;
+
+    if (!code || !workspace_id || !installation_id) {
+        return Response.json({ success: false, error: 'Missing data' }, { status: 400 });
     }
-    
-    // Initialize Supabase client
-    const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
-    
-    // Get the user ID from the session
-    const authHeader = context.request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    try {
+        // Initialize Supabase client
+        const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
+
+        // Exchange code for access token
+        const tokenResponse = await ky.post('https://github.com/login/oauth/access_token', {
+            json: {
+                client_id: context.env.GITHUB_CLIENT_ID,
+                client_secret: context.env.GITHUB_CLIENT_SECRET,
+                code: code,
+                redirect_uri: 'http://localhost:8788/integrations',
+            },
+            headers: {
+                Accept: 'application/json',
+                'User-Agent': 'Weekfuse',
+            },
+        });
+
+        const tokenData = await tokenResponse.json();
+
+        if (tokenData.error || !tokenData.access_token) {
+            console.error('GitHub token exchange error:', tokenData);
+            return Response.json(
+                {
+                    success: false,
+                    error: tokenData.error || 'Failed to get access token',
+                },
+                { status: 400 },
+            );
+        }
+
+        // Save the access token in Supabase
+        const { error: updateError } = await supabase.from('workspace_integrations').upsert({
+            type: 'github',
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            installation_id,
+            workspace_id,
+            status: 'active',
+            last_sync: toUTC(),
+        });
+
+        if (updateError) {
+            console.error('Supabase update error:', updateError);
+            return Response.json(
+                {
+                    success: false,
+                    error: 'Failed to save integration data',
+                },
+                { status: 500 },
+            );
+        }
+
+        // Fetch issues assigned to the user
+        const issuesResponse = await ky.get('https://api.github.com/user/issues', {
+            headers: {
+                Authorization: `Bearer ${tokenData.access_token}`,
+                'User-Agent': 'emileond',
+            },
+        });
+
+        const issuesData = await issuesResponse.json();
+
+        // Process and store issues (simplified for now)
+        if (issuesData && Array.isArray(issuesData)) {
+            const upsertPromises = issuesData.map((issue) =>
+                supabase.from('tasks').upsert(
+                    {
+                        name: issue.title,
+                        description: {
+                            type: 'doc',
+                            content: [
+                                {
+                                    type: 'paragraph',
+                                    content: [{ type: 'text', text: issue.body }],
+                                },
+                            ],
+                        },
+                        workspace_id: workspace_id,
+                        integration_source: 'github',
+                        external_id: issue.id,
+                        created_at: issue.created_at,
+                    },
+                    {
+                        onConflict: ['integration_source', 'external_id'],
+                    },
+                ),
+            );
+
+            const results = await Promise.all(upsertPromises);
+
+            results.forEach((result, index) => {
+                if (result.error) {
+                    console.error(`Upsert error for issue ${issuesData[index].id}:`, result.error);
+                } else {
+                    console.log(`Issue ${issuesData[index].id} imported successfully`);
+                }
+            });
+        }
+
+        return Response.json({ success: true, issuesData });
+    } catch (error) {
+        console.error('Error in GitHub auth flow:', error);
+        return Response.json(
+            {
+                success: false,
+                error: 'Internal server error',
+            },
+            { status: 500 },
+        );
     }
-    
-    const token = authHeader.split(' ')[1];
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Delete the GitHub integration for this user
-    const { error: deleteError } = await supabase
-        .from('github_integrations')
-        .delete()
-        .eq('user_id', user.id);
-    
-    if (deleteError) {
-        return Response.json({ error: 'Failed to disconnect GitHub integration' }, { status: 500 });
-    }
-    
-    return Response.json({ success: true });
 }
