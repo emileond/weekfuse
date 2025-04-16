@@ -93,6 +93,8 @@ export async function onRequestPost(context) {
                     })
                     .json();
 
+                console.log(pageData);
+
                 // Destructure the issues array and total count from the response
                 const { issues: pageIssues = [], total: totalIssues = 0 } = pageData;
 
