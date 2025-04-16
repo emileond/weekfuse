@@ -23,7 +23,7 @@ export const githubSync = schedules.task({
 
         // Fetch active workspace integrations that need syncing
         const { data: integrations, error: fetchError } = await supabase
-            .from('workspace_integrations')
+            .from('user_integrations')
             .select('*')
             .eq('type', 'github')
             .eq('status', 'active')
@@ -65,7 +65,7 @@ export const githubSync = schedules.task({
                 if (res.error) {
                     logger.error('Failed to refresh access token');
                     await supabase
-                        .from('workspace_integrations')
+                        .from('user_integrations')
                         .update({
                             status: 'error',
                         })

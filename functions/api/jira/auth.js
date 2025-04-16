@@ -5,9 +5,9 @@ import { toUTC } from '../../../src/utils/dateUtils.js';
 // Handle POST requests for initiating Jira OAuth flow
 export async function onRequestPost(context) {
     const body = await context.request.json();
-    const { code, workspace_id } = body;
+    const { code, user_id, workspace_id } = body;
 
-    if (!code || !workspace_id) {
+    if (!code || !!user_id || !workspace_id) {
         return Response.json({ success: false, error: 'Missing data' }, { status: 400 });
     }
 
@@ -45,10 +45,11 @@ export async function onRequestPost(context) {
         }
 
         // Save the access token in Supabase
-        const { error: updateError } = await supabase.from('workspace_integrations').upsert({
+        const { error: updateError } = await supabase.from('user_integrations').upsert({
             type: 'jira',
             access_token: access_token,
             refresh_token: refresh_token,
+            user_id,
             workspace_id,
             status: 'active',
             last_sync: toUTC(),
@@ -123,7 +124,7 @@ export async function onRequestPost(context) {
                         //         },
                         //     ],
                         // },
-                        workspace_id: workspace_id,
+                        workspace_id,
                         integration_source: 'jira',
                         external_id: issue.id,
                         external_data: issue,

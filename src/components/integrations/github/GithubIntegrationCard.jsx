@@ -2,19 +2,15 @@ import IntegrationCard from '../IntegrationCard.jsx';
 import { RiGithubFill } from 'react-icons/ri';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
+import { useUser } from '../../../hooks/react-query/user/useUser.js';
 import {
-    useWorkspaceIntegration,
+    useUserIntegration,
     useDeleteIntegration,
-} from '../../../hooks/react-query/integrations/useWorkspaceIntegrations.js';
+} from '../../../hooks/react-query/integrations/useUserIntegrations.js';
 
 const GithubIntegrationCard = () => {
-    const [currentWorkspace] = useCurrentWorkspace();
-    const {
-        data: integration,
-        isLoading,
-        isPending,
-    } = useWorkspaceIntegration(currentWorkspace, 'github');
+    const { data: user } = useUser();
+    const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'github');
     const deleteIntegration = useDeleteIntegration();
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);

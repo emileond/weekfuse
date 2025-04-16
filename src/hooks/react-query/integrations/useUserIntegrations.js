@@ -3,11 +3,11 @@ import { supabaseClient } from '../../../lib/supabase';
 import ky from 'ky';
 
 // Fetch integration for a specific workspace / integration type
-const fetchIntegration = async ({ workspace_id, type }) => {
+const fetchIntegration = async ({ user_id, type }) => {
     const { data, error } = await supabaseClient
-        .from('workspace_integrations')
+        .from('user_integrations')
         .select('id, status, installation_id')
-        .eq('workspace_id', workspace_id)
+        .eq('user_id', user_id)
         .eq('type', type)
         .single();
 
@@ -23,16 +23,16 @@ const fetchIntegration = async ({ workspace_id, type }) => {
 };
 
 // Hook to fetch projects
-export const useWorkspaceIntegration = (currentWorkspace, type) => {
+export const useUserIntegration = (user_id, type) => {
     return useQuery({
-        queryKey: ['workspace_integration', currentWorkspace?.workspace_id, type],
+        queryKey: ['user_integration', user_id, type],
         queryFn: () =>
             fetchIntegration({
-                workspace_id: currentWorkspace?.workspace_id,
+                user_id,
                 type,
             }),
         staleTime: 1000 * 60 * 60, // 60 minutes
-        enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided
+        enabled: !!user_id, // Only fetch if workspace_id is provided
     });
 };
 
@@ -46,7 +46,7 @@ const deleteIntegration = async ({ id, installation_id, type }) => {
     }
 
     // Then delete from the database
-    const { error } = await supabaseClient.from('workspace_integrations').delete().eq('id', id);
+    const { error } = await supabaseClient.from('user_integrations').delete().eq('id', id);
 
     if (error) {
         throw new Error('Failed to delete integration');
@@ -64,7 +64,7 @@ export const useDeleteIntegration = () => {
         onSuccess: () => {
             // Invalidate the relevant query
             queryClient.invalidateQueries({
-                queryKey: ['workspace_integration'],
+                queryKey: ['user_integration'],
                 exact: false,
                 type: 'all',
             });

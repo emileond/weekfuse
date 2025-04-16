@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import ky from 'ky';
+import { useUser } from '../../hooks/react-query/user/useUser.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import toast from 'react-hot-toast';
 import { Spinner } from '@heroui/react';
@@ -8,6 +9,7 @@ import AppLayout from '../../components/layout/AppLayout.jsx';
 import { useQueryClient } from '@tanstack/react-query';
 
 const OAuthCallback = () => {
+    const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const { provider } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -22,16 +24,17 @@ const OAuthCallback = () => {
                 json: {
                     code,
                     installation_id,
+                    user_id: user.id,
                     workspace_id: currentWorkspace.workspace_id,
                 },
             });
 
             toast.success('GitHub Integration connected');
             await queryClient.cancelQueries({
-                queryKey: ['workspace_integration', currentWorkspace?.workspace_id, 'github'],
+                queryKey: ['user_integration', user?.id, 'github'],
             });
             await queryClient.invalidateQueries({
-                queryKey: ['workspace_integration', currentWorkspace?.workspace_id, 'github'],
+                queryKey: ['user_integration', user?.id, 'github'],
             });
         } catch (error) {
             let errorMessage = 'Failed to connect GitHub Integration';
@@ -53,16 +56,17 @@ const OAuthCallback = () => {
             await ky.post('/api/jira/auth', {
                 json: {
                     code,
+                    user_id: user.id,
                     workspace_id: currentWorkspace.workspace_id,
                 },
             });
 
             toast.success('Jira Integration connected');
             await queryClient.cancelQueries({
-                queryKey: ['workspace_integration', currentWorkspace?.workspace_id, 'jira'],
+                queryKey: ['user_integration', user?.id, 'jira'],
             });
             await queryClient.invalidateQueries({
-                queryKey: ['workspace_integration', currentWorkspace?.workspace_id, 'jira'],
+                queryKey: ['user_integration', user?.id, 'jira'],
             });
         } catch (error) {
             let errorMessage = 'Failed to connect Jira Integration';
@@ -79,7 +83,7 @@ const OAuthCallback = () => {
     };
 
     useEffect(() => {
-        if (!currentWorkspace) return;
+        if (!user) return;
 
         const code = searchParams.get('code');
 
@@ -96,7 +100,7 @@ const OAuthCallback = () => {
             default:
                 toast.error('Unsupported OAuth provider');
         }
-    }, [provider, currentWorkspace]);
+    }, [provider, user]);
 
     if (loading)
         return (
