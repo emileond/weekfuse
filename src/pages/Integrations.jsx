@@ -4,6 +4,7 @@ import IntegrationCard from '../components/integrations/IntegrationCard';
 import { RiGithubFill, RiSlackFill } from 'react-icons/ri';
 import { Link } from '@heroui/react';
 import GithubIntegrationCard from '../components/integrations/github/GithubIntegrationCard.jsx';
+import JiraIntegrationCard from '../components/integrations/jira/JiraIntegrationCard.jsx';
 
 function IntegrationsPage() {
     // Define all integrations with GitHub having dynamic status and handlers
@@ -41,6 +42,7 @@ function IntegrationsPage() {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <GithubIntegrationCard />
+                    <JiraIntegrationCard />
                     {integrations?.map((integration) => (
                         <IntegrationCard
                             key={integration.id}

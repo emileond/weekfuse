@@ -151,7 +151,7 @@ function IntegrationCard({
                                     )}
                                     <Button
                                         size="sm"
-                                        variant="ghost"
+                                        variant="light"
                                         color="danger"
                                         onPress={handleDisconnect}
                                         startContent={<RiShutDownLine fontSize={BTN_ICON_SIZE} />}
@@ -162,7 +162,7 @@ function IntegrationCard({
                                 </>
                             ) : (
                                 <Button
-                                    variant="bordered"
+                                    variant="ghost"
                                     size="sm"
                                     onPress={handleConnect}
                                     startContent={<RiLoginCircleLine fontSize={BTN_ICON_SIZE} />}

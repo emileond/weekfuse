@@ -8,19 +8,20 @@ import {
     useDeleteIntegration,
 } from '../../../hooks/react-query/integrations/useWorkspaceIntegrations.js';
 
-const GithubIntegrationCard = () => {
+const JiraIntegrationCard = () => {
     const [currentWorkspace] = useCurrentWorkspace();
     const {
         data: integration,
         isLoading,
         isPending,
-    } = useWorkspaceIntegration(currentWorkspace, 'github');
+    } = useWorkspaceIntegration(currentWorkspace, 'jira');
     const deleteIntegration = useDeleteIntegration();
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
 
     const handleConnect = () => {
-        window.location.href = 'https://github.com/apps/weekfuse/installations/new';
+        window.location.href =
+            'https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=O4tGSfMVVADbcB7j7ZtiQKvDuN4ExclE&scope=read%3Aissue%3Ajira%20write%3Aissue%3Ajira%20read%3Aissue.remote-link%3Ajira%20read%3Aissue-details%3Ajira%20read%3Aissue%3Ajira-software%20read%3Aissue-meta%3Ajira%20read%3Aissue.property%3Ajira%20read%3Aissue-type%3Ajira%20read%3Aepic%3Ajira-software20offline_access&redirect_uri=https%3A%2F%2Fweekfuse.com%2Fintegrations%2Foauth%2Fcallback%2Fjira&state=${YOUR_USER_BOUND_VALUE}&response_type=code&prompt=consent';
     };
 
     const handleDisconnect = () => {
@@ -58,12 +59,12 @@ const GithubIntegrationCard = () => {
 
     return (
         <IntegrationCard
-            id="github"
-            name="Github"
+            id="jira"
+            name="Jira"
             isLoading={loading}
             isPending={isPending}
             icon={<RiGithubFill />}
-            description="Import GitHub issues assigned to you."
+            description="Import Jira tickets assigned to you."
             status={status}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
@@ -72,4 +73,4 @@ const GithubIntegrationCard = () => {
     );
 };
 
-export default GithubIntegrationCard;
+export default JiraIntegrationCard;
