@@ -23,7 +23,7 @@ export async function onRequestPost(context) {
                     client_secret: context.env.JIRA_CLIENT_SECRET,
                     code: code,
                     redirect_uri: 'https://weekfuse.com/integrations/oauth/callback/jira',
-                    grant_type: 'authorization_code',
+                    grant_type: 'access_token',
                 },
                 headers: {
                     'Content-Type': 'application/json',
