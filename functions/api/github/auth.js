@@ -50,7 +50,7 @@ export async function onRequestPost(context) {
     const body = await context.request.json();
     const { code, user_id, workspace_id, installation_id } = body;
 
-    if (!code || !user_id || !!workspace_id || !installation_id) {
+    if (!code || !user_id || !workspace_id || !installation_id) {
         return Response.json({ success: false, error: 'Missing data' }, { status: 400 });
     }
 
