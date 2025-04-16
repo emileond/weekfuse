@@ -31,6 +31,7 @@ import UpcomingPage from './pages/Upcoming.jsx';
 import ProjectsPage from './pages/Projects.jsx';
 import ProjectTasksPage from './pages/ProjectTasks.jsx';
 import NotesPage from './pages/Notes.jsx';
+import OauthCallback from './pages/integrations/OauthCallback.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -130,6 +131,14 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <IntegrationsPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/integrations/oauth/callback/:provider',
+            element: (
+                <ProtectedRoute>
+                    <OauthCallback />
                 </ProtectedRoute>
             ),
         },
