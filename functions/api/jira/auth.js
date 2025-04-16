@@ -113,7 +113,7 @@ export async function onRequestPost(context) {
             const upsertPromises = issuesData.map((issue) =>
                 supabase.from('tasks').upsert(
                     {
-                        name: issue.summary,
+                        name: issue.fields.summary,
                         // description: {
                         //     type: 'doc',
                         //     content: [
