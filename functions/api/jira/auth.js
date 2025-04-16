@@ -93,8 +93,6 @@ export async function onRequestPost(context) {
                     })
                     .json();
 
-                console.log(pageData);
-
                 // Destructure the issues array and total count from the response
                 const { issues: pageIssues = [], total: totalIssues = 0 } = pageData;
 
@@ -115,7 +113,7 @@ export async function onRequestPost(context) {
             const upsertPromises = issuesData.map((issue) =>
                 supabase.from('tasks').upsert(
                     {
-                        name: issue.description,
+                        name: issue.summary,
                         // description: {
                         //     type: 'doc',
                         //     content: [
