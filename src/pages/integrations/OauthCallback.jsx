@@ -83,7 +83,7 @@ const OAuthCallback = () => {
     };
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !currentWorkspace) return;
 
         const code = searchParams.get('code');
 
@@ -100,7 +100,7 @@ const OAuthCallback = () => {
             default:
                 toast.error('Unsupported OAuth provider');
         }
-    }, [provider, user]);
+    }, [provider, user, currentWorkspace]);
 
     if (loading)
         return (
