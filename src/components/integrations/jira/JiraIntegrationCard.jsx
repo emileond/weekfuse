@@ -21,7 +21,7 @@ const JiraIntegrationCard = () => {
 
     const handleConnect = () => {
         window.location.href =
-            'https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=O4tGSfMVVADbcB7j7ZtiQKvDuN4ExclE&scope=read%3Aissue%3Ajira%20write%3Aissue%3Ajira%20read%3Aissue.remote-link%3Ajira%20read%3Aissue-details%3Ajira%20read%3Aissue%3Ajira-software%20read%3Aissue-meta%3Ajira%20read%3Aissue.property%3Ajira%20read%3Aissue-type%3Ajira%20read%3Aepic%3Ajira-software20offline_access&redirect_uri=https%3A%2F%2Fweekfuse.com%2Fintegrations%2Foauth%2Fcallback%2Fjira&state=${YOUR_USER_BOUND_VALUE}&response_type=code&prompt=consent';
+            'https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=O4tGSfMVVADbcB7j7ZtiQKvDuN4ExclE&scope=offline_access%20read%3Aissue%3Ajira%20write%3Aissue%3Ajira%20read%3Aissue.remote-link%3Ajira%20read%3Aissue-details%3Ajira%20read%3Aissue%3Ajira-software%20read%3Aissue-meta%3Ajira%20read%3Aissue.property%3Ajira%20read%3Aissue-type%3Ajira%20read%3Aepic%3Ajira-software&redirect_uri=https%3A%2F%2Fweekfuse.com%2Fintegrations%2Foauth%2Fcallback%2Fjira&state=${YOUR_USER_BOUND_VALUE}&response_type=code&prompt=consent';
     };
 
     const handleDisconnect = () => {
