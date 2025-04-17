@@ -1,4 +1,4 @@
-import { logger, schedules } from '@trigger.dev/sdk/v3';
+import { logger, schedules, AbortTaskRunError } from '@trigger.dev/sdk/v3';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import { toUTC } from '../utils/dateUtils';
@@ -63,7 +63,7 @@ export const githubSync = schedules.task({
                     .json();
 
                 if (res.error) {
-                    logger.error('Failed to refresh access token');
+                    logger.error('Failed to refresh access token', res.error);
                     await supabase
                         .from('user_integrations')
                         .update({
@@ -128,7 +128,7 @@ export const githubSync = schedules.task({
 
                 // Update the last_sync timestamp
                 await supabase
-                    .from('workspace_integrations')
+                    .from('user_integrations')
                     .update({
                         access_token,
                         refresh_token,

@@ -45,6 +45,32 @@ const GithubIntegrationCard = () => {
         );
     };
 
+    const handleReset = () => {
+        if (!integration) return;
+
+        setLoading(true);
+        deleteIntegration.mutate(
+            {
+                id: integration.id,
+                installation_id: integration.installation_id,
+                type: 'github',
+            },
+            {
+                onSuccess: () => {
+                    setStatus('inactive');
+                    toast.success('Github Integration disconnected');
+                },
+                onError: (error) => {
+                    console.error('Error disconnecting Github:', error);
+                    toast.error('Failed to disconnect Github Integration');
+                },
+                onSettled: () => {
+                    setLoading(false);
+                },
+            },
+        );
+    };
+
     useEffect(() => {
         setLoading(isLoading);
         if (integration) {
@@ -63,6 +89,7 @@ const GithubIntegrationCard = () => {
             status={status}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
+            onReset={handleReset}
             hasConfigOptions={false}
         />
     );

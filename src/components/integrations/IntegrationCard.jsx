@@ -11,11 +11,6 @@ import {
     ModalBody,
     ModalFooter,
     useDisclosure,
-    Drawer,
-    DrawerContent,
-    DrawerHeader,
-    DrawerBody,
-    DrawerFooter,
     Image,
     Divider,
     Spinner,
@@ -33,17 +28,11 @@ function IntegrationCard({
     isPending,
     onConnect,
     onDisconnect,
+    onReset,
     hasConfigOptions,
     onConfigure,
 }) {
     const BTN_ICON_SIZE = '1rem';
-
-    // Modal for connect action
-    const {
-        isOpen: isConnectModalOpen,
-        onOpen: onConnectModalOpen,
-        onClose: onConnectModalClose,
-    } = useDisclosure();
 
     // Modal for disconnect confirmation
     const {
@@ -52,20 +41,9 @@ function IntegrationCard({
         onClose: onDisconnectModalClose,
     } = useDisclosure();
 
-    // Drawer for configuration
-    const {
-        isOpen: isConfigDrawerOpen,
-        onOpen: onConfigDrawerOpen,
-        onClose: onConfigDrawerClose,
-    } = useDisclosure();
-
     // Handle connect action
     const handleConnect = () => {
-        if (onConnect) {
-            onConnect();
-        } else {
-            onConnectModalOpen();
-        }
+        onConnect();
     };
 
     // Handle disconnect action
@@ -75,11 +53,12 @@ function IntegrationCard({
 
     // Handle configure action
     const handleConfigure = () => {
-        if (onConfigure) {
-            onConfigure();
-        } else {
-            onConfigDrawerOpen();
-        }
+        onConfigure();
+    };
+
+    // Handle configure action
+    const handleError = () => {
+        onReset();
     };
 
     // Determine status chip color
@@ -93,6 +72,62 @@ function IntegrationCard({
                 return 'primary';
             default:
                 return 'default';
+        }
+    };
+
+    const getActions = () => {
+        switch (status) {
+            case 'active':
+                return (
+                    <>
+                        {hasConfigOptions && (
+                            <Button
+                                size="sm"
+                                variant="bordered"
+                                onPress={handleConfigure}
+                                startContent={<RiEqualizer3Fill fontSize={BTN_ICON_SIZE} />}
+                            >
+                                Configure
+                            </Button>
+                        )}
+                        <Button
+                            size="sm"
+                            variant="bordered"
+                            color="danger"
+                            onPress={handleDisconnect}
+                            startContent={<RiShutDownLine fontSize={BTN_ICON_SIZE} />}
+                            isDisabled={isLoading}
+                        >
+                            Disconnect
+                        </Button>
+                    </>
+                );
+            case 'error':
+                return (
+                    <Button
+                        size="sm"
+                        variant="bordered"
+                        onPress={handleError}
+                        startContent={<RiShutDownLine fontSize={BTN_ICON_SIZE} />}
+                        isDisabled={isLoading}
+                    >
+                        Reconnect
+                    </Button>
+                );
+            case 'soon':
+                return <></>;
+            default:
+                return (
+                    <Button
+                        variant="bordered"
+                        size="sm"
+                        onPress={handleConnect}
+                        startContent={<RiLoginCircleLine fontSize={BTN_ICON_SIZE} />}
+                        isLoading={isLoading}
+                    >
+                        Connect
+                    </Button>
+                );
         }
     };
 
@@ -135,66 +170,11 @@ function IntegrationCard({
                     <>
                         <Divider />
                         <CardFooter className="flex justify-end gap-2 pt-4">
-                            {status === 'active' ? (
-                                <>
-                                    {hasConfigOptions && (
-                                        <Button
-                                            size="sm"
-                                            variant="bordered"
-                                            onPress={handleConfigure}
-                                            startContent={
-                                                <RiEqualizer3Fill fontSize={BTN_ICON_SIZE} />
-                                            }
-                                        >
-                                            Configure
-                                        </Button>
-                                    )}
-                                    <Button
-                                        size="sm"
-                                        variant="light"
-                                        color="danger"
-                                        onPress={handleDisconnect}
-                                        startContent={<RiShutDownLine fontSize={BTN_ICON_SIZE} />}
-                                        isDisabled={isLoading}
-                                    >
-                                        Disconnect
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onPress={handleConnect}
-                                    startContent={<RiLoginCircleLine fontSize={BTN_ICON_SIZE} />}
-                                    isLoading={isLoading}
-                                >
-                                    Connect
-                                </Button>
-                            )}
+                            {getActions()}
                         </CardFooter>
                     </>
                 )}
             </Card>
-
-            {/* Connect Modal */}
-            <Modal isOpen={isConnectModalOpen} onClose={onConnectModalClose}>
-                <ModalContent>
-                    <ModalHeader>Connect {name}</ModalHeader>
-                    <ModalBody>
-                        <p>Configure your connection to {name}.</p>
-                        {/* Connection form would go here */}
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="flat" onPress={onConnectModalClose}>
-                            Cancel
-                        </Button>
-                        <Button color="primary" onPress={onConnectModalClose}>
-                            Connect
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
-
             {/* Disconnect Confirmation Dialog */}
             <Modal isOpen={isDisconnectModalOpen} onClose={onDisconnectModalClose}>
                 <ModalContent>
@@ -220,25 +200,6 @@ function IntegrationCard({
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-
-            {/* Configuration Drawer */}
-            <Drawer isOpen={isConfigDrawerOpen} onClose={onConfigDrawerClose} placement="right">
-                <DrawerContent>
-                    <DrawerHeader>{name} Configuration</DrawerHeader>
-                    <DrawerBody>
-                        <p>Configure your {name} integration settings.</p>
-                        {/* Configuration form would go here */}
-                    </DrawerBody>
-                    <DrawerFooter>
-                        <Button variant="flat" onPress={onConfigDrawerClose} isDisabled={isLoading}>
-                            Cancel
-                        </Button>
-                        <Button color="primary" onPress={onConfigDrawerClose} isLoading={isLoading}>
-                            Save
-                        </Button>
-                    </DrawerFooter>
-                </DrawerContent>
-            </Drawer>
         </>
     );
 }

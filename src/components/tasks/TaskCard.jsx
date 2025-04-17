@@ -22,7 +22,7 @@ import EntityChip from '../common/EntityChip.jsx';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
-import IntegrationSourceIcon from './IntegrationSourceIcon.jsx';
+import IntegrationSourceIcon from './integrations/IntegrationSourceIcon.jsx';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');

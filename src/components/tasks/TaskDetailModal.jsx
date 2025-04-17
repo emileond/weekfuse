@@ -21,10 +21,8 @@ import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
 import { RiCheckboxCircleFill, RiCheckboxCircleLine } from 'react-icons/ri';
-import IntegrationSourceIcon from './IntegrationSourceIcon.jsx';
-import TaskIntegrationPanel from './TaskIntegrationPanel.jsx';
+import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
-import { tinymceToTiptap } from '../../utils/editorUtils.js';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();

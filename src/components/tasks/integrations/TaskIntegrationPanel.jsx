@@ -1,4 +1,4 @@
-import IntegrationSourceIcon from './IntegrationSourceIcon.jsx';
+import IntegrationSourceIcon from '../integrations/IntegrationSourceIcon.jsx';
 import {
     Chip,
     User,
@@ -19,11 +19,12 @@ import {
     RiCheckboxCircleLine,
     RiGitRepositoryLine,
 } from 'react-icons/ri';
-import { colorContrast } from '../../utils/colorContrast.js';
+import { colorContrast } from '../../../utils/colorContrast.js';
 import ky from 'ky';
-import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
+import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import JiraTaskDetails from './jira/JiraTaskDetails.jsx';
 
 const TaskIntegrationLink = ({ source, external_data }) => {
     switch (source) {
@@ -105,6 +106,7 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
                                         <Button
                                             size="sm"
                                             variant="flat"
+                                            className="font-medium"
                                             startContent={
                                                 external_data?.state === 'open' ? (
                                                     <RiCheckboxBlankCircleLine
@@ -200,69 +202,7 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
             );
 
         case 'jira':
-            return (
-                <>
-                    {external_data?.fields?.priority && (
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm">Priority</label>
-                            <Chip
-                                color="default"
-                                variant="light"
-                                startContent={
-                                    <Image
-                                        width={18}
-                                        src={external_data?.fields?.priority?.iconUrl}
-                                    />
-                                }
-                            >
-                                {external_data?.fields?.priority?.name}
-                            </Chip>
-                        </div>
-                    )}
-                    {!!external_data?.fields?.labels?.length && (
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm">Labels</label>
-                            <div className="flex flex-wrap gap-1">
-                                {external_data?.fields?.labels?.map((label) => (
-                                    <Chip key={label} size="sm">
-                                        {label}
-                                    </Chip>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {!!external_data?.fields?.assignee && (
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm">Assignee</label>
-                            <div className="flex flex-wrap gap-1">
-                                <User
-                                    name={external_data?.fields?.assignee?.displayName}
-                                    avatarProps={{
-                                        src: external_data?.fields?.assignee?.avatarUrls?.['24x24'],
-                                        size: 'sm',
-                                        className: 'w-6 h-6 text-tiny',
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
-                    {!!external_data?.fields?.reporter && (
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm">Reporter</label>
-                            <div className="flex flex-wrap gap-1">
-                                <User
-                                    name={external_data?.fields?.reporter?.displayName}
-                                    avatarProps={{
-                                        src: external_data?.fields?.reporter?.avatarUrls?.['24x24'],
-                                        size: 'sm',
-                                        className: 'w-6 h-6 text-tiny',
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </>
-            );
+            return <JiraTaskDetails external_data={external_data} />;
     }
 };
 

@@ -25,11 +25,10 @@ const SimpleEditor = ({ defaultContent = '', label, onChange, isEditable = true 
             },
 
             renderHTML({ options, node }) {
-                console.log(node);
                 return [
                     'a',
                     mergeAttributes({ href: '#' }, options.HTMLAttributes),
-                    `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`,
+                    `${node.attrs.label ?? options.suggestion.char + node.attrs.id}`,
                 ];
             },
         }),
@@ -42,7 +41,7 @@ const SimpleEditor = ({ defaultContent = '', label, onChange, isEditable = true 
         editable: isEditable,
         editorProps: {
             attributes: {
-                class: `prose dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
+                class: `prose prose-sm dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
             },
         },
         onBlur: ({ editor }) => {
