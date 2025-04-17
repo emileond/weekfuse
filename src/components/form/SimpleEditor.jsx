@@ -1,10 +1,11 @@
-import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Typography from '@tiptap/extension-typography';
 import Highlight from '@tiptap/extension-highlight';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
+import Mention from '@tiptap/extension-mention';
+import { mergeAttributes } from '@tiptap/core';
 
 // Import editor fixes
 import '../editor/editor-fixes.css';
@@ -17,6 +18,20 @@ const SimpleEditor = ({ defaultContent = '', label, onChange, isEditable = true 
         TaskList,
         TaskItem.configure({
             nested: true,
+        }),
+        Mention.configure({
+            HTMLAttributes: {
+                class: 'text-blue',
+            },
+
+            renderHTML({ options, node }) {
+                console.log(node);
+                return [
+                    'a',
+                    mergeAttributes({ href: '#' }, options.HTMLAttributes),
+                    `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`,
+                ];
+            },
         }),
     ];
     const content = JSON.parse(defaultContent);

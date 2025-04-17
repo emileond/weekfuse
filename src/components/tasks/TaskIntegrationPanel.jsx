@@ -3,6 +3,7 @@ import {
     Chip,
     User,
     Link,
+    Image,
     Divider,
     Dropdown,
     DropdownTrigger,
@@ -23,6 +24,36 @@ import ky from 'ky';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+
+const TaskIntegrationLink = ({ source, external_data }) => {
+    switch (source) {
+        case 'github':
+            return (
+                <Link
+                    className="font-medium text-blue-700 text-sm"
+                    isExternal
+                    showAnchorIcon
+                    href={external_data?.html_url}
+                >
+                    #{external_data?.number}
+                </Link>
+            );
+        case 'jira':
+            return (
+                <div className="flex gap-1 items-center">
+                    <Image src={external_data?.fields?.issuetype?.iconUrl} />
+                    <Link
+                        className="font-medium text-blue-700 text-sm"
+                        isExternal
+                        showAnchorIcon
+                        href={external_data?.self}
+                    >
+                        {external_data?.key}
+                    </Link>
+                </div>
+            );
+    }
+};
 
 export const TaskIntegrationDetails = ({ source, external_id, external_data }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -121,6 +152,7 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
                                 avatarProps={{
                                     src: member?.avatar_url,
                                     size: 'sm',
+                                    className: 'w-6 h-6 text-tiny',
                                 }}
                             />
                         ))}
@@ -166,23 +198,83 @@ export const TaskIntegrationDetails = ({ source, external_id, external_data }) =
                     )}
                 </>
             );
+
+        case 'jira':
+            return (
+                <>
+                    {external_data?.fields?.priority && (
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm">Priority</label>
+                            <Chip
+                                color="default"
+                                variant="light"
+                                startContent={
+                                    <Image
+                                        width={18}
+                                        src={external_data?.fields?.priority?.iconUrl}
+                                    />
+                                }
+                            >
+                                {external_data?.fields?.priority?.name}
+                            </Chip>
+                        </div>
+                    )}
+                    {!!external_data?.fields?.labels?.length && (
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm">Labels</label>
+                            <div className="flex flex-wrap gap-1">
+                                {external_data?.fields?.labels?.map((label) => (
+                                    <Chip key={label} size="sm">
+                                        {label}
+                                    </Chip>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {!!external_data?.fields?.assignee && (
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm">Assignee</label>
+                            <div className="flex flex-wrap gap-1">
+                                <User
+                                    name={external_data?.fields?.assignee?.displayName}
+                                    avatarProps={{
+                                        src: external_data?.fields?.assignee?.avatarUrls?.['24x24'],
+                                        size: 'sm',
+                                        className: 'w-6 h-6 text-tiny',
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    {!!external_data?.fields?.reporter && (
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm">Reporter</label>
+                            <div className="flex flex-wrap gap-1">
+                                <User
+                                    name={external_data?.fields?.reporter?.displayName}
+                                    avatarProps={{
+                                        src: external_data?.fields?.reporter?.avatarUrls?.['24x24'],
+                                        size: 'sm',
+                                        className: 'w-6 h-6 text-tiny',
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
     }
 };
 
 const TaskIntegrationPanel = ({ source, external_id, external_data }) => {
     return (
         <div className="flex flex-col gap-6 bg-content2 basis-1/3 p-6 border-l-1 border-default-200">
-            <h4 className="font-semibold flex gap-1">
-                <IntegrationSourceIcon type={source} /> {source}
-                <Link
-                    className="font-medium text-blue-700"
-                    isExternal
-                    showAnchorIcon
-                    href={external_data?.html_url}
-                >
-                    #{external_data?.number}
-                </Link>
-            </h4>
+            <div className="flex gap-3 items-center">
+                <h4 className="font-semibold flex gap-1">
+                    <IntegrationSourceIcon type={source} /> {source}
+                </h4>
+                <TaskIntegrationLink source={source} external_data={external_data} />
+            </div>
             <Divider />
             <TaskIntegrationDetails
                 source={source}

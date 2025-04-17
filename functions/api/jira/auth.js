@@ -1,6 +1,7 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
 import { toUTC } from '../../../src/utils/dateUtils.js';
+import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
 
 // Handle POST requests for initiating Jira OAuth flow
 export async function onRequestPost(context) {
@@ -111,19 +112,12 @@ export async function onRequestPost(context) {
 
         // Process and store issues (simplified for now)
         if (issuesData && Array.isArray(issuesData)) {
-            const upsertPromises = issuesData.map((issue) =>
-                supabase.from('tasks').upsert(
+            const upsertPromises = issuesData.map((issue) => {
+                const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+                return supabase.from('tasks').upsert(
                     {
                         name: issue.fields.summary,
-                        // description: {
-                        //     type: 'doc',
-                        //     content: [
-                        //         {
-                        //             type: 'paragraph',
-                        //             content: [{ type: 'text', text: issue.body }],
-                        //         },
-                        //     ],
-                        // },
+                        description: convertedDesc || null,
                         workspace_id,
                         integration_source: 'jira',
                         external_id: issue.id,
@@ -133,8 +127,8 @@ export async function onRequestPost(context) {
                     {
                         onConflict: ['integration_source', 'external_id'],
                     },
-                ),
-            );
+                );
+            });
 
             const results = await Promise.all(upsertPromises);
 

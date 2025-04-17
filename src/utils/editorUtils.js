@@ -1,0 +1,229 @@
+/**
+ * Utility functions for editor-related operations
+ */
+
+/**
+ * Converts TinyMCE content format to Tiptap format
+ * 
+ * @param {Object} tinymceContent - Content in TinyMCE format
+ * @returns {Object} - Content in Tiptap format
+ */
+export const tinymceToTiptap = (tinymceContent) => {
+  // If input is null or undefined, return empty document
+  if (!tinymceContent) {
+    return {
+      type: 'doc',
+      content: []
+    };
+  }
+
+  // If input is a string, try to parse it as JSON
+  const content = typeof tinymceContent === 'string' 
+    ? JSON.parse(tinymceContent) 
+    : tinymceContent;
+
+  // Create a new Tiptap document
+  const tiptapDoc = {
+    type: 'doc',
+    content: []
+  };
+
+  // If the content has no content array, return empty document
+  if (!content.content || !Array.isArray(content.content)) {
+    return tiptapDoc;
+  }
+
+  // Process each node in the content array
+  tiptapDoc.content = content.content.map(node => convertNode(node));
+
+  return tiptapDoc;
+};
+
+/**
+ * Converts a TinyMCE node to a Tiptap node
+ * 
+ * @param {Object} node - TinyMCE node
+ * @returns {Object} - Tiptap node
+ */
+const convertNode = (node) => {
+  switch (node.type) {
+    case 'paragraph':
+      return convertParagraph(node);
+    case 'bulletList':
+    case 'orderedList':
+    case 'taskList':
+      return convertList(node);
+    case 'listItem':
+    case 'taskItem':
+      return convertListItem(node);
+    case 'heading':
+      return convertHeading(node);
+    case 'blockquote':
+      return convertBlockquote(node);
+    case 'codeBlock':
+      return convertCodeBlock(node);
+    case 'image':
+      return convertImage(node);
+    default:
+      // For unknown node types, try to pass through if it has content
+      if (node.content && Array.isArray(node.content)) {
+        return {
+          ...node,
+          content: node.content.map(childNode => convertNode(childNode))
+        };
+      }
+      // Otherwise return the node as is
+      return node;
+  }
+};
+
+/**
+ * Converts a TinyMCE paragraph to a Tiptap paragraph
+ * 
+ * @param {Object} paragraph - TinyMCE paragraph node
+ * @returns {Object} - Tiptap paragraph node
+ */
+const convertParagraph = (paragraph) => {
+  return {
+    type: 'paragraph',
+    content: paragraph.content ? paragraph.content.map(node => convertInlineNode(node)) : []
+  };
+};
+
+/**
+ * Converts a TinyMCE list to a Tiptap list
+ * 
+ * @param {Object} list - TinyMCE list node
+ * @returns {Object} - Tiptap list node
+ */
+const convertList = (list) => {
+  return {
+    type: list.type,
+    content: list.content ? list.content.map(node => convertNode(node)) : []
+  };
+};
+
+/**
+ * Converts a TinyMCE list item to a Tiptap list item
+ * 
+ * @param {Object} listItem - TinyMCE list item node
+ * @returns {Object} - Tiptap list item node
+ */
+const convertListItem = (listItem) => {
+  return {
+    type: listItem.type,
+    content: listItem.content ? listItem.content.map(node => convertNode(node)) : []
+  };
+};
+
+/**
+ * Converts a TinyMCE heading to a Tiptap heading
+ * 
+ * @param {Object} heading - TinyMCE heading node
+ * @returns {Object} - Tiptap heading node
+ */
+const convertHeading = (heading) => {
+  return {
+    type: 'heading',
+    attrs: heading.attrs || { level: 1 },
+    content: heading.content ? heading.content.map(node => convertInlineNode(node)) : []
+  };
+};
+
+/**
+ * Converts a TinyMCE blockquote to a Tiptap blockquote
+ * 
+ * @param {Object} blockquote - TinyMCE blockquote node
+ * @returns {Object} - Tiptap blockquote node
+ */
+const convertBlockquote = (blockquote) => {
+  return {
+    type: 'blockquote',
+    content: blockquote.content ? blockquote.content.map(node => convertNode(node)) : []
+  };
+};
+
+/**
+ * Converts a TinyMCE codeBlock to a Tiptap codeBlock
+ * 
+ * @param {Object} codeBlock - TinyMCE codeBlock node
+ * @returns {Object} - Tiptap codeBlock node
+ */
+const convertCodeBlock = (codeBlock) => {
+  return {
+    type: 'codeBlock',
+    attrs: codeBlock.attrs || { language: null },
+    content: codeBlock.content ? codeBlock.content.map(node => convertInlineNode(node)) : []
+  };
+};
+
+/**
+ * Converts a TinyMCE image to a Tiptap image
+ * 
+ * @param {Object} image - TinyMCE image node
+ * @returns {Object} - Tiptap image node
+ */
+const convertImage = (image) => {
+  return {
+    type: 'image',
+    attrs: image.attrs || { src: '', alt: '' }
+  };
+};
+
+/**
+ * Converts a TinyMCE inline node to a Tiptap inline node
+ * 
+ * @param {Object} node - TinyMCE inline node
+ * @returns {Object} - Tiptap inline node
+ */
+const convertInlineNode = (node) => {
+  switch (node.type) {
+    case 'text':
+      return convertText(node);
+    case 'mention':
+      return convertMention(node);
+    case 'hardBreak':
+      return { type: 'hardBreak' };
+    default:
+      // For unknown inline node types, return as is
+      return node;
+  }
+};
+
+/**
+ * Converts a TinyMCE text node to a Tiptap text node
+ * 
+ * @param {Object} textNode - TinyMCE text node
+ * @returns {Object} - Tiptap text node
+ */
+const convertText = (textNode) => {
+  const tiptapTextNode = {
+    type: 'text',
+    text: textNode.text || ''
+  };
+
+  // Handle marks (bold, italic, etc.)
+  if (textNode.marks && Array.isArray(textNode.marks)) {
+    tiptapTextNode.marks = textNode.marks;
+  }
+
+  return tiptapTextNode;
+};
+
+/**
+ * Converts a TinyMCE mention node to a Tiptap mention node
+ * 
+ * @param {Object} mentionNode - TinyMCE mention node
+ * @returns {Object} - Tiptap mention node
+ */
+const convertMention = (mentionNode) => {
+  return {
+    type: 'mention',
+    attrs: {
+      id: mentionNode.attrs?.id || '',
+      label: mentionNode.attrs?.text || '',
+      // Map other attributes as needed
+      ...mentionNode.attrs
+    }
+  };
+};
