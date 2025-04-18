@@ -11,7 +11,7 @@ import { useUser } from '../../../hooks/react-query/user/useUser.js';
 const JiraIntegrationCard = () => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'jira');
-    const deleteIntegration = useDeleteIntegration();
+    const deleteIntegration = useDeleteIntegration(user.id, 'jira');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
 
@@ -28,7 +28,7 @@ const JiraIntegrationCard = () => {
             {
                 id: integration.id,
                 installation_id: integration.installation_id,
-                type: 'github',
+                type: 'jira',
             },
             {
                 onSuccess: () => {

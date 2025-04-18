@@ -1,6 +1,6 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
-import { toUTC } from '../../../src/utils/dateUtils.js';
+import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 import { App, Octokit } from 'octokit';
 
 // Handle DELETE requests for disconnecting GitHub integration
@@ -85,6 +85,12 @@ export async function onRequestPost(context) {
             );
         }
 
+        // Calculate expires_at if expires_in is available
+        let expires_at = null;
+        if (tokenData.expires_in) {
+            expires_at = calculateExpiresAt(tokenData.expires_in - 600);
+        }
+
         // Save the access token in Supabase
         const { error: updateError } = await supabase.from('user_integrations').upsert({
             type: 'github',
@@ -95,6 +101,7 @@ export async function onRequestPost(context) {
             workspace_id,
             status: 'active',
             last_sync: toUTC(),
+            expires_at,
         });
 
         if (updateError) {

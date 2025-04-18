@@ -11,7 +11,7 @@ import {
 const GithubIntegrationCard = () => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'github');
-    const deleteIntegration = useDeleteIntegration();
+    const deleteIntegration = useDeleteIntegration(user.id, 'github');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
 

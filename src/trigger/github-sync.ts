@@ -1,7 +1,7 @@
 import { logger, schedules, AbortTaskRunError } from '@trigger.dev/sdk/v3';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
-import { toUTC } from '../utils/dateUtils';
+import { toUTC, calculateExpiresAt } from '../utils/dateUtils';
 import ky from 'ky';
 import { Octokit } from 'octokit';
 
@@ -47,42 +47,65 @@ export const githubSync = schedules.task({
         // Process each integration
         for (const integration of integrations) {
             try {
-                logger.log(`Refreshing access_token`);
-                const res = await ky
-                    .post('https://github.com/login/oauth/access_token', {
-                        searchParams: {
-                            client_id: process.env.GITHUB_CLIENT_ID,
-                            client_secret: process.env.GITHUB_CLIENT_SECRET,
-                            grant_type: 'refresh_token',
-                            refresh_token: integration.refresh_token,
-                        },
-                        headers: {
-                            Accept: 'application/json',
-                        },
-                    })
-                    .json();
+                // Check if token has expired
+                const currentTime = dayjs().utc();
+                const tokenExpired = !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
 
-                if (res.error) {
-                    logger.error('Failed to refresh access token', res.error);
+                let access_token = integration.access_token;
+                let refresh_token = integration.refresh_token;
+                let expires_at = integration.expires_at;
+
+                // Only refresh token if it has expired
+                if (tokenExpired) {
+                    logger.log(`Access token expired, refreshing`);
+                    const res = await ky
+                        .post('https://github.com/login/oauth/access_token', {
+                            searchParams: {
+                                client_id: process.env.GITHUB_CLIENT_ID,
+                                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                                grant_type: 'refresh_token',
+                                refresh_token: integration.refresh_token,
+                            },
+                            headers: {
+                                Accept: 'application/json',
+                            },
+                        })
+                        .json();
+
+                    if (res.error) {
+                        logger.error('Failed to refresh access token', res.error);
+                        await supabase
+                            .from('user_integrations')
+                            .update({
+                                status: 'error',
+                            })
+                            .eq('id', integration.id);
+                    } else {
+                        // Update token information
+                        access_token = res.access_token;
+                        refresh_token = res.refresh_token;
+                        expires_at = calculateExpiresAt(res.expires_in);
+
+                        // Update the database with new token information
+                        await supabase
+                            .from('user_integrations')
+                            .update({
+                                access_token,
+                                refresh_token,
+                                expires_at,
+                                last_sync: toUTC(),
+                            })
+                            .eq('id', integration.id);
+                    }
+                } else {
+                    // Token is still valid, just update the last_sync timestamp
                     await supabase
                         .from('user_integrations')
                         .update({
-                            status: 'error',
+                            last_sync: toUTC(),
                         })
                         .eq('id', integration.id);
                 }
-
-                const { access_token, refresh_token } = res;
-
-                // Update the last_sync timestamp
-                await supabase
-                    .from('user_integrations')
-                    .update({
-                        access_token,
-                        refresh_token,
-                        last_sync: toUTC(),
-                    })
-                    .eq('id', integration.id);
 
                 const octokit = new Octokit({ auth: access_token });
 

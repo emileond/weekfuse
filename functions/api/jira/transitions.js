@@ -1,5 +1,7 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
+import dayjs from 'dayjs';
+import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 
 // Handle GET requests to fetch transitions for a Jira issue
 export async function onRequestGet(context) {
@@ -35,7 +37,7 @@ export async function onRequestGet(context) {
         // Get the workspace integration to get the access_token
         const { data: integration, error: integrationError } = await supabase
             .from('user_integrations')
-            .select('access_token, refresh_token')
+            .select('access_token, refresh_token, expires_at')
             .eq('type', 'jira')
             .eq('status', 'active')
             .eq('workspace_id', workspace_id)
@@ -52,39 +54,68 @@ export async function onRequestGet(context) {
             );
         }
 
-        // Get the resources for the Jira instance
-        const newToken = await ky
-            .post('https://auth.atlassian.com/oauth/token', {
-                json: {
-                    client_id: context.env.JIRA_CLIENT_ID,
-                    client_secret: context.env.JIRA_CLIENT_SECRET,
-                    refresh_token: integration.refresh_token,
-                    grant_type: 'refresh_token',
-                },
-                headers: {
-                    Authorization: `Bearer ${integration.access_token}`,
-                    Accept: 'application/json',
-                },
-            })
-            .json();
+        // Check if token has expired
+        const currentTime = dayjs().utc();
+        const tokenExpired = !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
 
-        console.log(newToken);
+        let accessToken = integration.access_token;
+        let refreshToken = integration.refresh_token;
 
-        if (!newToken) {
-            return Response.json(
-                {
-                    success: false,
-                    error: 'Unable to refresh token',
-                },
-                { status: 401 },
-            );
+        // Only refresh token if it has expired
+        if (tokenExpired) {
+            console.log('Access token expired, refreshing');
+
+            // Refresh token
+            const newToken = await ky
+                .post('https://auth.atlassian.com/oauth/token', {
+                    json: {
+                        client_id: context.env.JIRA_CLIENT_ID,
+                        client_secret: context.env.JIRA_CLIENT_SECRET,
+                        refresh_token: integration.refresh_token,
+                        grant_type: 'refresh_token',
+                    },
+                    headers: {
+                        Authorization: `Bearer ${integration.access_token}`,
+                        Accept: 'application/json',
+                    },
+                })
+                .json();
+
+            console.log(newToken);
+
+            if (!newToken) {
+                return Response.json(
+                    {
+                        success: false,
+                        error: 'Unable to refresh token',
+                    },
+                    { status: 401 },
+                );
+            }
+
+            // Update token information
+            accessToken = newToken.access_token;
+            refreshToken = newToken.refresh_token;
+            const expiresAt = calculateExpiresAt(newToken.expires_in);
+
+            // Update the database with new token information
+            await supabase
+                .from('user_integrations')
+                .update({
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    expires_at: expiresAt,
+                })
+                .eq('workspace_id', workspace_id)
+                .eq('type', 'jira')
+                .eq('status', 'active');
         }
 
         // Get the resources for the Jira instance
         const resources = await ky
             .get('https://api.atlassian.com/oauth/token/accessible-resources', {
                 headers: {
-                    Authorization: `Bearer ${newToken.access_token}`,
+                    Authorization: `Bearer ${accessToken}`,
                     Accept: 'application/json',
                 },
             })
@@ -109,7 +140,7 @@ export async function onRequestGet(context) {
                 `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/2/issue/${issueIdOrKey}/transitions`,
                 {
                     headers: {
-                        Authorization: `Bearer ${newToken.access_token}`,
+                        Authorization: `Bearer ${accessToken}`,
                         Accept: 'application/json',
                     },
                 },
@@ -155,7 +186,7 @@ export async function onRequestPost(context) {
         // Get the workspace integration to get the access_token
         const { data: integration, error: integrationError } = await supabase
             .from('user_integrations')
-            .select('access_token, refresh_token')
+            .select('access_token, refresh_token, expires_at')
             .eq('type', 'jira')
             .eq('status', 'active')
             .eq('workspace_id', workspace_id)
@@ -172,11 +203,66 @@ export async function onRequestPost(context) {
             );
         }
 
+        // Check if token has expired
+        const currentTime = dayjs().utc();
+        const tokenExpired = !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
+
+        let accessToken = integration.access_token;
+        let refreshToken = integration.refresh_token;
+
+        // Only refresh token if it has expired
+        if (tokenExpired) {
+            console.log('Access token expired, refreshing');
+
+            // Refresh token
+            const newToken = await ky
+                .post('https://auth.atlassian.com/oauth/token', {
+                    json: {
+                        client_id: context.env.JIRA_CLIENT_ID,
+                        client_secret: context.env.JIRA_CLIENT_SECRET,
+                        refresh_token: integration.refresh_token,
+                        grant_type: 'refresh_token',
+                    },
+                    headers: {
+                        Authorization: `Bearer ${integration.access_token}`,
+                        Accept: 'application/json',
+                    },
+                })
+                .json();
+
+            if (!newToken) {
+                return Response.json(
+                    {
+                        success: false,
+                        error: 'Unable to refresh token',
+                    },
+                    { status: 401 },
+                );
+            }
+
+            // Update token information
+            accessToken = newToken.access_token;
+            refreshToken = newToken.refresh_token;
+            const expiresAt = calculateExpiresAt(newToken.expires_in);
+
+            // Update the database with new token information
+            await supabase
+                .from('user_integrations')
+                .update({
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    expires_at: expiresAt,
+                })
+                .eq('workspace_id', workspace_id)
+                .eq('type', 'jira')
+                .eq('status', 'active');
+        }
+
         // Get the resources for the Jira instance
         const resources = await ky
             .get('https://api.atlassian.com/oauth/token/accessible-resources', {
                 headers: {
-                    Authorization: `Bearer ${integration.access_token}`,
+                    Authorization: `Bearer ${accessToken}`,
                     Accept: 'application/json',
                 },
             })
@@ -205,7 +291,7 @@ export async function onRequestPost(context) {
                     },
                 },
                 headers: {
-                    Authorization: `Bearer ${integration.access_token}`,
+                    Authorization: `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
                 },
@@ -227,7 +313,7 @@ export async function onRequestPost(context) {
                     `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/2/issue/${issueIdOrKey}`,
                     {
                         headers: {
-                            Authorization: `Bearer ${integration.access_token}`,
+                            Authorization: `Bearer ${accessToken}`,
                             Accept: 'application/json',
                         },
                     },

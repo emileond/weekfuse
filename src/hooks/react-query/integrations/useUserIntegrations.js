@@ -56,7 +56,7 @@ const deleteIntegration = async ({ id, installation_id, type }) => {
 };
 
 // Hook to delete an integration
-export const useDeleteIntegration = () => {
+export const useDeleteIntegration = (user_id, type) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -64,9 +64,8 @@ export const useDeleteIntegration = () => {
         onSuccess: () => {
             // Invalidate the relevant query
             queryClient.invalidateQueries({
-                queryKey: ['user_integration'],
-                exact: false,
-                type: 'all',
+                queryKey: ['user_integration', user_id, type],
+                exact: true,
             });
         },
     });

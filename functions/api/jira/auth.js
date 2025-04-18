@@ -1,6 +1,6 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
-import { toUTC } from '../../../src/utils/dateUtils.js';
+import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
 
 // Handle POST requests for initiating Jira OAuth flow
@@ -32,7 +32,7 @@ export async function onRequestPost(context) {
             })
             .json();
 
-        const { access_token, refresh_token } = await tokenData;
+        const { access_token, refresh_token, expires_in } = await tokenData;
 
         if (!access_token || !refresh_token) {
             console.error('Jira token exchange error:', tokenData);
@@ -45,6 +45,12 @@ export async function onRequestPost(context) {
             );
         }
 
+        // Calculate expires_at if expires_in is available
+        let expires_at = null;
+        if (expires_in) {
+            expires_at = calculateExpiresAt(expires_in - 600);
+        }
+
         // Save the access token in Supabase
         const { error: updateError } = await supabase.from('user_integrations').upsert({
             type: 'jira',
@@ -54,6 +60,7 @@ export async function onRequestPost(context) {
             workspace_id,
             status: 'active',
             last_sync: toUTC(),
+            expires_at,
         });
 
         if (updateError) {

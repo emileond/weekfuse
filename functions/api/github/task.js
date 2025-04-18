@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Octokit } from 'octokit';
-import { toUTC } from '../../../src/utils/dateUtils.js';
+import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
+import dayjs from 'dayjs';
 import ky from 'ky';
 
 export async function onRequestPatch(context) {
@@ -35,7 +36,7 @@ export async function onRequestPatch(context) {
         // Get the workspace integration to get the access_token
         const { data: integration, error: integrationError } = await supabase
             .from('user_integrations')
-            .select('id, access_token, refresh_token')
+            .select('id, access_token, refresh_token, expires_at')
             .eq('type', 'github')
             // .eq('status', 'active')
             .eq('user_id', user_id)
@@ -46,43 +47,59 @@ export async function onRequestPatch(context) {
             return Response.json(integrationError, { status: 404 });
         }
 
-        const res = await ky
-            .post('https://github.com/login/oauth/access_token', {
-                searchParams: {
-                    client_id: context.env.GITHUB_CLIENT_ID,
-                    client_secret: context.env.GITHUB_CLIENT_SECRET,
-                    grant_type: 'refresh_token',
-                    refresh_token: integration.refresh_token,
-                },
-                headers: {
-                    Accept: 'application/json',
-                },
-            })
-            .json();
+        // Check if token has expired
+        const currentTime = dayjs().utc();
+        const tokenExpired = !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
 
-        if (res.error) {
-            console.log(res);
+        let access_token = integration.access_token;
+        let refresh_token = integration.refresh_token;
+
+        // Only refresh token if it has expired
+        if (tokenExpired) {
+            console.log('Access token expired, refreshing');
+
+            const res = await ky
+                .post('https://github.com/login/oauth/access_token', {
+                    searchParams: {
+                        client_id: context.env.GITHUB_CLIENT_ID,
+                        client_secret: context.env.GITHUB_CLIENT_SECRET,
+                        grant_type: 'refresh_token',
+                        refresh_token: integration.refresh_token,
+                    },
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                })
+                .json();
+
+            if (res.error) {
+                console.log(res);
+                await supabase
+                    .from('user_integrations')
+                    .update({
+                        status: 'error',
+                    })
+                    .eq('id', integration.id);
+
+                return Response.json(res, { status: 400 });
+            }
+
+            // Update token information
+            access_token = res.access_token;
+            refresh_token = res.refresh_token;
+            const expires_at = calculateExpiresAt(res.expires_in);
+
+            // Update integration access_token, refresh_token, expires_at and the last_sync timestamp
             await supabase
                 .from('user_integrations')
                 .update({
-                    status: 'error',
+                    access_token,
+                    refresh_token,
+                    expires_at,
+                    last_sync: toUTC(),
                 })
                 .eq('id', integration.id);
-
-            return Response.json(res, { status: 400 });
         }
-
-        const { access_token, refresh_token } = res;
-
-        // Update integration access_token and the last_sync timestamp
-        await supabase
-            .from('user_integrations')
-            .update({
-                access_token,
-                refresh_token,
-                last_sync: toUTC(),
-            })
-            .eq('id', integration.id);
 
         // Initialize Oktokit
         const octokit = new Octokit({ auth: access_token });

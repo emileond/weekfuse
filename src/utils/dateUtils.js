@@ -10,6 +10,11 @@ export const toUTC = (date = null) => {
         .format();
 };
 
+export const calculateExpiresAt = (expiresIn) => {
+    // expiresIn is in seconds, add it to current time to get expiration timestamp
+    return dayjs().add(expiresIn, 'second').utc().format();
+};
+
 export const formatDate = (date, options = { dateStyle: 'long' }, locale = navigator.language) => {
     if (!date) return '';
     return new Intl.DateTimeFormat(locale, options).format(new Date(date));
