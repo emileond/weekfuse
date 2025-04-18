@@ -5,6 +5,7 @@ import {
     DropdownItem,
     DropdownMenu,
     DropdownTrigger,
+    DropdownSection,
     Image,
     User,
 } from '@heroui/react';
@@ -16,6 +17,7 @@ import {
 } from '../../../../hooks/react-query/integrations/jira/useJiraTransitions.js';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 const JiraTaskDetails = ({ external_data }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -25,8 +27,10 @@ const JiraTaskDetails = ({ external_data }) => {
         currentWorkspace?.workspace_id,
     );
     const { mutateAsync: transitionIssue } = useJiraTransitionIssue();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleTransition = async (transitionId) => {
+        setIsLoading(true);
         try {
             await transitionIssue({
                 issueIdOrKey: external_data?.id,
@@ -48,6 +52,8 @@ const JiraTaskDetails = ({ external_data }) => {
             });
         } catch (error) {
             toast.error(error.message || 'Failed to update jira status');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -64,19 +70,22 @@ const JiraTaskDetails = ({ external_data }) => {
                                     variant="flat"
                                     className="font-medium"
                                     endContent={<RiArrowDownSLine fontSize="1rem" />}
+                                    isLoading={isLoading}
                                 >
                                     {external_data?.fields?.status?.name}
                                 </Button>
                             </DropdownTrigger>
                             <DropdownMenu>
-                                {transitions?.map((item) => (
-                                    <DropdownItem
-                                        key={item.id}
-                                        onPress={() => handleTransition(item.id)}
-                                    >
-                                        {item.name}
-                                    </DropdownItem>
-                                ))}
+                                <DropdownSection title="Move to:">
+                                    {transitions?.map((item) => (
+                                        <DropdownItem
+                                            key={item.id}
+                                            onPress={() => handleTransition(item.id)}
+                                        >
+                                            {item.name}
+                                        </DropdownItem>
+                                    ))}
+                                </DropdownSection>
                             </DropdownMenu>
                         </Dropdown>
                     </div>

@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import { toUTC, calculateExpiresAt } from '../utils/dateUtils';
 import ky from 'ky';
-import { Octokit } from 'octokit';
+import { tinymceToTiptap } from '../utils/editorUtils';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -11,36 +11,36 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY as string,
 );
 
-export const githubSync = schedules.task({
-    id: 'github-sync',
+export const jiraSync = schedules.task({
+    id: 'jira-sync',
     cron: '*/10 * * * *', // Every 10 minutes
     maxDuration: 3000, // 50 minutes max duration
     run: async () => {
-        logger.log('Starting GitHub sync task');
+        logger.log('Starting Jira sync task');
 
-        // Calculate the timestamp for 8 hours ago in UTC
+        // Calculate the timestamp for 2 hours ago in UTC
         const timeRange = dayjs().utc().subtract(2, 'hours').toISOString();
 
         // Fetch active workspace integrations that need syncing
         const { data: integrations, error: fetchError } = await supabase
             .from('user_integrations')
             .select('*')
-            .eq('type', 'github')
+            .eq('type', 'jira')
             .eq('status', 'active')
             .lt('last_sync', timeRange)
             .limit(100);
 
         if (fetchError) {
-            logger.error(`Error fetching GitHub integrations: ${fetchError.message}`);
+            logger.error(`Error fetching Jira integrations: ${fetchError.message}`);
             return { success: false, error: fetchError.message };
         }
 
         if (!integrations || integrations.length === 0) {
-            logger.log('No GitHub integrations need syncing');
+            logger.log('No Jira integrations need syncing');
             return { success: true, synced: 0 };
         }
 
-        logger.log(`Found ${integrations.length} GitHub integrations to sync`);
+        logger.log(`Found ${integrations.length} Jira integrations to sync`);
 
         let syncedCount = 0;
         let failedCount = 0;
@@ -61,12 +61,12 @@ export const githubSync = schedules.task({
                 if (tokenExpired) {
                     logger.log(`Access token expired, refreshing`);
                     const res = await ky
-                        .post('https://github.com/login/oauth/access_token', {
-                            searchParams: {
-                                client_id: process.env.GITHUB_CLIENT_ID,
-                                client_secret: process.env.GITHUB_CLIENT_SECRET,
-                                grant_type: 'refresh_token',
+                        .post('https://auth.atlassian.com/oauth/token', {
+                            json: {
+                                client_id: process.env.JIRA_CLIENT_ID,
+                                client_secret: process.env.JIRA_CLIENT_SECRET,
                                 refresh_token: integration.refresh_token,
+                                grant_type: 'refresh_token',
                             },
                             headers: {
                                 Accept: 'application/json',
@@ -109,36 +109,82 @@ export const githubSync = schedules.task({
                         .eq('id', integration.id);
                 }
 
-                const octokit = new Octokit({ auth: access_token });
+                // Get the resources for the Jira instance
+                const resources = await ky
+                    .get('https://api.atlassian.com/oauth/token/accessible-resources', {
+                        headers: {
+                            Authorization: `Bearer ${access_token}`,
+                            Accept: 'application/json',
+                        },
+                    })
+                    .json();
 
-                const issuesData = await octokit.paginate('GET /issues?state=open');
+                if (!resources || resources.length === 0) {
+                    logger.error('No accessible Jira resources found');
+                    continue;
+                }
+
+                let issuesData = [];
+
+                // Process each Jira resource (instance)
+                for (const resource of resources) {
+                    const maxResults = 50; // Define the maximum number of issues per page
+                    let startAt = 0;
+                    let total = 0;
+                    let resourceIssues = [];
+
+                    do {
+                        // Construct the URL for the current page
+                        const url = `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/search?jql=assignee=currentUser()%20AND%20statusCategory!=Done&startAt=${startAt}&maxResults=${maxResults}`;
+
+                        try {
+                            const pageData = await ky
+                                .get(url, {
+                                    headers: {
+                                        Authorization: `Bearer ${access_token}`,
+                                        Accept: 'application/json',
+                                    },
+                                })
+                                .json();
+
+                            // Destructure the issues array and total count from the response
+                            const { issues: pageIssues = [], total: totalIssues = 0 } = pageData;
+
+                            // Append the current page's issues to the resource's issue list
+                            resourceIssues = [...resourceIssues, ...pageIssues];
+
+                            // Update total and startAt for pagination
+                            total = totalIssues;
+                            startAt += maxResults;
+                        } catch (error) {
+                            logger.error(`Error fetching Jira issues: ${error.message}`);
+                            break;
+                        }
+                    } while (startAt < total);
+
+                    // Merge the issues from this resource into the overall issuesData array
+                    issuesData = [...issuesData, ...resourceIssues];
+                }
 
                 // Process and store issues
                 if (issuesData && Array.isArray(issuesData)) {
-                    const upsertPromises = issuesData.map((issue) =>
-                        supabase.from('tasks').upsert(
+                    const upsertPromises = issuesData.map((issue) => {
+                        const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+                        return supabase.from('tasks').upsert(
                             {
-                                name: issue.title,
-                                description: {
-                                    type: 'doc',
-                                    content: [
-                                        {
-                                            type: 'paragraph',
-                                            content: [{ type: 'text', text: issue.body || '' }],
-                                        },
-                                    ],
-                                },
+                                name: issue.fields.summary,
+                                description: convertedDesc || null,
                                 workspace_id: integration.workspace_id,
-                                integration_source: 'github',
+                                integration_source: 'jira',
                                 external_id: issue.id,
                                 external_data: issue,
-                                created_at: issue.created_at,
+                                // created_at: issue.fields.created,
                             },
                             {
                                 onConflict: ['integration_source', 'external_id'],
                             },
-                        ),
-                    );
+                        );
+                    });
 
                     const results = await Promise.all(upsertPromises);
 
@@ -163,13 +209,13 @@ export const githubSync = schedules.task({
 
                 syncedCount++;
                 logger.log(
-                    `Successfully synced GitHub integration for workspace ${integration.workspace_id}`,
+                    `Successfully synced Jira integration for workspace ${integration.workspace_id}`,
                 );
             } catch (error) {
                 console.log(error);
                 failedCount++;
                 logger.error(
-                    `Error syncing GitHub integration for workspace ${integration.workspace_id}: ${error.message}`,
+                    `Error syncing Jira integration for workspace ${integration.workspace_id}: ${error.message}`,
                 );
             }
         }
