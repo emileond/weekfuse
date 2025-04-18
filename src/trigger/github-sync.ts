@@ -74,6 +74,16 @@ export const githubSync = schedules.task({
 
                 const { access_token, refresh_token } = res;
 
+                // Update the last_sync timestamp
+                await supabase
+                    .from('user_integrations')
+                    .update({
+                        access_token,
+                        refresh_token,
+                        last_sync: toUTC(),
+                    })
+                    .eq('id', integration.id);
+
                 const octokit = new Octokit({ auth: access_token });
 
                 const issuesData = await octokit.paginate('GET /issues?state=open');
@@ -125,16 +135,6 @@ export const githubSync = schedules.task({
                         `Processed ${issuesData.length} issues for workspace ${integration.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`,
                     );
                 }
-
-                // Update the last_sync timestamp
-                await supabase
-                    .from('user_integrations')
-                    .update({
-                        access_token,
-                        refresh_token,
-                        last_sync: toUTC(),
-                    })
-                    .eq('id', integration.id);
 
                 syncedCount++;
                 logger.log(

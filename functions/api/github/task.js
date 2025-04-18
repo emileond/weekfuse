@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Octokit } from 'octokit';
+import { toUTC } from '../../../src/utils/dateUtils.js';
+import ky from 'ky';
 
 export async function onRequestPatch(context) {
     try {
@@ -7,9 +9,9 @@ export async function onRequestPatch(context) {
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
         // Get the request body
-        const { external_id, url, state, workspace_id } = await context.request.json();
+        const { external_id, url, state, user_id } = await context.request.json();
 
-        if (!external_id || !url || !state || !workspace_id) {
+        if (!external_id || !url || !state || !user_id) {
             return Response.json(
                 {
                     success: false,
@@ -32,31 +34,64 @@ export async function onRequestPatch(context) {
 
         // Get the workspace integration to get the access_token
         const { data: integration, error: integrationError } = await supabase
-            .from('workspace_integrations')
-            .select('access_token, refresh_token')
+            .from('user_integrations')
+            .select('id, access_token, refresh_token')
             .eq('type', 'github')
-            .eq('status', 'active')
-            .eq('workspace_id', workspace_id)
+            // .eq('status', 'active')
+            .eq('user_id', user_id)
             .single();
 
         if (integrationError || !integration) {
-            return Response.json(
-                {
-                    success: false,
-                    error: 'GitHub integration not found',
-                    details: integrationError,
-                },
-                { status: 404 },
-            );
+            console.log(integrationError);
+            return Response.json(integrationError, { status: 404 });
         }
 
+        const res = await ky
+            .post('https://github.com/login/oauth/access_token', {
+                searchParams: {
+                    client_id: context.env.GITHUB_CLIENT_ID,
+                    client_secret: context.env.GITHUB_CLIENT_SECRET,
+                    grant_type: 'refresh_token',
+                    refresh_token: integration.refresh_token,
+                },
+                headers: {
+                    Accept: 'application/json',
+                },
+            })
+            .json();
+
+        if (res.error) {
+            console.log(res);
+            await supabase
+                .from('user_integrations')
+                .update({
+                    status: 'error',
+                })
+                .eq('id', integration.id);
+
+            return Response.json(res, { status: 400 });
+        }
+
+        const { access_token, refresh_token } = res;
+
+        // Update integration access_token and the last_sync timestamp
+        await supabase
+            .from('user_integrations')
+            .update({
+                access_token,
+                refresh_token,
+                last_sync: toUTC(),
+            })
+            .eq('id', integration.id);
+
         // Initialize Oktokit
-        const octokit = new Octokit({ auth: integration.access_token });
+        const octokit = new Octokit({ auth: access_token });
 
         // Update the issue state in GitHub
         const response = await octokit.request(`PATCH ${url}`, { state: state });
 
         if (response.status !== 200) {
+            console.log(response);
             return Response.json(
                 {
                     success: false,
@@ -68,7 +103,6 @@ export async function onRequestPatch(context) {
         }
 
         // Update the task in Supabase with the new state
-
         const { data: task, error: selectError } = await supabase
             .from('tasks')
             .select('external_data')
@@ -87,6 +121,7 @@ export async function onRequestPatch(context) {
             .eq('integration_source', 'github');
 
         if (updateError) {
+            console.log(updateError);
             return Response.json(
                 {
                     success: false,
@@ -102,14 +137,7 @@ export async function onRequestPatch(context) {
             message: `GitHub issue state updated to ${state}`,
         });
     } catch (error) {
-        console.error('Error updating GitHub task:', error);
-        return Response.json(
-            {
-                success: false,
-                error: 'Internal server error',
-                details: error.message,
-            },
-            { status: 500 },
-        );
+        console.log('Error updating GitHub task:', error);
+        return Response.json(error, { status: 500 });
     }
 }
