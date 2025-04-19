@@ -7,16 +7,16 @@ import {
 } from '../../../hooks/react-query/integrations/useUserIntegrations.js';
 import { useUser } from '../../../hooks/react-query/user/useUser.js';
 
-const TrelloIntegrationCard = () => {
+const ClickupIntegrationCard = () => {
     const { data: user } = useUser();
-    const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'trello');
-    const deleteIntegration = useDeleteIntegration(user.id, 'trello');
+    const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'clickup');
+    const deleteIntegration = useDeleteIntegration(user.id, 'clickup');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
 
     const handleConnect = () => {
         window.location.href =
-            'https://trello.com/1/authorize?expiration=never&scope=read,write&response_type=token&key=22d71bb66c8e12f0668dd083c1118d2a&callback_method=fragment&return_url=https://weekfuse.com/integrations/oauth/callback/trello';
+            'https://app.clickup.com/api?client_id=MZHWY0X3R4B24M2XKEV344LUGJZLRVBH&redirect_uri=https://weekfuse.com/integrations/oauth/callback/clickup';
     };
 
     const handleDisconnect = () => {
@@ -27,16 +27,16 @@ const TrelloIntegrationCard = () => {
             {
                 id: integration.id,
                 access_token: integration.access_token,
-                type: 'trello',
+                type: 'clickup',
             },
             {
                 onSuccess: () => {
                     setStatus('inactive');
-                    toast.success('Trello Integration disconnected');
+                    toast.success('Clickup Integration disconnected');
                 },
                 onError: (error) => {
-                    console.error('Error disconnecting Trello:', error);
-                    toast.error('Failed to disconnect Trello Integration');
+                    console.error('Error disconnecting Clickup:', error);
+                    toast.error('Failed to disconnect Clickup Integration');
                 },
                 onSettled: () => {
                     setLoading(false);
@@ -53,16 +53,16 @@ const TrelloIntegrationCard = () => {
             {
                 id: integration.id,
                 access_token: integration.access_token,
-                type: 'trello',
+                type: 'clickup',
             },
             {
                 onSuccess: () => {
                     setStatus('inactive');
-                    toast.success('Trello Integration reset');
+                    toast.success('Clickup Integration reset');
                 },
                 onError: (error) => {
-                    console.error('Error resetting Trello:', error);
-                    toast.error('Failed to reset Trello Integration');
+                    console.error('Error resetting Clickup:', error);
+                    toast.error('Failed to reset Clickup Integration');
                 },
                 onSettled: () => {
                     setLoading(false);
@@ -80,11 +80,11 @@ const TrelloIntegrationCard = () => {
 
     return (
         <IntegrationCard
-            id="trello"
-            name="Trello"
+            id="clickup"
+            name="Clickup"
             isLoading={loading}
             isPending={isPending}
-            description="Import all Trello cards from boards visible to you."
+            description="Import all Clickup tasks assigned to you."
             status={status}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
@@ -94,4 +94,4 @@ const TrelloIntegrationCard = () => {
     );
 };
 
-export default TrelloIntegrationCard;
+export default ClickupIntegrationCard;

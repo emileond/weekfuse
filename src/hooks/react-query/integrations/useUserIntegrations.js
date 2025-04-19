@@ -37,19 +37,26 @@ export const useUserIntegration = (user_id, type) => {
 };
 
 // Delete integration
-const deleteIntegration = async ({ id, installation_id, type }) => {
+const deleteIntegration = async ({ id, installation_id, type, access_token }) => {
     if (type === 'github' && installation_id) {
         // First, make a DELETE request to the API
         await ky.delete('/api/github/auth', {
-            json: { installation_id },
+            json: { id, installation_id },
         });
     }
 
-    // Then delete from the database
-    const { error } = await supabaseClient.from('user_integrations').delete().eq('id', id);
-
-    if (error) {
-        throw new Error('Failed to delete integration');
+    if (type === 'trello' && access_token) {
+        // First, make a DELETE request to the API
+        await ky.delete('/api/trello/auth', {
+            json: { access_token },
+        });
+    }
+    if (type === 'jira' && id) {
+        // Then delete from the database
+        const { error } = await supabaseClient.from('user_integrations').delete().eq('id', id);
+        if (error) {
+            throw new Error('Failed to delete integration');
+        }
     }
 
     return { success: true };

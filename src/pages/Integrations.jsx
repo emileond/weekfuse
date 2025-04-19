@@ -6,6 +6,7 @@ import { Link } from '@heroui/react';
 import GithubIntegrationCard from '../components/integrations/github/GithubIntegrationCard.jsx';
 import JiraIntegrationCard from '../components/integrations/jira/JiraIntegrationCard.jsx';
 import TrelloIntegrationCard from '../components/integrations/trello/TrelloIntegrationCard.jsx';
+import ClickupIntegrationCard from '../components/integrations/clickup/ClickupIntegrationCard.jsx';
 
 function IntegrationsPage() {
     // Define all integrations with GitHub having dynamic status and handlers
@@ -45,6 +46,7 @@ function IntegrationsPage() {
                     <GithubIntegrationCard />
                     <JiraIntegrationCard />
                     <TrelloIntegrationCard />
+                    <ClickupIntegrationCard />
                     {integrations?.map((integration) => (
                         <IntegrationCard
                             key={integration.id}

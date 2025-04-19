@@ -3,6 +3,67 @@ import { createClient } from '@supabase/supabase-js';
 import { toUTC } from '../../../src/utils/dateUtils.js';
 import { markdownToTipTap } from '../../../src/utils/editorUtils.js';
 
+// Handle DELETE requests for disconnecting Trello integration
+export async function onRequestDelete(context) {
+    try {
+        const body = await context.request.json();
+        const { access_token } = body;
+
+        if (!access_token) {
+            return Response.json(
+                { success: false, error: 'Missing access_token' },
+                { status: 400 },
+            );
+        }
+
+        // Initialize Supabase client
+        const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
+
+        try {
+            // Revoke the token with Trello's API
+            await ky.delete(
+                `https://api.trello.com/1/tokens/${access_token}/?key=${context.env.TRELLO_API_KEY}&token=${access_token}`,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                }
+            );
+
+            console.log(`Successfully revoked Trello token: ${access_token}`);
+        } catch (revokeError) {
+            console.error('Error revoking Trello token:', revokeError);
+            // Continue with deletion from database even if API revocation fails
+        }
+
+        // Delete the token from the database
+        const { error: deleteError } = await supabase
+            .from('user_integrations')
+            .delete()
+            .eq('type', 'trello')
+            .eq('access_token', access_token);
+
+        if (deleteError) {
+            console.error('Error deleting Trello integration from database:', deleteError);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
+        }
+
+        return Response.json({ success: true });
+    } catch (error) {
+        console.error('Error disconnecting Trello integration:', error);
+        return Response.json(
+            {
+                success: false,
+                error: 'Internal server error',
+            },
+            { status: 500 },
+        );
+    }
+}
+
 // Handle POST requests for initiating Trello OAuth flow
 export async function onRequestPost(context) {
     const body = await context.request.json();

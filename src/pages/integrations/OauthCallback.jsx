@@ -115,6 +115,38 @@ const OAuthCallback = () => {
         }
     };
 
+    const handleClickupCallback = async ({ code }) => {
+        setLoading(true);
+        try {
+            await ky.post('/api/clickup/auth', {
+                json: {
+                    code,
+                    user_id: user.id,
+                    workspace_id: currentWorkspace.workspace_id,
+                },
+            });
+
+            toast.success('ClickUp Integration connected');
+            await queryClient.cancelQueries({
+                queryKey: ['user_integration', user?.id, 'clickup'],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ['user_integration', user?.id, 'clickup'],
+            });
+        } catch (error) {
+            let errorMessage = 'Failed to connect ClickUp Integration';
+            if (error.response) {
+                const errorData = await error.response.json();
+                errorMessage = errorData.message || errorMessage;
+            }
+            console.error('Error connecting to ClickUp:', error);
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+            navigate('/integrations');
+        }
+    };
+
     useEffect(() => {
         if (!user || !currentWorkspace) return;
 
@@ -136,6 +168,9 @@ const OAuthCallback = () => {
                     const token = params.get('token');
                     handleTrelloCallback({ token });
                 }
+                break;
+            case 'clickup':
+                handleClickupCallback({ code });
                 break;
             default:
                 toast.error('Unsupported OAuth provider');

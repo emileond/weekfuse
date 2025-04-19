@@ -7,14 +7,15 @@ import { App, Octokit } from 'octokit';
 export async function onRequestDelete(context) {
     try {
         const body = await context.request.json();
-        const { installation_id } = body;
+        const { id, installation_id } = body;
 
-        if (!installation_id) {
+        if (!id || !installation_id) {
             return Response.json(
-                { success: false, error: 'Missing installation_id' },
+                { success: false, error: 'Missing required fields' },
                 { status: 400 },
             );
         }
+        const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
         try {
             const app = new App({
@@ -30,6 +31,21 @@ export async function onRequestDelete(context) {
         } catch (revokeError) {
             console.error('Error revoking GitHub installation:', revokeError);
             return Response.error();
+        }
+
+        // Delete the token from the database
+        const { error: deleteError } = await supabase
+            .from('user_integrations')
+            .delete()
+            .eq('type', 'github')
+            .eq('id', id);
+
+        if (deleteError) {
+            console.error('Error deleting Trello integration from database:', deleteError);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
         }
 
         return Response.json({ success: true });
