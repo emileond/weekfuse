@@ -8,16 +8,16 @@ import {
 } from '../../../hooks/react-query/integrations/useUserIntegrations.js';
 import { useUser } from '../../../hooks/react-query/user/useUser.js';
 
-const JiraIntegrationCard = () => {
+const TrelloIntegrationCard = () => {
     const { data: user } = useUser();
-    const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'jira');
-    const deleteIntegration = useDeleteIntegration(user.id, 'jira');
+    const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'trello');
+    const deleteIntegration = useDeleteIntegration(user.id, 'trello');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
 
     const handleConnect = () => {
         window.location.href =
-            'https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=O4tGSfMVVADbcB7j7ZtiQKvDuN4ExclE&scope=offline_access%20read%3Ajira-work%20write%3Ajira-work&redirect_uri=https%3A%2F%2Fweekfuse.com%2Fintegrations%2Foauth%2Fcallback%2Fjira&response_type=code&prompt=consent';
+            'https://trello.com/1/authorize?expiration=never&scope=read,write&response_type=token&key=22d71bb66c8e12f0668dd083c1118d2a&callback_method=fragment&return_url=http://localhost:8788/integrations/oauth/callback/trello';
     };
 
     const handleDisconnect = () => {
@@ -28,16 +28,16 @@ const JiraIntegrationCard = () => {
             {
                 id: integration.id,
                 installation_id: integration.installation_id,
-                type: 'jira',
+                type: 'trello',
             },
             {
                 onSuccess: () => {
                     setStatus('inactive');
-                    toast.success('Jira Integration disconnected');
+                    toast.success('Trello Integration disconnected');
                 },
                 onError: (error) => {
-                    console.error('Error disconnecting Github:', error);
-                    toast.error('Failed to disconnect Github Integration');
+                    console.error('Error disconnecting Trello:', error);
+                    toast.error('Failed to disconnect Trello Integration');
                 },
                 onSettled: () => {
                     setLoading(false);
@@ -55,11 +55,11 @@ const JiraIntegrationCard = () => {
 
     return (
         <IntegrationCard
-            id="jira"
-            name="Jira"
+            id="trello"
+            name="Trello"
             isLoading={loading}
             isPending={isPending}
-            description="Import Jira tickets assigned to you."
+            description="Import all Trello cards from boards visible to you."
             status={status}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
@@ -68,4 +68,4 @@ const JiraIntegrationCard = () => {
     );
 };
 
-export default JiraIntegrationCard;
+export default TrelloIntegrationCard;

@@ -148,7 +148,7 @@ export async function onRequestPost(context) {
             });
         }
 
-        return Response.json({ success: true, issuesData });
+        return Response.json({ success: true });
     } catch (error) {
         console.error('Error in Jira auth flow:', error);
         return Response.json(

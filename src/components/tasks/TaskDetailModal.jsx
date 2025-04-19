@@ -1,7 +1,6 @@
 import {
     Modal,
     ModalContent,
-    ModalHeader,
     ModalBody,
     ModalFooter,
     Button,
@@ -23,6 +22,7 @@ import SimpleEditor from '../form/SimpleEditor.jsx';
 import { RiCheckboxCircleFill, RiCheckboxCircleLine } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
+import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -202,6 +202,12 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                     onChange={setDescription}
                                     isEditable={!isExternal}
                                 />
+                                {task?.integration_source && (
+                                    <TaskIntegrationDescription
+                                        source={task?.integration_source}
+                                        external_data={task?.external_data}
+                                    />
+                                )}
                                 <div className="flex items-center justify-between pb-1">
                                     <div className="flex gap-2">
                                         <DatePicker

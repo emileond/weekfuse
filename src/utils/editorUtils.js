@@ -3,6 +3,166 @@
  */
 
 /**
+ * Converts markdown text to Tiptap format
+ * 
+ * @param {string} markdown - Markdown text
+ * @returns {Object} - Content in Tiptap format
+ */
+export const markdownToTipTap = (markdown) => {
+  // If input is null or undefined, return empty document
+  if (!markdown) {
+    return {
+      type: 'doc',
+      content: []
+    };
+  }
+
+  // Create a new Tiptap document
+  const tiptapDoc = {
+    type: 'doc',
+    content: []
+  };
+
+  // Split the markdown into lines
+  const lines = markdown.split('\n');
+
+  // Process the lines
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+
+    // Skip empty lines
+    if (!line) {
+      i++;
+      continue;
+    }
+
+    // Check for headings (# Heading)
+    if (line.startsWith('#')) {
+      const level = line.match(/^#+/)[0].length;
+      if (level <= 6) {
+        const headingText = line.substring(level).trim();
+        tiptapDoc.content.push({
+          type: 'heading',
+          attrs: { level },
+          content: [{ type: 'text', text: headingText }]
+        });
+        i++;
+        continue;
+      }
+    }
+
+    // Check for bullet lists (- item or * item)
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      const listItems = [];
+
+      // Collect all consecutive list items
+      while (i < lines.length && (lines[i].trim().startsWith('- ') || lines[i].trim().startsWith('* '))) {
+        const itemText = lines[i].trim().substring(2);
+        listItems.push({
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: [{ type: 'text', text: itemText }]
+          }]
+        });
+        i++;
+      }
+
+      tiptapDoc.content.push({
+        type: 'bulletList',
+        content: listItems
+      });
+
+      continue;
+    }
+
+    // Check for numbered lists (1. item)
+    if (/^\d+\.\s/.test(line)) {
+      const listItems = [];
+
+      // Collect all consecutive list items
+      while (i < lines.length && /^\d+\.\s/.test(lines[i].trim())) {
+        const itemText = lines[i].trim().replace(/^\d+\.\s/, '');
+        listItems.push({
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: [{ type: 'text', text: itemText }]
+          }]
+        });
+        i++;
+      }
+
+      tiptapDoc.content.push({
+        type: 'orderedList',
+        content: listItems
+      });
+
+      continue;
+    }
+
+    // Check for code blocks (```code```)
+    if (line.startsWith('```')) {
+      const language = line.substring(3).trim();
+      const codeLines = [];
+      i++;
+
+      // Collect all lines until the closing ```
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+
+      // Skip the closing ```
+      if (i < lines.length) {
+        i++;
+      }
+
+      tiptapDoc.content.push({
+        type: 'codeBlock',
+        attrs: { language: language || null },
+        content: [{ type: 'text', text: codeLines.join('\n') }]
+      });
+
+      continue;
+    }
+
+    // Check for blockquotes (> quote)
+    if (line.startsWith('> ')) {
+      const quoteLines = [];
+
+      // Collect all consecutive blockquote lines
+      while (i < lines.length && lines[i].trim().startsWith('> ')) {
+        quoteLines.push(lines[i].trim().substring(2));
+        i++;
+      }
+
+      tiptapDoc.content.push({
+        type: 'blockquote',
+        content: [{
+          type: 'paragraph',
+          content: [{ type: 'text', text: quoteLines.join('\n') }]
+        }]
+      });
+
+      continue;
+    }
+
+    // Default: treat as paragraph
+    // Process inline formatting (bold, italic, etc.)
+    tiptapDoc.content.push({
+      type: 'paragraph',
+      content: [{ type: 'text', text: line }]
+    });
+
+    i++;
+  }
+
+  return tiptapDoc;
+};
+
+/**
  * Converts TinyMCE content format to Tiptap format
  * 
  * @param {Object} tinymceContent - Content in TinyMCE format

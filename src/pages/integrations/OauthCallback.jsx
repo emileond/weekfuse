@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import ky from 'ky';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
@@ -16,6 +16,7 @@ const OAuthCallback = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const queryClient = useQueryClient();
+    const { hash } = useLocation();
 
     const handleGithubCallback = async ({ code, installation_id }) => {
         setLoading(true);
@@ -82,6 +83,38 @@ const OAuthCallback = () => {
         }
     };
 
+    const handleTrelloCallback = async ({ token }) => {
+        setLoading(true);
+        try {
+            await ky.post('/api/trello/auth', {
+                json: {
+                    access_token: token,
+                    user_id: user.id,
+                    workspace_id: currentWorkspace.workspace_id,
+                },
+            });
+
+            toast.success('Trello Integration connected');
+            await queryClient.cancelQueries({
+                queryKey: ['user_integration', user?.id, 'trello'],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ['user_integration', user?.id, 'trello'],
+            });
+        } catch (error) {
+            let errorMessage = 'Failed to connect Trello';
+            if (error.response) {
+                const errorData = await error.response.json();
+                errorMessage = errorData.message || errorMessage;
+            }
+            console.error('Error connecting to Trello:', error);
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+            navigate('/integrations');
+        }
+    };
+
     useEffect(() => {
         if (!user || !currentWorkspace) return;
 
@@ -96,6 +129,13 @@ const OAuthCallback = () => {
             }
             case 'jira':
                 handleJiraCallback({ code });
+                break;
+            case 'trello':
+                {
+                    const params = new URLSearchParams(hash.slice(1));
+                    const token = params.get('token');
+                    handleTrelloCallback({ token });
+                }
                 break;
             default:
                 toast.error('Unsupported OAuth provider');

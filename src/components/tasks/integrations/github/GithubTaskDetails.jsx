@@ -133,13 +133,13 @@ const GithubTaskDetails = ({ external_data }) => {
                     <label className="text-sm">Repository</label>
                     <Chip
                         color="default"
-                        className="text-default-500"
+                        className="text-default-700"
                         size="sm"
                         variant="bordered"
-                        startContent={<RiGitRepositoryLine fontSize="1rem" />}
+                        startContent={<RiGitRepositoryLine fontSize=".9rem" />}
                     >
                         <Link
-                            className="text-sm text-default-500"
+                            className="text-sm text-default-700"
                             isExternal
                             href={external_data?.repository?.html_url}
                         >

@@ -2,6 +2,7 @@ import IntegrationSourceIcon from '../integrations/IntegrationSourceIcon.jsx';
 import { Link, Image, Divider } from '@heroui/react';
 import JiraTaskDetails from './jira/JiraTaskDetails.jsx';
 import GithubTaskDetails from './github/GithubTaskDetails.jsx';
+import TrelloTaskDetails from './trello/TrelloTaskDetails.jsx';
 
 const TaskIntegrationLink = ({ source, external_data }) => {
     switch (source) {
@@ -30,6 +31,19 @@ const TaskIntegrationLink = ({ source, external_data }) => {
                     </Link>
                 </div>
             );
+        case 'trello':
+            return (
+                <div className="flex gap-1 items-center">
+                    <Link
+                        className="font-medium text-blue-700 text-sm"
+                        isExternal
+                        showAnchorIcon
+                        href={external_data?.shortUrl}
+                    >
+                        See in Trello
+                    </Link>
+                </div>
+            );
     }
 };
 
@@ -40,6 +54,9 @@ export const TaskIntegrationDetails = ({ source, external_data }) => {
 
         case 'jira':
             return <JiraTaskDetails external_data={external_data} />;
+
+        case 'trello':
+            return <TrelloTaskDetails external_data={external_data} />;
     }
 };
 
