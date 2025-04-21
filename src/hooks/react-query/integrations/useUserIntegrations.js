@@ -51,6 +51,12 @@ const deleteIntegration = async ({ id, installation_id, type, access_token }) =>
             json: { access_token },
         });
     }
+    if (type === 'clickup' && access_token) {
+        // First, make a DELETE request to the API
+        await ky.delete('/api/trello/auth', {
+            json: { access_token },
+        });
+    }
     if (type === 'jira' && id) {
         // Then delete from the database
         const { error } = await supabaseClient.from('user_integrations').delete().eq('id', id);

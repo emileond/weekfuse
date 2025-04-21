@@ -387,3 +387,148 @@ const convertMention = (mentionNode) => {
     }
   };
 };
+
+/**
+ * Converts plain text to Tiptap format, detecting structure based on text patterns
+ * 
+ * @param {string} plainText - Plain text input
+ * @returns {Object} - Content in Tiptap format
+ */
+export const plainTextToTiptap = (plainText) => {
+  // If input is null or undefined, return empty document
+  if (!plainText) {
+    return {
+      type: 'doc',
+      content: []
+    };
+  }
+
+  // Create a new Tiptap document
+  const tiptapDoc = {
+    type: 'doc',
+    content: []
+  };
+
+  // Split the text into lines
+  const lines = plainText.split('\n');
+
+  // Process the lines
+  let i = 0;
+  let inList = false;
+  let listItems = [];
+  let currentSection = null;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+
+    // Handle empty lines
+    if (!trimmedLine) {
+      // If we were in a list, add the list to the document
+      if (inList) {
+        tiptapDoc.content.push({
+          type: 'bulletList',
+          content: listItems
+        });
+        inList = false;
+        listItems = [];
+      }
+
+      // Add an empty paragraph for spacing
+      tiptapDoc.content.push({
+        type: 'paragraph',
+        content: []
+      });
+
+      i++;
+      continue;
+    }
+
+    // Check if this is the first line (title)
+    if (i === 0) {
+      tiptapDoc.content.push({
+        type: 'heading',
+        attrs: { level: 1 },
+        content: [{ type: 'text', text: trimmedLine }]
+      });
+
+      i++;
+      continue;
+    }
+
+    // Check for section headings
+    // A section heading is typically short (1-4 words) and followed by content
+    const wordCount = trimmedLine.split(/\s+/).length;
+    const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+    const isLastLine = i === lines.length - 1;
+
+    // Detect if this line is a section heading
+    const isSectionHeading = wordCount <= 4 && 
+                            !isLastLine && 
+                            nextLine && 
+                            !nextLine.startsWith('#') && 
+                            !nextLine.startsWith('-') && 
+                            !nextLine.startsWith('*');
+
+    if (isSectionHeading) {
+      // If we were in a list, add the list to the document
+      if (inList) {
+        tiptapDoc.content.push({
+          type: 'bulletList',
+          content: listItems
+        });
+        inList = false;
+        listItems = [];
+      }
+
+      // Add the section heading
+      tiptapDoc.content.push({
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: trimmedLine }]
+      });
+
+      currentSection = trimmedLine;
+      i++;
+      continue;
+    }
+
+    // Check if this line is part of a list
+    // Lines after a section heading or indented lines are treated as list items
+    const isIndented = line.startsWith(' ') || line.startsWith('\t');
+    const isPrevLineHeading = currentSection !== null && i > 0 && lines[i - 1].trim() === currentSection;
+
+    if (isPrevLineHeading || isIndented || inList) {
+      inList = true;
+
+      listItems.push({
+        type: 'listItem',
+        content: [{
+          type: 'paragraph',
+          content: [{ type: 'text', text: trimmedLine }]
+        }]
+      });
+
+      i++;
+      continue;
+    }
+
+    // Default: treat as paragraph
+    tiptapDoc.content.push({
+      type: 'paragraph',
+      content: [{ type: 'text', text: trimmedLine }]
+    });
+
+    i++;
+  }
+
+  // If we ended while still in a list, add the list to the document
+  if (inList) {
+    tiptapDoc.content.push({
+      type: 'bulletList',
+      content: listItems
+    });
+  }
+
+  return tiptapDoc;
+};

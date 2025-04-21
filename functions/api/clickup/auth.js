@@ -66,15 +66,27 @@ export async function onRequestPost(context) {
             );
         }
 
+        // Get user profile
+        const userData = await ky
+            .get('https://api.clickup.com/api/v2/user', {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    accept: 'application/json',
+                },
+            })
+            .json();
+
         // Get user's authorized teams
         const teamsData = await ky
             .get('https://api.clickup.com/api/v2/team', {
                 headers: {
-                    'Authorization': `Bearer ${access_token}`,
+                    Authorization: `Bearer ${access_token}`,
                     'Content-Type': 'application/json',
                 },
             })
             .json();
+
+        const userID = userData.user.id;
 
         let allTasks = [];
 
@@ -83,12 +95,15 @@ export async function onRequestPost(context) {
             for (const team of teamsData.teams) {
                 // Get all tasks assigned to the user that are not completed
                 const tasksData = await ky
-                    .get(`https://api.clickup.com/api/v2/team/${team.id}/task?assignees[]=me&statuses[]=!complete`, {
-                        headers: {
-                            'Authorization': `Bearer ${access_token}`,
-                            'Content-Type': 'application/json',
+                    .get(
+                        `https://api.clickup.com/api/v2/team/${team.id}/task?assignees[]=${userID}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${access_token}`,
+                                'Content-Type': 'application/json',
+                            },
                         },
-                    })
+                    )
                     .json();
 
                 if (tasksData && tasksData.tasks && Array.isArray(tasksData.tasks)) {
@@ -102,7 +117,7 @@ export async function onRequestPost(context) {
             const upsertPromises = allTasks.map((task) => {
                 // Convert description to Tiptap format if available
                 const convertedDesc = task?.description ? tinymceToTiptap(task.description) : null;
-                
+
                 return supabase.from('tasks').upsert(
                     {
                         name: task.name,
@@ -135,7 +150,7 @@ export async function onRequestPost(context) {
         return Response.json(
             {
                 success: false,
-                error: 'Internal server error',
+                error: error,
             },
             { status: 500 },
         );
