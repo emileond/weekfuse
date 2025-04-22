@@ -42,7 +42,7 @@ const CreatableSelect = ({
     });
 
     // Ensure all options are valid before rendering
-    const validOptions = filteredOptions.filter((option) => option && option.value && option.label);
+    const validOptions = filteredOptions.filter((option) => option && option.value !== undefined && option.value !== null && option.label);
 
     const handleSelect = (option) => {
         if (multiple) {

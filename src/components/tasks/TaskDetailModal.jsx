@@ -18,6 +18,7 @@ import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
+import PrioritySelect from '../form/PrioritySelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
 import { RiCheckboxCircleFill, RiCheckboxCircleLine } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
@@ -33,6 +34,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [selectedMilestone, setSelectedMilestone] = useState(null);
     const [selectedTags, setSelectedTags] = useState([]);
+    const [selectedPriority, setSelectedPriority] = useState(null);
 
     const isExternal = !!task?.integration_source;
 
@@ -74,6 +76,13 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             } else {
                 setSelectedTags([]);
             }
+
+            // Set initial priority if task has one
+            if (task.priority !== null && task.priority !== undefined) {
+                setSelectedPriority({ value: task.priority });
+            } else {
+                setSelectedPriority(null);
+            }
         }
     }, [isOpen, task, reset]);
 
@@ -110,6 +119,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 });
             }
         }
+
     };
 
     const onSubmit = async (data) => {
@@ -122,6 +132,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 project_id: selectedProject?.value || null,
                 milestone_id: selectedMilestone?.value || null,
                 tags: selectedTags.length > 0 ? selectedTags : null,
+                priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
             };
 
             // Check if the data has actually changed
@@ -149,6 +160,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                             dayjs(task.date).format('YYYY-MM-DD'))) ||
                 updates.project_id !== (task.project_id || null) ||
                 updates.milestone_id !== (task.milestone_id || null) ||
+                updates.priority !== task.priority ||
                 !areTagsEqual(updates.tags, task.tags);
 
             // Only make the database call if the data has changed
@@ -234,6 +246,10 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                             defaultValue={task?.tags || task?.tag_id}
                                             onChange={setSelectedTags}
                                             multiple={true}
+                                        />
+                                        <PrioritySelect
+                                            defaultValue={task?.priority}
+                                            onChange={setSelectedPriority}
                                         />
                                     </div>
                                     {task.status === 'completed' && task.completed_at && (

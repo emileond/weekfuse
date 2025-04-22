@@ -18,6 +18,7 @@ import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
+import PrioritySelect from '../form/PrioritySelect.jsx';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defaultMilestone }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -30,6 +31,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
         defaultMilestone ? { value: defaultMilestone } : null,
     ); // State to track selected milestone
     const [selectedTags, setSelectedTags] = useState([]); // State to track selected tags
+    const [selectedPriority, setSelectedPriority] = useState(null); // State to track selected priority
 
     const {
         register,
@@ -39,7 +41,6 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
     } = useForm();
 
     const onSubmit = async (data) => {
-        console.log(selectedTags);
         try {
             await createTask({
                 task: {
@@ -50,6 +51,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                     project_id: selectedProject?.value || null,
                     milestone_id: selectedMilestone?.value || null,
                     tags: selectedTags.length > 0 ? selectedTags : null,
+                    priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
                     status: 'pending',
                 },
             });
@@ -59,6 +61,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
             setSelectedProject(null);
             setSelectedMilestone(null);
             setSelectedTags([]);
+            setSelectedPriority(null);
         } catch (error) {
             toast.error(error.message || 'Failed to create task');
         }
@@ -105,6 +108,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                                     />
                                 )}
                                 <TagSelect onChange={setSelectedTags} multiple={true} />
+                                <PrioritySelect onChange={setSelectedPriority} />
                             </div>
                         </div>
                     </ModalBody>
@@ -118,6 +122,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                                 setSelectedProject(null);
                                 setSelectedMilestone(null);
                                 setSelectedTags([]);
+                                setSelectedPriority(null);
                             }}
                             isDisabled={isPending}
                         >

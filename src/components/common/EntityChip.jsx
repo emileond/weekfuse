@@ -1,16 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Chip, Spinner } from '@heroui/react';
-import { RiListCheck3, RiFlag2Line, RiPriceTag3Line, RiHashtag } from 'react-icons/ri';
+import { 
+    RiListCheck3, 
+    RiFlag2Line, 
+    RiPriceTag3Line, 
+    RiHashtag,
+    RiArrowUpDoubleLine,
+    RiArrowDownWideLine,
+    RiEqualLine,
+    RiAlarmWarningLine
+} from 'react-icons/ri';
 import { useProjects } from '../../hooks/react-query/projects/useProjects';
 import { useMilestones } from '../../hooks/react-query/milestones/useMilestones';
 import { useTags } from '../../hooks/react-query/tags/useTags';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 
-/**
- * A reusable component that displays an entity (project, milestone, tag, priority) as a chip
- * Fetches the entity data using react-query hooks based on the provided type and ID
- * For tags, it can display multiple tags if entityId is an array
- */
+// Priority mapping to match PrioritySelect component - defined outside component to avoid recreation on each render
+const PRIORITY_MAPPING = {
+    0: { 
+        label: 'Low', 
+        icon: <RiArrowDownWideLine fontSize=".95rem" className="text-blue-500" />,
+    },
+    1: { 
+        label: 'Medium', 
+        icon: <RiEqualLine fontSize=".95rem" className="text-orange-500" />,
+    },
+    2: { 
+        label: 'High', 
+        icon: <RiArrowUpDoubleLine fontSize=".95rem" className="text-danger" />,
+    }
+};
+
 const EntityChip = ({ type, entityId, size = 'sm', variant = 'light', className = '' }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const [entityData, setEntityData] = useState(null);
@@ -61,9 +81,19 @@ const EntityChip = ({ type, entityId, size = 'sm', variant = 'light', className 
                 setIsLoading(false);
             }
         } else if (type === 'priority') {
-            // For priority, we could have a predefined mapping or fetch from an API
-            // For now, just use the ID as the name
-            setEntityData({ name: entityId });
+            // Use our priority mapping to get the appropriate data
+            const priorityValue = parseInt(entityId, 10);
+            const priorityInfo = PRIORITY_MAPPING[priorityValue] || { 
+                label: 'Unknown', 
+                icon: <RiAlarmWarningLine fontSize=".9rem" />,
+                color: 'text-default-600'
+            };
+
+            setEntityData({ 
+                name: priorityInfo.label,
+                priority: priorityValue,
+                color: priorityInfo.color
+            });
             setIsLoading(false);
         }
     }, [
@@ -88,7 +118,11 @@ const EntityChip = ({ type, entityId, size = 'sm', variant = 'light', className 
             case 'tag':
                 return <RiHashtag fontSize=".9rem" />;
             case 'priority':
-                return <RiPriceTag3Line fontSize=".9rem" />;
+                if (entityData && entityData.priority !== undefined) {
+                    const priorityInfo = PRIORITY_MAPPING[entityData.priority];
+                    return priorityInfo ? priorityInfo.icon : <RiAlarmWarningLine fontSize=".9rem" />;
+                }
+                return <RiAlarmWarningLine fontSize=".9rem" />;
             default:
                 return null;
         }
@@ -130,7 +164,6 @@ const EntityChip = ({ type, entityId, size = 'sm', variant = 'light', className 
                 size={size}
                 variant={variant}
                 startContent={getIcon()}
-                className={`text-default-600 ${className}`}
             >
                 {entityData.name}
             </Chip>

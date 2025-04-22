@@ -25,3 +25,5 @@ dist-ssr
 
 .trigger
 .dev.vars
+
+*.npmrc
