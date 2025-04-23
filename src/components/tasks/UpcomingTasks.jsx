@@ -11,9 +11,10 @@ import {
 import BacklogPanel from './BacklogPanel.jsx';
 import { useTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import DraggableList from './DraggableList.jsx';
-import timezone from 'dayjs/plugin/timezone'; // Import the timezone plugin
+import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import NewTaskModal from './NewTaskModal.jsx';
+import ky from 'ky';
 
 // Extend dayjs with the plugins
 dayjs.extend(utc);
@@ -48,11 +49,34 @@ const UpcomingTasks = () => {
         onOpenChange();
     };
 
+    const handleAutoPlan = async () => {
+        try {
+            const response = await ky.post('/api/ai/plan', {
+                json: {
+                    startDate,
+                    endDate,
+                    scheduledTasks: tasks || [],
+                    workspace_id: currentWorkspace?.workspace_id
+                },
+                timeout: false,
+            }).json();
+
+            console.log('Auto plan response:', response);
+        } catch (error) {
+            console.error('Error in auto plan:', error);
+        }
+    }
+
     return (
         <>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={newTaskDate} />
             <div className="flex justify-between mb-2">
-                <p className="text-sm text-default-600">From Mar 12 - Apr 12</p>
+                <Button
+                onPress={handleAutoPlan}
+                >
+                    Auto Plan
+                </Button>
+                <p className="text-sm text-default-600">From start date - end date</p>
                 <Button
                     size="sm"
                     variant="flat"

@@ -9,9 +9,9 @@ function UpcomingPage() {
                 maxW="screen-2xl"
                 title="Upcoming"
                 description="These are the tasks that are scheduled for the upcoming days."
-                // primaryAction="New task"
+                //primaryAction="Auto Plan"
                 // icon={<RiAddLine fontSize="1.1rem" />}
-                // onClick={null}
+                //onClick={null}
             >
                 <div className="flex flex-col gap-3">
                     <UpcomingTasks />
