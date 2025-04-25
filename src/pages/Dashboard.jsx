@@ -30,7 +30,7 @@ function DashboardPage() {
     });
     const { data: overdueTasks } = useTasks(currentWorkspace, {
         statusList: ['pending'],
-        endDate: dayjs().startOf('day').subtract(1, 'day').toISOString(),
+        endDate: dayjs().startOf('day').toISOString(),
     });
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
     const listDate = dayjs().startOf('day').tz(dayjs.tz.guess(), true).toISOString();
