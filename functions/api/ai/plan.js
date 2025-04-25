@@ -11,12 +11,12 @@ export async function onRequestPost(context) {
     const { startDate, endDate, availableDates, workspace_id } = body;
     const ai = new GoogleGenAI({ apiKey: context.env.GEMINI_API_KEY });
 
-    // fetch backlog form supabase
+    // fetch backlog from supabase
     const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
     const { data: backlog } = await supabase
         .from('tasks')
-        .select('name, description, id')
+        .select('id, name, description, priority, project_id, milestone_id')
         .eq('workspace_id', workspace_id)
         .is('date', null)
         .eq('status', 'pending')
@@ -34,16 +34,10 @@ Requirements:
 1.  **Strict Whitelist**: You may only assign tasks to dates in \`availableDates\`. If a backlog item cannot fit on any of those dates, leave it unscheduled.
 2.  **Max 3 Tasks per Day**: None of the provided availableDates have ≥3 existing tasks, so you only need to worry about distributing the backlog intelligently.
 3.  **Context-Aware Distribution**: Instead of evenly distributing tasks, consider both the task context (name and description) and the day of the week. For example:
-   - Schedule meetings, calls, and collaborative tasks on Mondays and Tuesdays when people are more energized after the weekend
+   - Schedule collaborative tasks on Mondays and Tuesdays when people are more energized after the weekend
    - Schedule deep work, coding, and creative tasks on Wednesdays and Thursdays when there are fewer interruptions
    - Schedule planning, reviews, and lighter tasks on Fridays when energy may be lower
    - Match task content with appropriate days (e.g., "weekly review" tasks on Fridays)
-4.  **Output**: Return ONLY a JSON array of objects:
-    [
-      { "id": "task-id", "date": "2025-05-15T00:00:00.000Z" },
-      …
-    ]
-   Leave any overflow tasks out of the array.
 
    Remember: do NOT add any dates outside of \`availableDates\`. Do NOT schedule on weekends or holidays—if they're not in \`availableDates\`, they're off-limits.
 

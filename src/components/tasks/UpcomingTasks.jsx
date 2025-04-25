@@ -2,9 +2,9 @@ import { useMemo, useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { Button, useDisclosure, Modal, ModalContent, ModalBody, Spinner } from '@heroui/react';
-import { RiAddLine, RiExpandLeftLine, RiContractRightLine } from 'react-icons/ri';
+import { RiAddLine, RiExpandLeftLine, RiContractRightLine, RiArrowGoBackLine } from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
-import { useTasks } from '../../hooks/react-query/tasks/useTasks.js';
+import { useTasks, useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import DraggableList from './DraggableList.jsx';
 import utc from 'dayjs/plugin/utc';
 import NewTaskModal from './NewTaskModal.jsx';
@@ -17,6 +17,7 @@ dayjs.extend(utc);
 const UpcomingTasks = () => {
     const [currentWorkspace] = useCurrentWorkspace();
     const [newTaskDate, setNewTaskDate] = useState(null);
+    const [lastPlanResponse, setLastPlanResponse] = useState(null);
     const { isOpen, onOpenChange } = useDisclosure();
     const {
         isOpen: isLoadingOpen,
@@ -25,6 +26,7 @@ const UpcomingTasks = () => {
     } = useDisclosure();
     const [loadingMessage, setLoadingMessage] = useState('Optimizing plan...');
     const queryClient = useQueryClient();
+    const updateMultipleTasks = useUpdateMultipleTasks(currentWorkspace);
 
     // Array of loading messages to display
     const loadingMessages = [
@@ -76,10 +78,43 @@ const UpcomingTasks = () => {
         onOpenChange();
     };
 
+    const handleRollback = async () => {
+        try {
+            if (!lastPlanResponse || !Array.isArray(lastPlanResponse)) {
+                console.error('No plan response to rollback');
+                return;
+            }
+
+            // Show loading modal
+            onLoadingOpen();
+            setLoadingMessage('Rolling back changes...');
+
+            // Prepare tasks for rollback (set date to null)
+            const tasksToUpdate = lastPlanResponse.map(task => ({
+                taskId: task.id,
+                updates: { date: null }
+            }));
+
+            // Update tasks using the hook
+            await updateMultipleTasks(tasksToUpdate);
+
+            // Clear the last plan response
+            setLastPlanResponse(null);
+
+            console.log('Successfully rolled back AI plan changes');
+        } catch (error) {
+            console.error('Error rolling back changes:', error);
+        } finally {
+            // Hide loading modal
+            onLoadingClose();
+        }
+    };
+
     const handleAutoPlan = async () => {
         try {
             // Show loading modal
             onLoadingOpen();
+            setLoadingMessage('Optimizing plan...');
 
             // Transform tasks into a map of dates with task counts
             const scheduledTasksPerDay = {};
@@ -141,6 +176,9 @@ const UpcomingTasks = () => {
 
             console.log('Auto plan response:', response);
 
+            // Store the response for potential rollback
+            setLastPlanResponse(response);
+
             // Refetch the tasks query after successful response
             if (response) {
                 await queryClient.cancelQueries({
@@ -176,7 +214,19 @@ const UpcomingTasks = () => {
                 </ModalContent>
             </Modal>
             <div className="flex justify-between mb-2">
-                <Button onPress={handleAutoPlan}>Auto Plan</Button>
+                <div className="flex gap-2">
+                    <Button onPress={handleAutoPlan}>Auto Plan</Button>
+                    {lastPlanResponse && (
+                        <Button 
+                            color="danger" 
+                            variant="flat" 
+                            onPress={handleRollback}
+                            startContent={<RiArrowGoBackLine fontSize="1rem" />}
+                        >
+                            Rollback
+                        </Button>
+                    )}
+                </div>
                 <p className="text-sm text-default-600">From start date - end date</p>
                 <Button
                     size="sm"
