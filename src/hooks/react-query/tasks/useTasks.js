@@ -66,14 +66,45 @@ export const useTasks = (currentWorkspace, filters = {}) => {
     });
 };
 
-const fetchBacklogTasks = async ({ workspace_id, page = 1, pageSize = 20 }) => {
+const fetchBacklogTasks = async ({
+    workspace_id,
+    page = 1,
+    pageSize = 20,
+    project_id = null,
+    milestone_id = null,
+    tags = null,
+    integration_source = null,
+    priority = null,
+}) => {
     // First, fetch only the count of tasks
-    const countQuery = supabaseClient
+    let countQuery = supabaseClient
         .from('tasks')
         .select('id', { count: 'exact', head: true })
         .eq('workspace_id', workspace_id)
         .is('date', null)
         .eq('status', 'pending');
+
+    // Apply additional filters to count query
+    if (project_id) {
+        countQuery = countQuery.eq('project_id', project_id);
+    }
+
+    if (milestone_id) {
+        countQuery = countQuery.eq('milestone_id', milestone_id);
+    }
+
+    if (tags && tags.length > 0) {
+        // For tags, we need to check if the task's tags array contains any of the selected tags
+        countQuery = countQuery.contains('tags', tags);
+    }
+
+    if (integration_source) {
+        countQuery = countQuery.eq('integration_source', integration_source);
+    }
+
+    if (priority) {
+        countQuery = countQuery.eq('priority', priority);
+    }
 
     const { count, error: countError } = await countQuery;
 
@@ -86,7 +117,7 @@ const fetchBacklogTasks = async ({ workspace_id, page = 1, pageSize = 20 }) => {
     const to = from + pageSize - 1;
 
     // Then fetch the actual tasks data
-    const dataQuery = supabaseClient
+    let dataQuery = supabaseClient
         .from('tasks')
         .select('*')
         .eq('workspace_id', workspace_id)
@@ -94,6 +125,27 @@ const fetchBacklogTasks = async ({ workspace_id, page = 1, pageSize = 20 }) => {
         .eq('status', 'pending')
         .order('order')
         .range(from, to);
+
+    // Apply the same filters to data query
+    if (project_id) {
+        dataQuery = dataQuery.eq('project_id', project_id);
+    }
+
+    if (milestone_id) {
+        dataQuery = dataQuery.eq('milestone_id', milestone_id);
+    }
+
+    if (tags && tags.length > 0) {
+        dataQuery = dataQuery.contains('tags', tags);
+    }
+
+    if (integration_source) {
+        dataQuery = dataQuery.eq('integration_source', integration_source);
+    }
+
+    if (priority) {
+        dataQuery = dataQuery.eq('priority', priority);
+    }
 
     const { data, error: dataError } = await dataQuery;
 
@@ -105,14 +157,29 @@ const fetchBacklogTasks = async ({ workspace_id, page = 1, pageSize = 20 }) => {
 };
 
 // Hook to fetch paginated backlog tasks for a given workspace
-export const useBacklogTasks = (currentWorkspace, page = 1, pageSize = 20) => {
+export const useBacklogTasks = (currentWorkspace, page = 1, pageSize = 20, filters = {}) => {
     return useQuery({
-        queryKey: ['backlogTasks', currentWorkspace?.workspace_id, page, pageSize],
+        queryKey: [
+            'backlogTasks',
+            currentWorkspace?.workspace_id,
+            page,
+            pageSize,
+            filters.project_id,
+            filters.milestone_id,
+            filters.tags,
+            filters.integration_source,
+            filters.priority,
+        ],
         queryFn: () =>
             fetchBacklogTasks({
                 workspace_id: currentWorkspace?.workspace_id,
                 page,
                 pageSize,
+                project_id: filters.project_id,
+                milestone_id: filters.milestone_id,
+                tags: filters.tags,
+                integration_source: filters.integration_source,
+                priority: filters.priority,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided

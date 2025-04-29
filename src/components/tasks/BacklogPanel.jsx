@@ -1,5 +1,5 @@
-import { Button, useDisclosure, Pagination, Progress, Spinner, Input } from '@heroui/react';
-import { RiAddLine, RiArchiveStackLine, RiSearchLine } from 'react-icons/ri';
+import { Button, useDisclosure, Pagination, Spinner, Input, Divider } from '@heroui/react';
+import { RiAddLine, RiArchiveStackLine, RiSearchLine, RiFilterLine } from 'react-icons/ri';
 import { useBacklogTasks, useFuzzySearchTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import DraggableList from './DraggableList.jsx';
@@ -7,6 +7,11 @@ import NewTaskModal from './NewTaskModal.jsx';
 import { useEffect, useState, useCallback, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import debounce from '../../utils/debounceUtils.js';
+import ProjectSelect from '../form/ProjectSelect.jsx';
+import MilestoneSelect from '../form/MilestoneSelect.jsx';
+import TagSelect from '../form/TagSelect.jsx';
+import IntegrationSourceSelect from '../form/IntegrationSourceSelect.jsx';
+import PrioritySelect from '../form/PrioritySelect.jsx';
 
 // Memoized panel content component to prevent unnecessary re-renders
 const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) => {
@@ -15,6 +20,15 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
     const { register, watch } = useForm();
     const searchTerm = watch('searchTerm', '');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [resetKey, setResetKey] = useState(0); // Add a key to force re-render of filter components
+
+    // Filter state variables
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [selectedMilestone, setSelectedMilestone] = useState(null);
+    const [selectedTags, setSelectedTags] = useState([]);
+    const [selectedIntegrationSource, setSelectedIntegrationSource] = useState(null);
+    const [selectedPriority, setSelectedPriority] = useState(null);
 
     // Create a debounced function to update search term
     const debouncedSetSearchTerm = useCallback(
@@ -29,8 +43,28 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
         debouncedSetSearchTerm(searchTerm);
     }, [searchTerm, debouncedSetSearchTerm]);
 
-    // Use the hook with pagination parameters for backlog tasks
-    const { data: tasksData } = useBacklogTasks(currentWorkspace, page, pageSize);
+    // Reset page when filters change
+    useEffect(() => {
+        setPage(1);
+    }, [
+        selectedProject,
+        selectedMilestone,
+        selectedTags,
+        selectedIntegrationSource,
+        selectedPriority,
+    ]);
+
+    // Create filters object for the useBacklogTasks hook
+    const filters = {
+        project_id: selectedProject,
+        milestone_id: selectedMilestone,
+        tags: selectedTags.length > 0 ? selectedTags : null,
+        integration_source: selectedIntegrationSource,
+        priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
+    };
+
+    // Use the hook with pagination parameters and filters for backlog tasks
+    const { data: tasksData } = useBacklogTasks(currentWorkspace, page, pageSize, filters);
 
     // Use the hook for fuzzy search with debounced search term
     const { data: searchData, isLoading: isSearching } = useFuzzySearchTasks(
@@ -61,6 +95,15 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                     <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700">
                         <RiArchiveStackLine fontSize="1.24rem" /> Backlog
                     </h3>
+                    <Button
+                        size="sm"
+                        color={showFilters ? 'primary' : 'default'}
+                        variant={showFilters ? 'solid' : 'light'}
+                        startContent={<RiFilterLine />}
+                        onPress={() => setShowFilters(!showFilters)}
+                    >
+                        Filters
+                    </Button>
                 </div>
                 <Button
                     size="sm"
@@ -76,10 +119,64 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                     color="primary"
                     variant="bordered"
                     placeholder="Search..."
-                    className="py-3 mb-4"
+                    className="mb-3"
                     startContent={<RiSearchLine />}
                     {...register('searchTerm')}
                 />
+
+                {showFilters && (
+                    <div className="mb-4">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            <ProjectSelect
+                                key={`project-select-${resetKey}`}
+                                onChange={(value) => setSelectedProject(value?.value || null)}
+                            />
+                            {selectedProject && (
+                                <MilestoneSelect
+                                    key={`milestone-select-${selectedProject}-${resetKey}`}
+                                    projectId={selectedProject}
+                                    onChange={(value) => setSelectedMilestone(value?.value || null)}
+                                />
+                            )}
+                            <TagSelect
+                                key={`tag-select-${resetKey}`}
+                                onChange={setSelectedTags}
+                                multiple={true}
+                            />
+                            <IntegrationSourceSelect
+                                key={`integration-source-select-${resetKey}`}
+                                onChange={setSelectedIntegrationSource}
+                            />
+                            <PrioritySelect
+                                key={`priority-select-${resetKey}`}
+                                onChange={setSelectedPriority}
+                            />
+                        </div>
+                        {(selectedProject ||
+                            selectedMilestone ||
+                            selectedTags.length > 0 ||
+                            selectedIntegrationSource ||
+                            selectedPriority) && (
+                            <Button
+                                size="sm"
+                                color="danger"
+                                variant="light"
+                                className="mt-2"
+                                onPress={() => {
+                                    setSelectedProject(null);
+                                    setSelectedMilestone(null);
+                                    setSelectedTags([]);
+                                    setSelectedIntegrationSource(null);
+                                    setSelectedPriority(null);
+                                    setResetKey((prevKey) => prevKey + 1); // Increment reset key to force re-render
+                                }}
+                            >
+                                Clear filters
+                            </Button>
+                        )}
+                        <Divider className="my-4" />
+                    </div>
+                )}
 
                 {isSearchActive && isSearching ? (
                     <div className="flex grow items-center justify-center">

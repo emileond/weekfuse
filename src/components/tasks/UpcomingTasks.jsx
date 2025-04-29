@@ -7,6 +7,7 @@ import {
     RiExpandLeftLine,
     RiContractRightLine,
     RiArrowGoBackLine,
+    RiSparkling2Fill,
 } from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
 import { useTasks, useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
@@ -220,7 +221,14 @@ const UpcomingTasks = () => {
             </Modal>
             <div className="flex justify-between mb-2">
                 <div className="flex gap-2">
-                    <Button onPress={handleAutoPlan}>Auto Plan</Button>
+                    <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={handleAutoPlan}
+                        endContent={<RiSparkling2Fill fontSize="1.2rem" />}
+                    >
+                        Auto Plan
+                    </Button>
                     {lastPlanResponse && (
                         <Button
                             color="danger"
