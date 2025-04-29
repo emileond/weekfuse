@@ -93,13 +93,13 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
             <div className="bg-content2 border-1 border-default rounded-xl p-4 flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700">
-                        <RiArchiveStackLine fontSize="1.24rem" /> Backlog
+                        <RiArchiveStackLine fontSize="1.2rem" /> Backlog
                     </h3>
                     <Button
                         size="sm"
                         color={showFilters ? 'primary' : 'default'}
                         variant={showFilters ? 'solid' : 'light'}
-                        startContent={<RiFilterLine />}
+                        startContent={<RiFilterLine fontSize=".85rem" />}
                         onPress={() => setShowFilters(!showFilters)}
                     >
                         Filters
@@ -122,6 +122,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                     className="mb-3"
                     startContent={<RiSearchLine />}
                     {...register('searchTerm')}
+                    autoComplete="off"
                 />
 
                 {showFilters && (

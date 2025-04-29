@@ -24,18 +24,18 @@ function PageLayout({
 
     return (
         <div
-            className={`min-h-screen h-full bg-background px-6 py-9 grow flex justify-center overflow-y-auto`}
+            className={`min-h-screen h-full bg-background px-6 py-6 grow flex justify-center overflow-y-auto`}
         >
             <div className={`w-full max-w-${maxW} flex flex-col gap-6`}>
                 <div>
-                    <div className="w-full flex flex-wrap justify-between gap-3">
+                    <div className="w-full flex flex-wrap items-center justify-between gap-3">
                         <div className="flex gap-3">
                             {backBtn && (
                                 <Button isIconOnly variant="light" onPress={() => navigate(-1)}>
                                     <RiArrowLeftLine fontSize="1.2rem" />
                                 </Button>
                             )}
-                            {title && <h1 className="font-semibold mb-3">{title}</h1>}
+                            {title && <h1 className="font-semibold text-2xl">{title}</h1>}
                         </div>
                         <div className="flex gap-3">
                             {customElements}

@@ -7,7 +7,6 @@ import {
     RiExpandLeftLine,
     RiContractRightLine,
     RiArrowGoBackLine,
-    RiSparkling2Fill,
 } from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
 import { useTasks, useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
@@ -20,10 +19,9 @@ import { useQueryClient } from '@tanstack/react-query';
 // Extend dayjs with the plugins
 dayjs.extend(utc);
 
-const UpcomingTasks = () => {
+const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const [newTaskDate, setNewTaskDate] = useState(null);
-    const [lastPlanResponse, setLastPlanResponse] = useState(null);
     const { isOpen, onOpenChange } = useDisclosure();
     const {
         isOpen: isLoadingOpen,
@@ -116,91 +114,95 @@ const UpcomingTasks = () => {
         }
     };
 
-    const handleAutoPlan = async () => {
-        try {
-            // Show loading modal
-            onLoadingOpen();
-            setLoadingMessage('Optimizing plan...');
+    // This function is now called by the parent component through the onAutoPlan prop
+    useEffect(() => {
+        // Set up the onAutoPlan function to be called from the parent
+        if (onAutoPlan) {
+            onAutoPlan.current = async () => {
+                try {
+                    // Show loading modal
+                    onLoadingOpen();
+                    setLoadingMessage('Optimizing plan...');
 
-            // Transform tasks into a map of dates with task counts
-            const scheduledTasksPerDay = {};
+                    // Transform tasks into a map of dates with task counts
+                    const scheduledTasksPerDay = {};
 
-            if (tasks && tasks.length > 0) {
-                tasks.forEach((task) => {
-                    if (task.date) {
-                        // Use UTC date as the key (YYYY-MM-DD format)
-                        const utcDate = dayjs(task.date).startOf('day').toISOString();
+                    if (tasks && tasks.length > 0) {
+                        tasks.forEach((task) => {
+                            if (task.date) {
+                                // Use UTC date as the key (YYYY-MM-DD format)
+                                const utcDate = dayjs(task.date).startOf('day').toISOString();
 
-                        // Increment the count for this date
-                        scheduledTasksPerDay[utcDate] = (scheduledTasksPerDay[utcDate] || 0) + 1;
-                    }
-                });
-            }
-
-            // Generate all dates in the range
-            const availableDates = [];
-            const start = dayjs(startDate);
-            const end = dayjs(endDate);
-
-            // Loop through all days in the range
-            let current = start;
-            while (current.isBefore(end) || current.isSame(end, 'day')) {
-                const currentIso = current.startOf('day').toISOString();
-                const weekday = current.day();
-                const weekdayName = current.format('dddd'); // Get weekday name (Monday, Tuesday, etc.)
-
-                // Only include weekdays (Mon-Fri)
-                if (weekday >= 1 && weekday <= 5) {
-                    // Check if this date has fewer than 3 tasks
-                    const taskCount = scheduledTasksPerDay[currentIso] || 0;
-                    if (taskCount < 3) {
-                        // Include both date and weekday name
-                        availableDates.push({
-                            date: currentIso,
-                            weekday: weekdayName,
+                                // Increment the count for this date
+                                scheduledTasksPerDay[utcDate] = (scheduledTasksPerDay[utcDate] || 0) + 1;
+                            }
                         });
                     }
+
+                    // Generate all dates in the range
+                    const availableDates = [];
+                    const start = dayjs(startDate);
+                    const end = dayjs(endDate);
+
+                    // Loop through all days in the range
+                    let current = start;
+                    while (current.isBefore(end) || current.isSame(end, 'day')) {
+                        const currentIso = current.startOf('day').toISOString();
+                        const weekday = current.day();
+                        const weekdayName = current.format('dddd'); // Get weekday name (Monday, Tuesday, etc.)
+
+                        // Only include weekdays (Mon-Fri)
+                        if (weekday >= 1 && weekday <= 5) {
+                            // Check if this date has fewer than 3 tasks
+                            const taskCount = scheduledTasksPerDay[currentIso] || 0;
+                            if (taskCount < 3) {
+                                // Include both date and weekday name
+                                availableDates.push({
+                                    date: currentIso,
+                                    weekday: weekdayName,
+                                });
+                            }
+                        }
+
+                        // Move to next day
+                        current = current.add(1, 'day');
+                    }
+
+                    console.log('Available dates for planning:', availableDates);
+
+                    const response = await ky
+                        .post('/api/ai/plan', {
+                            json: {
+                                startDate,
+                                endDate,
+                                availableDates,
+                                workspace_id: currentWorkspace?.workspace_id,
+                            },
+                            timeout: false,
+                        })
+                        .json();
+
+                    // Store the response for potential rollback
+                    setLastPlanResponse(response);
+
+                    // Refetch the tasks query after successful response
+                    if (response) {
+                        await queryClient.cancelQueries({
+                            queryKey: ['tasks', currentWorkspace?.workspace_id],
+                        });
+                        await queryClient.invalidateQueries({
+                            queryKey: ['tasks', currentWorkspace?.workspace_id],
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error in auto plan:', error);
+                } finally {
+                    // Hide loading modal
+                    onLoadingClose();
                 }
-
-                // Move to next day
-                current = current.add(1, 'day');
-            }
-
-            console.log('Available dates for planning:', availableDates);
-
-            const response = await ky
-                .post('/api/ai/plan', {
-                    json: {
-                        startDate,
-                        endDate,
-                        availableDates,
-                        workspace_id: currentWorkspace?.workspace_id,
-                    },
-                    timeout: false,
-                })
-                .json();
-
-            console.log('Auto plan response:', response);
-
-            // Store the response for potential rollback
-            setLastPlanResponse(response);
-
-            // Refetch the tasks query after successful response
-            if (response) {
-                await queryClient.cancelQueries({
-                    queryKey: ['tasks', currentWorkspace?.workspace_id],
-                });
-                await queryClient.invalidateQueries({
-                    queryKey: ['tasks', currentWorkspace?.workspace_id],
-                });
-            }
-        } catch (error) {
-            console.error('Error in auto plan:', error);
-        } finally {
-            // Hide loading modal
-            onLoadingClose();
+            };
         }
-    };
+    }, [currentWorkspace, startDate, endDate, tasks, queryClient, onLoadingOpen, onLoadingClose, setLoadingMessage]);
 
     return (
         <>
@@ -220,15 +222,6 @@ const UpcomingTasks = () => {
                 </ModalContent>
             </Modal>
             <div className="flex justify-between mb-2">
-                <div className="flex gap-2">
-                    <Button
-                        size="sm"
-                        variant="flat"
-                        onPress={handleAutoPlan}
-                        endContent={<RiSparkling2Fill fontSize="1.2rem" />}
-                    >
-                        Auto Plan
-                    </Button>
                     {lastPlanResponse && (
                         <Button
                             color="danger"
@@ -239,7 +232,6 @@ const UpcomingTasks = () => {
                             Rollback
                         </Button>
                     )}
-                </div>
                 <p className="text-sm text-default-600">From start date - end date</p>
                 <Button
                     size="sm"
@@ -307,7 +299,7 @@ const UpcomingTasks = () => {
                         );
                     })}
                 </div>
-                <BacklogPanel isBacklogCollapsed={isBacklogCollapsed} />
+                 <BacklogPanel isBacklogCollapsed={isBacklogCollapsed} />
             </div>
         </>
     );

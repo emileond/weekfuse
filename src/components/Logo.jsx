@@ -4,7 +4,7 @@ import logo from '/logo.svg'
 import icon from '/icon.svg'
 import darkLogo from '/logo-dark.svg'
 
-function Logo({ isIconOnly = false, size = '6' }) {
+function Logo({ isIconOnly = false, size }) {
   const [darkMode] = useDarkMode()
   const [src, setSrc] = useState(isIconOnly ? icon : logo)
 
@@ -18,7 +18,7 @@ function Logo({ isIconOnly = false, size = '6' }) {
     }
   }, [darkMode, isIconOnly])
 
-  return <img src={src} alt="logo" className={`h-${size} w-auto`} />
+  return <img src={src} alt="logo" className={`${size ? `h-[${size}]` : "h-6"} w-auto`} />
 }
 
 export default Logo
