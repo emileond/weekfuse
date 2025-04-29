@@ -7,7 +7,7 @@ import {
     Button
 } from '@heroui/react';
 import {
-    RiAlarmWarningLine,
+    RiFlag2Line,
     RiArrowUpDoubleLine,
     RiArrowDownWideLine,
     RiEqualLine,
@@ -72,7 +72,7 @@ export default function PrioritySelect({
                     size="sm"
                     variant="light"
                     className="text-default-600"
-                    startContent={selectedOption?.icon || <RiAlarmWarningLine fontSize="1rem" />}
+                    startContent={selectedOption?.icon || <RiFlag2Line fontSize="1rem" />}
                 >
                     {selectedOption?.label || label}
                 </Button>

@@ -10,7 +10,7 @@ function Sidebar() {
     const location = useLocation();
 
     return (
-        <div className="basis-64 grow-0 shrink-0 h-screen bg-content2 p-6 flex flex-col justify-between border-r-1 border-default-200">
+        <div className="basis-60 grow-0 shrink-0 h-screen bg-content2 px-4 py-6 flex flex-col justify-between border-r-1 border-default-200">
             <nav className="w-full flex flex-col items-start gap-1">
                 <div className="m-auto px-4">
                     <Logo size="140px" />
@@ -26,7 +26,7 @@ function Sidebar() {
                             key={index}
                             to={route.path}
                             startContent={route?.startContent}
-                            className={`items-center justify-start w-full ${
+                            className={`text-sm h-11 px-4 items-center justify-start w-full ${
                                 !isActive && 'text-default-600'
                             }`}
                             size="lg"

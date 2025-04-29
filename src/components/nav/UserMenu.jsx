@@ -88,7 +88,6 @@ function UserMenu({ avatarOnly }) {
                 {avatarOnly ? (
                     <Avatar
                         showFallback
-                        name={user?.data?.name || 'User'}
                         src={avatarUrl}
                         size="sm"
                         className="cursor-pointer"
