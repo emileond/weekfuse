@@ -11,7 +11,17 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY as string,
 );
 
-export const clickupSync = schedules.task({
+export const clickupS        // Fetch active workspace integrations that need syncing
+    const { data: integrations, error: fetchError } = await supabase
+        .from('user_integrations')
+        .select('*')
+        .eq('type', 'clickup')
+        .eq('status', 'active')
+        .lt('last_sync', timeRange)
+        .limit(100);
+
+    if (fetchError) {
+        logger.errorync = schedules.task({
     id: 'clickup-sync',
     cron: '*/10 * * * *', // Every 10 minutes
     maxDuration: 3000, // 50 minutes max duration
@@ -21,17 +31,7 @@ export const clickupSync = schedules.task({
         // Calculate the timestamp for 2 hours ago in UTC
         const timeRange = dayjs().utc().subtract(2, 'hours').toISOString();
 
-        // Fetch active workspace integrations that need syncing
-        const { data: integrations, error: fetchError } = await supabase
-            .from('user_integrations')
-            .select('*')
-            .eq('type', 'clickup')
-            .eq('status', 'active')
-            .lt('last_sync', timeRange)
-            .limit(100);
-
-        if (fetchError) {
-            logger.error(`Error fetching ClickUp integrations: ${fetchError.message}`);
+(`Error fetching ClickUp integrations: ${fetchError.message}`);
             return { success: false, error: fetchError.message };
         }
 

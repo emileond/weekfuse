@@ -2,7 +2,12 @@ import { useMemo, useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { Button, useDisclosure, Modal, ModalContent, ModalBody, Spinner } from '@heroui/react';
-import { RiAddLine, RiExpandLeftLine, RiContractRightLine, RiArrowGoBackLine } from 'react-icons/ri';
+import {
+    RiAddLine,
+    RiExpandLeftLine,
+    RiContractRightLine,
+    RiArrowGoBackLine,
+} from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
 import { useTasks, useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import DraggableList from './DraggableList.jsx';
@@ -90,9 +95,9 @@ const UpcomingTasks = () => {
             setLoadingMessage('Rolling back changes...');
 
             // Prepare tasks for rollback (set date to null)
-            const tasksToUpdate = lastPlanResponse.map(task => ({
+            const tasksToUpdate = lastPlanResponse.map((task) => ({
                 taskId: task.id,
-                updates: { date: null }
+                updates: { date: null },
             }));
 
             // Update tasks using the hook
@@ -123,7 +128,7 @@ const UpcomingTasks = () => {
                 tasks.forEach((task) => {
                     if (task.date) {
                         // Use UTC date as the key (YYYY-MM-DD format)
-                        const utcDate = dayjs(task.date).startOf('day').toISOString()
+                        const utcDate = dayjs(task.date).startOf('day').toISOString();
 
                         // Increment the count for this date
                         scheduledTasksPerDay[utcDate] = (scheduledTasksPerDay[utcDate] || 0) + 1;
@@ -151,7 +156,7 @@ const UpcomingTasks = () => {
                         // Include both date and weekday name
                         availableDates.push({
                             date: currentIso,
-                            weekday: weekdayName
+                            weekday: weekdayName,
                         });
                     }
                 }
@@ -217,9 +222,9 @@ const UpcomingTasks = () => {
                 <div className="flex gap-2">
                     <Button onPress={handleAutoPlan}>Auto Plan</Button>
                     {lastPlanResponse && (
-                        <Button 
-                            color="danger" 
-                            variant="flat" 
+                        <Button
+                            color="danger"
+                            variant="flat"
                             onPress={handleRollback}
                             startContent={<RiArrowGoBackLine fontSize="1rem" />}
                         >

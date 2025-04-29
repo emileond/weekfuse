@@ -66,31 +66,53 @@ export const useTasks = (currentWorkspace, filters = {}) => {
     });
 };
 
-const fetchBacklogTasks = async ({ workspace_id }) => {
-    let query = supabaseClient
+const fetchBacklogTasks = async ({ workspace_id, page = 1, pageSize = 20 }) => {
+    // First, fetch only the count of tasks
+    const countQuery = supabaseClient
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('workspace_id', workspace_id)
+        .is('date', null)
+        .eq('status', 'pending');
+
+    const { count, error: countError } = await countQuery;
+
+    if (countError) {
+        throw new Error('Failed to fetch task count');
+    }
+
+    // Calculate range for pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    // Then fetch the actual tasks data
+    const dataQuery = supabaseClient
         .from('tasks')
         .select('*')
         .eq('workspace_id', workspace_id)
         .is('date', null)
         .eq('status', 'pending')
-        .order('order');
+        .order('order')
+        .range(from, to);
 
-    const { data, error } = await query;
+    const { data, error: dataError } = await dataQuery;
 
-    if (error) {
-        throw new Error('Failed to fetch tasks');
+    if (dataError) {
+        throw new Error('Failed to fetch tasks data');
     }
 
-    return data;
+    return { data, count };
 };
 
-// Hook to fetch all tasks for a given workspace
-export const useBacklogTasks = (currentWorkspace) => {
+// Hook to fetch paginated backlog tasks for a given workspace
+export const useBacklogTasks = (currentWorkspace, page = 1, pageSize = 20) => {
     return useQuery({
-        queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+        queryKey: ['backlogTasks', currentWorkspace?.workspace_id, page, pageSize],
         queryFn: () =>
             fetchBacklogTasks({
                 workspace_id: currentWorkspace?.workspace_id,
+                page,
+                pageSize,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided
@@ -228,5 +250,45 @@ export const useDeleteTask = (currentWorkspace) => {
                 refetchType: 'all',
             });
         },
+    });
+};
+
+// Function to fuzzy search tasks
+const fuzzySearchTasks = async ({ searchText, resultLimit = 20, statusFilter }) => {
+    if (!searchText || searchText.trim() === '') {
+        return { data: [] };
+    }
+
+    const { data, error } = await supabaseClient.rpc('fuzzy_search_tasks', {
+        search_text: searchText,
+        result_limit: resultLimit,
+        status_filter: statusFilter,
+    });
+
+    if (error) {
+        console.error('Error searching tasks:', error);
+        throw new Error('Failed to search tasks');
+    }
+
+    return { data };
+};
+
+// Hook to fuzzy search tasks
+export const useFuzzySearchTasks = (
+    currentWorkspace,
+    searchText,
+    resultLimit = 20,
+    statusFilter,
+) => {
+    return useQuery({
+        queryKey: ['fuzzySearchTasks', currentWorkspace?.workspace_id, searchText, resultLimit],
+        queryFn: () =>
+            fuzzySearchTasks({
+                searchText,
+                resultLimit,
+                statusFilter,
+            }),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        enabled: !!currentWorkspace?.workspace_id && !!searchText && searchText.trim() !== '', // Only fetch if workspace_id and searchText are provided
     });
 };
