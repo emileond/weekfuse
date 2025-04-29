@@ -13,9 +13,9 @@ function Sidebar() {
         <div className="basis-64 grow-0 shrink-0 h-screen bg-content2 p-6 flex flex-col justify-between border-r-1 border-default-200">
             <nav className="w-full flex flex-col items-start gap-1">
                 <div className="m-auto px-4">
-                    <Logo size="18px" />
+                    <Logo size="140px" />
                 </div>
-                <Divider className="my-6" />
+                <Divider className="my-5" />
                 <WorkspaceSwitcher />
                 {navItems.map((route, index) => {
                     const isActive = route.path === location.pathname;

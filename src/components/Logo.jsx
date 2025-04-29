@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import {Image} from '@heroui/react';
 import { useDarkMode } from '../hooks/theme/useDarkMode'
 import logo from '/logo.svg'
 import icon from '/icon.svg'
 import darkLogo from '/logo-dark.svg'
 
-function Logo({ isIconOnly = false, size }) {
+function Logo({ isIconOnly = false, size = "160px" }) {
   const [darkMode] = useDarkMode()
   const [src, setSrc] = useState(isIconOnly ? icon : logo)
 
@@ -18,7 +19,7 @@ function Logo({ isIconOnly = false, size }) {
     }
   }, [darkMode, isIconOnly])
 
-  return <img src={src} alt="logo" className={`${size ? `h-[${size}]` : "h-6"} w-auto`} />
+  return <Image src={src} alt="logo" width={size} />
 }
 
 export default Logo
