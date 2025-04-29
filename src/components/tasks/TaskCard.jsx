@@ -111,6 +111,64 @@ const TaskCard = ({ task, sm }) => {
 
     return (
         <>
+
+            <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
+
+            {/* Delete Confirmation Modal */}
+            <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
+                <ModalContent>
+                    <ModalHeader>Delete Task</ModalHeader>
+                    <ModalBody>
+                        <p>
+                            Are you sure you want to delete "{task.name}"? This action cannot be
+                            undone.
+                        </p>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="flat" onPress={onDeleteModalClose}>
+                            Cancel
+                        </Button>
+                        <Button color="danger" onPress={handleDelete}>
+                            Delete
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Move Modal */}
+            <Modal isOpen={isMoveModalOpen} onClose={onMoveModalClose}>
+                <ModalContent>
+                    <ModalHeader>Move Task</ModalHeader>
+                    <ModalBody>
+                        <p className="mb-4">Select a list to move this task to:</p>
+                        <CreatableSelect
+                            label="Select project"
+                            options={[
+                                {
+                                    label: 'option x',
+                                    value: 'option x',
+                                },
+                                {
+                                    label: 'option y',
+                                    value: 'option y',
+                                },
+                                {
+                                    label: 'option z',
+                                    value: 'option z',
+                                },
+                            ]}
+                        />
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="flat" onPress={onMoveModalClose}>
+                            Cancel
+                        </Button>
+                        <Button color="primary" onPress={onMoveModalClose}>
+                            Move
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
             <div
                 id={task.id}
                 className="w-full border-1 border-content3 rounded-xl p-3 bg-content1 hover:bg-content2/50 transition-bg duration-300 ease-in-out cursor-grabbing hover:cursor-pointer"
@@ -210,63 +268,6 @@ const TaskCard = ({ task, sm }) => {
                     </div>
                 )}
             </div>
-            <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
-
-            {/* Delete Confirmation Modal */}
-            <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
-                <ModalContent>
-                    <ModalHeader>Delete Task</ModalHeader>
-                    <ModalBody>
-                        <p>
-                            Are you sure you want to delete "{task.name}"? This action cannot be
-                            undone.
-                        </p>
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="flat" onPress={onDeleteModalClose}>
-                            Cancel
-                        </Button>
-                        <Button color="danger" onPress={handleDelete}>
-                            Delete
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
-
-            {/* Move Modal */}
-            <Modal isOpen={isMoveModalOpen} onClose={onMoveModalClose}>
-                <ModalContent>
-                    <ModalHeader>Move Task</ModalHeader>
-                    <ModalBody>
-                        <p className="mb-4">Select a list to move this task to:</p>
-                        <CreatableSelect
-                            label="Select project"
-                            options={[
-                                {
-                                    label: 'option x',
-                                    value: 'option x',
-                                },
-                                {
-                                    label: 'option y',
-                                    value: 'option y',
-                                },
-                                {
-                                    label: 'option z',
-                                    value: 'option z',
-                                },
-                            ]}
-                        />
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="flat" onPress={onMoveModalClose}>
-                            Cancel
-                        </Button>
-                        <Button color="primary" onPress={onMoveModalClose}>
-                            Move
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
         </>
     );
 };

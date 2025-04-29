@@ -22,6 +22,10 @@ const DraggableList = ({ id, items, group, smallCards }) => {
         dropZoneClass: 'bg-default text-default-500 opacity-30',
         plugins: [animations()],
         onDragend: async (e) => {
+            // Ensure the dragged element's z-index is reset to 10
+            if (e && e.draggedNode && e.draggedNode.el) {
+                e.draggedNode.el.style.zIndex = 10;
+            }
             const itemIndex = e?.draggedNode?.data.index;
             const itemId = e?.draggedNode?.data?.value?.id;
             const itemDate = e?.draggedNode?.data?.value?.date
