@@ -91,20 +91,9 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
         <>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={null} />
             <div className="bg-content2 border-1 border-default rounded-xl p-4 flex flex-col h-full">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700">
-                        <RiArchiveStackLine fontSize="1.2rem" /> Backlog
-                    </h3>
-                    <Button
-                        size="sm"
-                        color={showFilters ? 'primary' : 'default'}
-                        variant={showFilters ? 'solid' : 'light'}
-                        startContent={<RiFilterLine fontSize=".85rem" />}
-                        onPress={() => setShowFilters(!showFilters)}
-                    >
-                        Filters
-                    </Button>
-                </div>
+                <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700">
+                    <RiArchiveStackLine fontSize="1.2rem" /> Backlog
+                </h3>
                 <Button
                     size="sm"
                     color="primary"
@@ -115,16 +104,28 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                 >
                     Add task
                 </Button>
-                <Input
-                    color="primary"
-                    variant="bordered"
-                    placeholder="Search..."
-                    className="mb-3"
-                    startContent={<RiSearchLine />}
-                    {...register('searchTerm')}
-                    autoComplete="off"
-                />
-
+                <div className="flex items-center gap-1 mb-3">
+                    <Input
+                        size="sm"
+                        color="primary"
+                        variant="bordered"
+                        placeholder="Search..."
+                        startContent={<RiSearchLine />}
+                        {...register('searchTerm')}
+                        autoComplete="off"
+                    />
+                    <div>
+                        <Button
+                            size="sm"
+                            color={showFilters ? 'primary' : 'default'}
+                            variant={showFilters ? 'flat' : 'light'}
+                            startContent={<RiFilterLine fontSize=".85rem" />}
+                            onPress={() => setShowFilters(!showFilters)}
+                        >
+                            Filters
+                        </Button>
+                    </div>
+                </div>
                 {showFilters && (
                     <div className="mb-4">
                         <div className="flex flex-wrap gap-2 mb-2">

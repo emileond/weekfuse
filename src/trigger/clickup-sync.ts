@@ -1,6 +1,5 @@
-import { logger, schedules, AbortTaskRunError } from '@trigger.dev/sdk/v3';
+import { logger, task } from '@trigger.dev/sdk/v3';
 import { createClient } from '@supabase/supabase-js';
-import dayjs from 'dayjs';
 import { toUTC } from '../utils/dateUtils';
 import ky from 'ky';
 import { plainTextToTiptap } from '../utils/editorUtils';
@@ -11,42 +10,13 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY as string,
 );
 
-export const clickupS        // Fetch active workspace integrations that need syncing
-    const { data: integrations, error: fetchError } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('type', 'clickup')
-        .eq('status', 'active')
-        .lt('last_sync', timeRange)
-        .limit(100);
-
-    if (fetchError) {
-        logger.errorync = schedules.task({
+export const clickupSync = task({
+    // Fetch active workspace integrations that need syncing
     id: 'clickup-sync',
-    cron: '*/10 * * * *', // Every 10 minutes
     maxDuration: 3000, // 50 minutes max duration
-    run: async () => {
-        logger.log('Starting ClickUp sync task');
+    run: async (payload: any) => {
+        logger.log('Starting Clickup sync task');
 
-        // Calculate the timestamp for 2 hours ago in UTC
-        const timeRange = dayjs().utc().subtract(2, 'hours').toISOString();
-
-(`Error fetching ClickUp integrations: ${fetchError.message}`);
-            return { success: false, error: fetchError.message };
-        }
-
-        if (!integrations || integrations.length === 0) {
-            logger.log('No ClickUp integrations need syncing');
-            return { success: true, synced: 0 };
-        }
-
-        logger.log(`Found ${integrations.length} ClickUp integrations to sync`);
-
-        let syncedCount = 0;
-        let failedCount = 0;
-
-        // Process each integration
-        for (const integration of integrations) {
             try {
                 // Update the last_sync timestamp
                 await supabase
@@ -54,9 +24,9 @@ export const clickupS        // Fetch active workspace integrations that need sy
                     .update({
                         last_sync: toUTC(),
                     })
-                    .eq('id', integration.id);
+                    .eq('id', payload.id);
 
-                const access_token = integration.access_token;
+                const access_token = payload.access_token;
 
                 // Get user profile
                 const userData = await ky
@@ -116,7 +86,7 @@ export const clickupS        // Fetch active workspace integrations that need sy
                             {
                                 name: task.name,
                                 description: convertedDesc,
-                                workspace_id: integration.workspace_id,
+                                workspace_id: payload.workspace_id,
                                 integration_source: 'clickup',
                                 external_id: task.id,
                                 external_data: task,
@@ -144,28 +114,23 @@ export const clickupS        // Fetch active workspace integrations that need sy
                     });
 
                     logger.log(
-                        `Processed ${allTasks.length} tasks for workspace ${integration.workspace_id}: ${taskSuccessCount} succeeded, ${taskFailCount} failed`,
+                        `Processed ${allTasks.length} tasks for workspace ${payload.workspace_id}: ${taskSuccessCount} succeeded, ${taskFailCount} failed`,
                     );
                 }
 
-                syncedCount++;
                 logger.log(
-                    `Successfully synced ClickUp integration for workspace ${integration.workspace_id}`,
+                    `Successfully synced ClickUp integration for workspace ${payload.workspace_id}`,
                 );
             } catch (error) {
                 console.log(error);
-                failedCount++;
                 logger.error(
-                    `Error syncing ClickUp integration for workspace ${integration.workspace_id}: ${error.message}`,
+                    `Error syncing ClickUp integration for workspace ${payload.workspace_id}: ${error.message}`,
                 );
             }
-        }
+
 
         return {
             success: true,
-            synced: syncedCount,
-            failed: failedCount,
-            total: integrations.length,
         };
     },
 });

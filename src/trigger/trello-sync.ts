@@ -1,6 +1,5 @@
-import { logger, schedules, AbortTaskRunError } from '@trigger.dev/sdk/v3';
+import { logger, task } from '@trigger.dev/sdk/v3';
 import { createClient } from '@supabase/supabase-js';
-import dayjs from 'dayjs';
 import { toUTC } from '../utils/dateUtils';
 import ky from 'ky';
 import { markdownToTipTap } from '../utils/editorUtils';
@@ -11,42 +10,12 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY as string,
 );
 
-export const trelloSync = schedules.task({
+export const trelloSync = task({
     id: 'trello-sync',
-    cron: '*/10 * * * *', // Every 10 minutes
-    maxDuration: 3000, // 50 minutes max duration
-    run: async () => {
+    maxDuration: 3600, // 60 minutes max duration
+    run: async (payload: any) => {
         logger.log('Starting Trello sync task');
 
-        // Calculate the timestamp for 2 hours ago in UTC
-        const timeRange = dayjs().utc().subtract(2, 'hours').toISOString();
-
-        // Fetch active workspace integrations that need syncing
-        const { data: integrations, error: fetchError } = await supabase
-            .from('user_integrations')
-            .select('*')
-            .eq('type', 'trello')
-            .eq('status', 'active')
-            .lt('last_sync', timeRange)
-            .limit(100);
-
-        if (fetchError) {
-            logger.error(`Error fetching Trello integrations: ${fetchError.message}`);
-            return { success: false, error: fetchError.message };
-        }
-
-        if (!integrations || integrations.length === 0) {
-            logger.log('No Trello integrations need syncing');
-            return { success: true, synced: 0 };
-        }
-
-        logger.log(`Found ${integrations.length} Trello integrations to sync`);
-
-        let syncedCount = 0;
-        let failedCount = 0;
-
-        // Process each integration
-        for (const integration of integrations) {
             try {
                 // Update the last_sync timestamp
                 await supabase
@@ -54,9 +23,9 @@ export const trelloSync = schedules.task({
                     .update({
                         last_sync: toUTC(),
                     })
-                    .eq('id', integration.id);
+                    .eq('id', payload.id);
 
-                const access_token = integration.access_token;
+                const access_token = payload.access_token;
 
                 // Get boards the member belongs to
                 const boards = await ky
@@ -104,7 +73,7 @@ export const trelloSync = schedules.task({
                             {
                                 name: card.name,
                                 description: tiptapDescription,
-                                workspace_id: integration.workspace_id,
+                                workspace_id: payload.workspace_id,
                                 integration_source: 'trello',
                                 external_id: card.id,
                                 external_data: card,
@@ -133,28 +102,22 @@ export const trelloSync = schedules.task({
                     });
 
                     logger.log(
-                        `Processed ${cardsData.length} cards for workspace ${integration.workspace_id}: ${cardSuccessCount} succeeded, ${cardFailCount} failed`,
+                        `Processed ${cardsData.length} cards for workspace ${payload.workspace_id}: ${cardSuccessCount} succeeded, ${cardFailCount} failed`,
                     );
                 }
 
-                syncedCount++;
                 logger.log(
-                    `Successfully synced Trello integration for workspace ${integration.workspace_id}`,
+                    `Successfully synced Trello integration for workspace ${payload.workspace_id}`,
                 );
             } catch (error) {
                 console.log(error);
-                failedCount++;
                 logger.error(
-                    `Error syncing Trello integration for workspace ${integration.workspace_id}: ${error.message}`,
+                    `Error syncing Trello integration for workspace ${payload.workspace_id}: ${error.message}`,
                 );
             }
-        }
 
         return {
             success: true,
-            synced: syncedCount,
-            failed: failedCount,
-            total: integrations.length,
         };
     },
 });

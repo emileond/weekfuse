@@ -26,7 +26,7 @@ function Sidebar() {
                             key={index}
                             to={route.path}
                             startContent={route?.startContent}
-                            className={`text-sm h-11 px-4 items-center justify-start w-full ${
+                            className={`text-[15px] h-11 px-4 items-center justify-start w-full ${
                                 !isActive && 'text-default-600'
                             }`}
                             size="lg"

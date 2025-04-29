@@ -1,4 +1,4 @@
-import { logger, schedules, AbortTaskRunError } from '@trigger.dev/sdk/v3';
+import { logger, task } from '@trigger.dev/sdk/v3';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import { toUTC, calculateExpiresAt } from '../utils/dateUtils';
@@ -11,51 +11,21 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY as string,
 );
 
-export const githubSync = schedules.task({
+export const githubSync = task({
     id: 'github-sync',
-    cron: '*/10 * * * *', // Every 10 minutes
     maxDuration: 3000, // 50 minutes max duration
-    run: async () => {
+    run: async (payload: any) => {
         logger.log('Starting GitHub sync task');
 
-        // Calculate the timestamp for 8 hours ago in UTC
-        const timeRange = dayjs().utc().subtract(2, 'hours').toISOString();
-
-        // Fetch active workspace integrations that need syncing
-        const { data: integrations, error: fetchError } = await supabase
-            .from('user_integrations')
-            .select('*')
-            .eq('type', 'github')
-            .eq('status', 'active')
-            .lt('last_sync', timeRange)
-            .limit(100);
-
-        if (fetchError) {
-            logger.error(`Error fetching GitHub integrations: ${fetchError.message}`);
-            return { success: false, error: fetchError.message };
-        }
-
-        if (!integrations || integrations.length === 0) {
-            logger.log('No GitHub integrations need syncing');
-            return { success: true, synced: 0 };
-        }
-
-        logger.log(`Found ${integrations.length} GitHub integrations to sync`);
-
-        let syncedCount = 0;
-        let failedCount = 0;
-
-        // Process each integration
-        for (const integration of integrations) {
             try {
                 // Check if token has expired
                 const currentTime = dayjs().utc();
                 const tokenExpired =
-                    !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
+                    !payload.expires_at || currentTime.isAfter(dayjs(payload.expires_at));
 
-                let access_token = integration.access_token;
-                let refresh_token = integration.refresh_token;
-                let expires_at = integration.expires_at;
+                let access_token = payload.access_token;
+                let refresh_token = payload.refresh_token;
+                let expires_at = payload.expires_at;
 
                 // Only refresh token if it has expired
                 if (tokenExpired) {
@@ -66,7 +36,7 @@ export const githubSync = schedules.task({
                                 client_id: process.env.GITHUB_CLIENT_ID,
                                 client_secret: process.env.GITHUB_CLIENT_SECRET,
                                 grant_type: 'refresh_token',
-                                refresh_token: integration.refresh_token,
+                                refresh_token: payload.refresh_token,
                             },
                             headers: {
                                 Accept: 'application/json',
@@ -81,7 +51,7 @@ export const githubSync = schedules.task({
                             .update({
                                 status: 'error',
                             })
-                            .eq('id', integration.id);
+                            .eq('id', payload.id);
                     } else {
                         // Update token information
                         access_token = res.access_token;
@@ -97,7 +67,7 @@ export const githubSync = schedules.task({
                                 expires_at,
                                 last_sync: toUTC(),
                             })
-                            .eq('id', integration.id);
+                            .eq('id', payload.id);
                     }
                 } else {
                     // Token is still valid, just update the last_sync timestamp
@@ -106,7 +76,7 @@ export const githubSync = schedules.task({
                         .update({
                             last_sync: toUTC(),
                         })
-                        .eq('id', integration.id);
+                        .eq('id', payload.id);
                 }
 
                 const octokit = new Octokit({ auth: access_token });
@@ -128,7 +98,7 @@ export const githubSync = schedules.task({
                                         },
                                     ],
                                 },
-                                workspace_id: integration.workspace_id,
+                                workspace_id: payload.workspace_id,
                                 integration_source: 'github',
                                 external_id: issue.id,
                                 external_data: issue,
@@ -157,28 +127,22 @@ export const githubSync = schedules.task({
                     });
 
                     logger.log(
-                        `Processed ${issuesData.length} issues for workspace ${integration.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`,
+                        `Processed ${issuesData.length} issues for workspace ${payload.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`,
                     );
                 }
 
-                syncedCount++;
                 logger.log(
-                    `Successfully synced GitHub integration for workspace ${integration.workspace_id}`,
+                    `Successfully synced GitHub integration for workspace ${payload.workspace_id}`,
                 );
             } catch (error) {
                 console.log(error);
-                failedCount++;
                 logger.error(
-                    `Error syncing GitHub integration for workspace ${integration.workspace_id}: ${error.message}`,
+                    `Error syncing GitHub integration for workspace ${payload.workspace_id}: ${error.message}`,
                 );
             }
-        }
 
         return {
             success: true,
-            synced: syncedCount,
-            failed: failedCount,
-            total: integrations.length,
         };
     },
 });
