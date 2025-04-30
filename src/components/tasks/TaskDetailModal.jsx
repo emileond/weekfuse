@@ -179,7 +179,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size={isExternal ? '5xl' : '3xl'}>
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size={isExternal ? '5xl' : '3xl'} className="max-h-[85vh]">
             <ModalContent>
                 <div className="flex gap-6">
                     <form onSubmit={handleSubmit(onSubmit)} className="basis-2/3 grow">
