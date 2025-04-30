@@ -1,4 +1,4 @@
-import { useDisclosure } from '@heroui/react';
+import { useDisclosure, Alert, Button } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
@@ -16,14 +16,18 @@ import TaskCard from '../components/tasks/TaskCard.jsx';
 import DatePicker from '../components/form/DatePicker.jsx';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
+import { taskOverloadMessages } from '../utils/alert-messages/taskOverload.js';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 function DashboardPage() {
+    const [parent] = useAutoAnimate();
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpenChange } = useDisclosure();
     const [insufficientCredits, setInsufficientCredits] = useState(false);
+    const [isTaskAlertDismissed, setIsTaskAlertDismissed] = useState(false);
     const { data: todayTasks } = useTasks(currentWorkspace, {
         startDate: dayjs().startOf('day').toISOString(),
         endDate: dayjs().endOf('day').toISOString(),
@@ -35,8 +39,27 @@ function DashboardPage() {
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
     const listDate = dayjs().startOf('day').tz(dayjs.tz.guess(), true).toISOString();
     const confettiShownRef = useRef(false);
+    const today = dayjs().format('YYYY-MM-DD');
+    // Store the task overload message in a ref so it doesn't change on re-renders
+    const taskOverloadMessageRef = useRef('');
 
     const hasOVerdueTasks = overdueTasks?.length > 0;
+    const hasTooManyTasks = todayTasks?.length > 5;
+
+    // Get a random message from the taskOverloadMessages array
+    const getRandomTaskOverloadMessage = () => {
+        if (!taskOverloadMessageRef.current) {
+            const randomIndex = Math.floor(Math.random() * taskOverloadMessages.length);
+            taskOverloadMessageRef.current = taskOverloadMessages[randomIndex].message;
+        }
+        return taskOverloadMessageRef.current;
+    };
+
+    // Handle dismissing the task overload alert
+    const handleDismiss = () => {
+        setIsTaskAlertDismissed(true);
+        localStorage.setItem(`task-alert-dismissed-${today}`, 'true');
+    };
 
     const rescheduleOverdueTasks = async (newDate) => {
         if (!newDate) return;
@@ -75,6 +98,12 @@ function DashboardPage() {
         }
     }, [todayTasks]);
 
+    // Check if the task alert has been dismissed today
+    useEffect(() => {
+        const isDismissed = localStorage.getItem(`task-alert-dismissed-${today}`) === 'true';
+        setIsTaskAlertDismissed(isDismissed);
+    }, [today]);
+
     return (
         <AppLayout>
             <Paywall
@@ -96,7 +125,10 @@ function DashboardPage() {
                 onClick={onOpenChange}
             >
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-2">
+                    <div ref={parent} className="flex flex-col gap-2">
+                        {hasTooManyTasks && !isTaskAlertDismissed && (
+                            <Alert description={getRandomTaskOverloadMessage()} color="primary" onClose={handleDismiss} />
+                        )}
                         {hasOVerdueTasks && (
                             <Accordion>
                                 <AccordionItem
