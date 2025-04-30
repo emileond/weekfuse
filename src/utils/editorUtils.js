@@ -193,8 +193,10 @@ export const tinymceToTiptap = (tinymceContent) => {
     return tiptapDoc;
   }
 
-  // Process each node in the content array
-  tiptapDoc.content = content.content.map(node => convertNode(node));
+  // Process each node in the content array and filter out null values (like mediaSingle nodes)
+  tiptapDoc.content = content.content
+    .map(node => convertNode(node))
+    .filter(node => node !== null);
 
   return tiptapDoc;
 };
@@ -224,12 +226,17 @@ const convertNode = (node) => {
       return convertCodeBlock(node);
     case 'image':
       return convertImage(node);
+    case 'mediaSingle':
+      // Skip mediaSingle nodes as they are only valid in TinyMCE and can't be displayed in TipTap
+      return null;
     default:
       // For unknown node types, try to pass through if it has content
       if (node.content && Array.isArray(node.content)) {
         return {
           ...node,
-          content: node.content.map(childNode => convertNode(childNode))
+          content: node.content
+            .map(childNode => convertNode(childNode))
+            .filter(childNode => childNode !== null)
         };
       }
       // Otherwise return the node as is
@@ -259,7 +266,11 @@ const convertParagraph = (paragraph) => {
 const convertList = (list) => {
   return {
     type: list.type,
-    content: list.content ? list.content.map(node => convertNode(node)) : []
+    content: list.content 
+      ? list.content
+          .map(node => convertNode(node))
+          .filter(node => node !== null) 
+      : []
   };
 };
 
@@ -272,7 +283,11 @@ const convertList = (list) => {
 const convertListItem = (listItem) => {
   return {
     type: listItem.type,
-    content: listItem.content ? listItem.content.map(node => convertNode(node)) : []
+    content: listItem.content 
+      ? listItem.content
+          .map(node => convertNode(node))
+          .filter(node => node !== null) 
+      : []
   };
 };
 
@@ -299,7 +314,11 @@ const convertHeading = (heading) => {
 const convertBlockquote = (blockquote) => {
   return {
     type: 'blockquote',
-    content: blockquote.content ? blockquote.content.map(node => convertNode(node)) : []
+    content: blockquote.content 
+      ? blockquote.content
+          .map(node => convertNode(node))
+          .filter(node => node !== null) 
+      : []
   };
 };
 

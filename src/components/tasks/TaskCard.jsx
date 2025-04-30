@@ -42,7 +42,6 @@ const TaskCard = ({ task, sm }) => {
         onClose: onMoveModalClose,
     } = useDisclosure();
 
-
     const taskDate = dayjs(task?.date);
     const today = dayjs().startOf('day');
     const isOverdue = taskDate.isBefore(today) && task.status === 'pending';
@@ -111,7 +110,6 @@ const TaskCard = ({ task, sm }) => {
 
     return (
         <>
-
             <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
 
             {/* Delete Confirmation Modal */}
@@ -223,9 +221,9 @@ const TaskCard = ({ task, sm }) => {
                     task.milestone_id ||
                     task.tags ||
                     task.tag_id ||
-                    task.priority !== null && task.priority !== undefined ||
+                    (task.priority !== null && task.priority !== undefined) ||
                     task.integration_source) && (
-                    <div className="flex gap-3 justify-end pt-2">
+                    <div className="flex gap-2 justify-end flex-wrap pt-2">
                         {task.project_id && (
                             <EntityChip
                                 type="project"

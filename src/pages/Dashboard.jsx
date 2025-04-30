@@ -1,10 +1,10 @@
-import { useDisclosure, Alert, Button } from '@heroui/react';
+import { useDisclosure, Alert, Button, Progress, Chip } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTasks, useUpdateMultipleTasks } from '../hooks/react-query/tasks/useTasks.js';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Paywall from '../components/marketing/Paywall';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
 import dayjs from 'dayjs';
@@ -46,6 +46,17 @@ function DashboardPage() {
     const hasOVerdueTasks = overdueTasks?.length > 0;
     const hasTooManyTasks = todayTasks?.length > 5;
 
+    // Calculate completed tasks count and percentage
+    const completedTasksCount = useMemo(() => {
+        if (!todayTasks) return 0;
+        return todayTasks.filter((task) => task.status === 'completed').length;
+    }, [todayTasks]);
+
+    const completedPercentage = useMemo(() => {
+        if (!todayTasks || todayTasks.length === 0) return 0;
+        return Math.round((completedTasksCount / todayTasks.length) * 100);
+    }, [todayTasks, completedTasksCount]);
+
     // Get a random message from the taskOverloadMessages array
     const getRandomTaskOverloadMessage = () => {
         if (!taskOverloadMessageRef.current) {
@@ -58,7 +69,7 @@ function DashboardPage() {
     // Handle dismissing the task overload alert
     const handleDismiss = () => {
         setIsTaskAlertDismissed(true);
-        localStorage.setItem(`task-alert-dismissed-${today}`, 'true');
+        localStorage.setItem('task-alert-dismissed', today);
     };
 
     const rescheduleOverdueTasks = async (newDate) => {
@@ -100,7 +111,8 @@ function DashboardPage() {
 
     // Check if the task alert has been dismissed today
     useEffect(() => {
-        const isDismissed = localStorage.getItem(`task-alert-dismissed-${today}`) === 'true';
+        const dismissedDate = localStorage.getItem('task-alert-dismissed');
+        const isDismissed = dismissedDate === today;
         setIsTaskAlertDismissed(isDismissed);
     }, [today]);
 
@@ -119,7 +131,6 @@ function DashboardPage() {
             <PageLayout
                 maxW="3xl"
                 title="Today"
-                description="your tasks for the day"
                 primaryAction="New task"
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
@@ -127,7 +138,28 @@ function DashboardPage() {
                 <div className="flex flex-col gap-3">
                     <div ref={parent} className="flex flex-col gap-2">
                         {hasTooManyTasks && !isTaskAlertDismissed && (
-                            <Alert description={getRandomTaskOverloadMessage()} color="primary" onClose={handleDismiss} />
+                            <Alert
+                                description={getRandomTaskOverloadMessage()}
+                                color="primary"
+                                onClose={handleDismiss}
+                            />
+                        )}
+                        {todayTasks && todayTasks.length > 0 && (
+                            <div className="py-3">
+                                <Progress
+                                    label={`${completedTasksCount}/${todayTasks.length} completed`}
+                                    aria-label="Today's progress"
+                                    size="sm"
+                                    color="success"
+                                    maxValue={todayTasks.length}
+                                    value={completedTasksCount}
+                                />
+                                {/*<div className="py-2">*/}
+                                {/*    <Chip size="sm" variant="light" className="text-default-500">*/}
+                                {/*        {completedTasksCount}/{todayTasks.length} completed*/}
+                                {/*    </Chip>*/}
+                                {/*</div>*/}
+                            </div>
                         )}
                         {hasOVerdueTasks && (
                             <Accordion>
