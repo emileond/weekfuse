@@ -22,6 +22,10 @@ const DraggableList = ({ id, items, group, smallCards }) => {
         dropZoneClass: 'bg-default text-default-500 opacity-30',
         plugins: [animations()],
         onDragend: async (e) => {
+            // id is "backlog" for the backlog
+            const startCol = id; // YYYY-MM-DD string
+            const endCol = e.parent.el.id; // YYYY-MM-DD string
+
             // Ensure the dragged element's z-index is reset to 10
             if (e && e.draggedNode && e.draggedNode.el) {
                 e.draggedNode.el.style.zIndex = 10;
@@ -75,7 +79,11 @@ const DraggableList = ({ id, items, group, smallCards }) => {
             }
             // Call the bulk update function
             try {
-                await updateMultipleTasks(tasksToUpdate);
+                await updateMultipleTasks({
+                    tasks: tasksToUpdate,
+                    startCol,
+                    endCol
+                });
             } catch (error) {
                 console.error('Error updating tasks:', error);
             }

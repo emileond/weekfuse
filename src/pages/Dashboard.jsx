@@ -82,7 +82,7 @@ function DashboardPage() {
         }));
 
         try {
-            await updateMultipleTasks(tasksToUpdate);
+            await updateMultipleTasks({ tasks: tasksToUpdate });
             toast.success('Tasks rescheduled');
         } catch (error) {
             console.error('Error updating tasks:', error);

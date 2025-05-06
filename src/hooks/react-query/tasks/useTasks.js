@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseClient } from '../../../lib/supabase';
+import dayjs from 'dayjs';
 
 // Fetch tasks for a specific workspace
 const fetchTasks = async ({
@@ -186,6 +187,46 @@ export const useBacklogTasks = (currentWorkspace, page = 1, pageSize = 20, filte
     });
 };
 
+// Fetch counts per day in the range
+async function fetchTaskCounts({ workspace_id, startDate, endDate }) {
+    // we cast timestamp → date so we group by calendar date
+    const { data, error } = await supabaseClient
+        .from('tasks')
+        .select(`date`, { head: false, count: 'exact' })
+        .eq('workspace_id', workspace_id)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
+
+    if (error) {
+        console.error(error);
+        throw error;
+    }
+
+    console.log(data);
+
+    // data comes back as [{ day: "2025-05-05", count: "4" }, …]
+    return data.reduce((acc, { day, count }) => {
+        acc[day] = Number(count);
+        return acc;
+    }, {});
+}
+
+export function useTasksCount(currentWorkspace, { startDate, endDate }) {
+    return useQuery({
+        queryKey: ['tasks-count', currentWorkspace?.workspace_id, startDate, endDate],
+        queryFn: () =>
+            fetchTaskCounts({
+                workspace_id: currentWorkspace.workspace_id,
+                startDate,
+                endDate,
+            }),
+
+        enabled: !!currentWorkspace?.workspace_id && !!startDate && !!endDate,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
 // Function to create a new task
 const createTask = async ({ task }) => {
     const { error } = await supabaseClient.from('tasks').insert(task);
@@ -249,7 +290,7 @@ export const useUpdateTask = (currentWorkspace) => {
 };
 
 // Function to update multiple tasks
-const updateMultipleTasks = async (tasks) => {
+const updateMultipleTasks = async ({ tasks, startCol, endCol }) => {
     const updates = tasks.map((task) =>
         supabaseClient.from('tasks').update(task.updates).eq('id', task.taskId),
     );
@@ -263,6 +304,9 @@ const updateMultipleTasks = async (tasks) => {
             console.error(`Failed to update task ${tasks[index].taskId}`, result.error);
         }
     });
+
+    // Return the columns that were affected for targeted invalidation
+    return { startCol, endCol };
 };
 
 // Hook to update multiple tasks
@@ -274,16 +318,39 @@ export const useUpdateMultipleTasks = (currentWorkspace) => {
         onError: (error) => {
             console.error('Error updating tasks:', error);
         },
-        onSuccess: () => {
-            // Invalidate all task-related queries for the workspace
-            queryClient.invalidateQueries({
-                queryKey: ['tasks', currentWorkspace?.workspace_id],
-                refetchType: 'all',
-            });
-            queryClient.invalidateQueries({
-                queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
-                refetchType: 'all',
-            });
+        onSuccess: (result) => {
+            const { startCol, endCol } = result;
+
+            // Invalidate only the affected columns
+            if (startCol === 'backlog' || endCol === 'backlog') {
+                // Invalidate backlog queries if backlog is involved
+                queryClient.invalidateQueries({
+                    queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                    refetchType: 'all',
+                });
+            }
+
+            // Invalidate start column queries if it's a date column
+            if (startCol !== 'backlog' && startCol) {
+                const startDate = dayjs(startCol).startOf('day').toISOString();
+                const endDate = dayjs(startCol).endOf('day').toISOString();
+
+                queryClient.invalidateQueries({
+                    queryKey: ['tasks', currentWorkspace?.workspace_id, { startDate, endDate }],
+                    refetchType: 'all',
+                });
+            }
+
+            // Invalidate end column queries if it's a date column and different from start column
+            if (endCol !== 'backlog' && endCol && endCol !== startCol) {
+                const startDate = dayjs(endCol).startOf('day').toISOString();
+                const endDate = dayjs(endCol).endOf('day').toISOString();
+
+                queryClient.invalidateQueries({
+                    queryKey: ['tasks', currentWorkspace?.workspace_id, { startDate, endDate }],
+                    refetchType: 'all',
+                });
+            }
         },
     });
 };
