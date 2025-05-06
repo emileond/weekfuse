@@ -91,19 +91,21 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
         <>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={null} />
             <div className="bg-content2 border-1 border-default rounded-xl p-4 flex flex-col h-full">
-                <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700">
+                <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700 pb-1">
                     <RiArchiveStackLine fontSize="1.2rem" /> Backlog
                 </h3>
-                <Button
-                    size="sm"
-                    color="primary"
-                    variant="light"
-                    startContent={<RiAddLine />}
-                    className="justify-start mb-4"
-                    onPress={() => onOpenChange(true)}
-                >
-                    Add task
-                </Button>
+                <div>
+                    <Button
+                        size="sm"
+                        color="primary"
+                        variant="light"
+                        startContent={<RiAddLine />}
+                        className="mb-2"
+                        onPress={() => onOpenChange(true)}
+                    >
+                        Add task
+                    </Button>
+                </div>
                 <div className="flex items-center gap-1 mb-3">
                     <Input
                         size="sm"

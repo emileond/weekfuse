@@ -28,13 +28,14 @@ const DayColumn = ({ day }) => {
 
     const dateStr = day.format('YYYY-MM-DD');
     const isToday = day.isSame(dayjs(), 'day');
+    const isWeekend = day.day() === 0 || day.day() === 6; // 0 is Sunday, 6 is Saturday
 
     return (
         <>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={newTaskDate} />
             <div
                 key={dateStr}
-                className={`flex flex-col gap-2 bg-content1 border-1 rounded-xl p-2  min-w-[250px] w-[75vw] sm:w-[50vw] md:w-[20vw] lg:w-[12vw] md flex-shrink-0 snap-center overflow-y-hidden`}
+                className={`flex flex-col gap-2 ${isWeekend ? 'bg-content2' : 'bg-content1'} border-1 rounded-xl p-2  min-w-[250px] w-[75vw] sm:w-[50vw] md:w-[20vw] lg:w-[12vw] md flex-shrink-0 snap-center overflow-y-hidden`}
             >
                 <div
                     className={`p-2 border-b-2 ${isToday ? 'border-secondary' : 'border-default'}`}

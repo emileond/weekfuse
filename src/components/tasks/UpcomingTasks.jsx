@@ -5,11 +5,12 @@ import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { Button, useDisclosure, Modal, ModalContent, ModalBody, Spinner } from '@heroui/react';
 import { RiExpandLeftLine, RiContractRightLine, RiArrowGoBackLine } from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
-import { useUpdateMultipleTasks, useTasksCount } from '../../hooks/react-query/tasks/useTasks.js';
+import { useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import utc from 'dayjs/plugin/utc';
 import ky from 'ky';
 import DayColumn from './DayColumn.jsx';
 import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 // Extend dayjs with the plugins
 dayjs.extend(utc);
@@ -88,17 +89,24 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
 
             // Clear the last plan response
             setLastPlanResponse(null);
+            toast.success('Changes reverted' )
 
-            console.log('Successfully rolled back AI plan changes');
+            await queryClient.cancelQueries({
+                queryKey: ['tasks', currentWorkspace?.workspace_id],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ['tasks', currentWorkspace?.workspace_id],
+            });
         } catch (error) {
             console.error('Error rolling back changes:', error);
+            toast.error('Error rolling back changes')
         } finally {
-            // Hide loading modal
             onLoadingClose();
         }
     };
 
     const autoPlan = async () => {
+        setIsBacklogCollapsed(true)
         // Show loading modal
         onLoadingOpen();
         setLoadingMessage('Optimizing plan...');

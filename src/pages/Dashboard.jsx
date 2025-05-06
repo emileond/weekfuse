@@ -20,6 +20,7 @@ import { taskOverloadMessages } from '../utils/alert-messages/taskOverload.js';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import EmptyState from '../components/EmptyState.jsx';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -29,12 +30,14 @@ function DashboardPage() {
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpenChange } = useDisclosure();
     const [insufficientCredits, setInsufficientCredits] = useState(false);
+    const [isRescheduling, setIsRescheduling] = useState(false);
     const [isTaskAlertDismissed, setIsTaskAlertDismissed] = useState(false);
-    const { data: todayTasks } = useTasks(currentWorkspace, {
+    const queryClient = useQueryClient();
+    const { data: todayTasks, refetch: refetchToday } = useTasks(currentWorkspace, {
         startDate: dayjs().startOf('day').toISOString(),
         endDate: dayjs().endOf('day').toISOString(),
     });
-    const { data: overdueTasks } = useTasks(currentWorkspace, {
+    const { data: overdueTasks, refetch: refetchOverdue } = useTasks(currentWorkspace, {
         statusList: ['pending'],
         endDate: dayjs().endOf('day').subtract(1, 'day').toISOString(),
     });
@@ -75,16 +78,37 @@ function DashboardPage() {
     };
 
     const rescheduleOverdueTasks = async (newDate) => {
-        if (!newDate) return;
+        if (!newDate && !isRescheduling) return;
         const tasksToUpdate = overdueTasks?.map((item) => ({
             taskId: item.id,
             updates: {
-                date: dayjs(newDate).toISOString(),
+                date: newDate ? dayjs(newDate).toISOString() : null,
             },
         }));
 
         try {
             await updateMultipleTasks({ tasks: tasksToUpdate });
+            await Promise.all([refetchToday(), refetchOverdue()]);
+
+            const startDate = dayjs(newDate)?.startOf('day').toISOString();
+            const endDate = dayjs(newDate)?.endOf('day').toISOString();
+
+            if (newDate) {
+                await queryClient.invalidateQueries([
+                    'tasks',
+                    currentWorkspace.workspace_id,
+                    {
+                        startDate,
+                        endDate,
+                    },
+                ]);
+            } else {
+                await queryClient.invalidateQueries([
+                    'backlogTasks',
+                    currentWorkspace.workspace_id,
+                ]);
+            }
+
             toast.success('Tasks rescheduled');
         } catch (error) {
             console.error('Error updating tasks:', error);
@@ -169,7 +193,10 @@ function DashboardPage() {
                                                 Overdue ({overdueTasks?.length})
                                             </span>
                                             <DatePicker
-                                                onChange={rescheduleOverdueTasks}
+                                                onChange={(val) => {
+                                                    rescheduleOverdueTasks(val),
+                                                        setIsRescheduling(true);
+                                                }}
                                                 trigger={
                                                     <div className="flex gap-2 text-xs text-primary rounded-md border-2 border-default bg-primary-50 hover:text-primary-500 py-1.5 px-3">
                                                         <RiCalendarScheduleLine fontSize="1rem" />
