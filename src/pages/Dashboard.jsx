@@ -1,4 +1,4 @@
-import { useDisclosure, Alert, Button, Progress, Chip } from '@heroui/react';
+import { useDisclosure, Alert, Progress } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
@@ -18,6 +18,8 @@ import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import { taskOverloadMessages } from '../utils/alert-messages/taskOverload.js';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import EmptyState from '../components/EmptyState.jsx';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -154,11 +156,6 @@ function DashboardPage() {
                                     maxValue={todayTasks.length}
                                     value={completedTasksCount}
                                 />
-                                {/*<div className="py-2">*/}
-                                {/*    <Chip size="sm" variant="light" className="text-default-500">*/}
-                                {/*        {completedTasksCount}/{todayTasks.length} completed*/}
-                                {/*    </Chip>*/}
-                                {/*</div>*/}
                             </div>
                         )}
                         {hasOVerdueTasks && (
@@ -191,8 +188,50 @@ function DashboardPage() {
                                 </AccordionItem>
                             </Accordion>
                         )}
-                        {todayTasks && (
+                        {todayTasks?.length === 0 && (
+                            <EmptyState
+                                title="Nothing here yet"
+                                description="Let’s get you rolling, start by creating your first to-do"
+                                primaryAction="Add a task"
+                                onClick={onOpenChange}
+                            />
+                        )}
+                        {todayTasks && completedPercentage !== 100 && (
                             <DraggableList id={listDate} items={todayTasks} group="today-tasks" />
+                        )}
+                        {completedPercentage === 100 && (
+                            <div>
+                                <Accordion>
+                                    <AccordionItem
+                                        key="completed-tasks"
+                                        textValue="Completed tasks"
+                                        title={
+                                            <div className="w-full flex items-center gap-3 justify-between">
+                                                <span className="text-sm font-medium">
+                                                    Completed tasks
+                                                </span>
+                                            </div>
+                                        }
+                                    >
+                                        <DraggableList
+                                            id={listDate}
+                                            items={todayTasks}
+                                            group="today-tasks"
+                                        />
+                                    </AccordionItem>
+                                </Accordion>
+                                <div className="flex flex-col items-center gap-3 px-12">
+                                    <div className="h-64">
+                                        <DotLottieReact src="/lottie/done.lottie" autoplay />
+                                    </div>
+                                    <h2 className="text-default-800 text-2xl font-semibold mt-[-50px] mb-1">
+                                        That’s a wrap!
+                                    </h2>
+                                    <p className="text-default-600 text-center text-pretty">
+                                        Grab snack, blast some tunes, or just kick back and relax.
+                                    </p>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
