@@ -14,6 +14,7 @@ import IntegrationSourceSelect from '../form/IntegrationSourceSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 
 // Memoized panel content component to prevent unnecessary re-renders
+// eslint-disable-next-line react/display-name
 const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) => {
     const [page, setPage] = useState(1);
     const pageSize = 20; // Number of tasks to show per page
@@ -64,7 +65,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
     };
 
     // Use the hook with pagination parameters and filters for backlog tasks
-    const { data: tasksData } = useBacklogTasks(currentWorkspace, page, pageSize, filters);
+    const { data: tasksData, refetch } = useBacklogTasks(currentWorkspace, page, pageSize, filters);
 
     // Use the hook for fuzzy search with debounced search term
     const { data: searchData, isLoading: isSearching } = useFuzzySearchTasks(
@@ -86,6 +87,12 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
             setTotalTasks(tasksData?.count);
         }
     }, [tasksData, isSearchActive]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            refetch();
+        }
+    }, [isOpen, refetch]);
 
     return (
         <>
