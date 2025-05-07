@@ -5,6 +5,7 @@ import { navItems } from './navItems';
 import UserMenu from './UserMenu';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import WorkspaceUsageCard from '../marketing/WorkspaceUsageCard';
+import CommandPalette from '../CommandPalette.jsx';
 
 function Sidebar() {
     const location = useLocation();
@@ -40,6 +41,7 @@ function Sidebar() {
             </nav>
             <div className="flex flex-col gap-6">
                 <Divider />
+                <CommandPalette />
                 {/*<WorkspaceUsageCard />*/}
                 <UserMenu />
             </div>

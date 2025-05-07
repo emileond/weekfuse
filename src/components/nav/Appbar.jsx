@@ -13,6 +13,7 @@ import Logo from '../Logo.jsx'
 import { navItems } from './navItems.jsx'
 import { Link as RouterLink } from 'react-router-dom'
 import UserMenu from './UserMenu.jsx'
+import CommandPalette from '../CommandPalette.jsx'
 
 export default function Appbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -34,6 +35,9 @@ export default function Appbar() {
       <NavbarContent justify="end">
         <NavbarItem className="hidden lg:flex">
           <Link href="#">Login</Link>
+        </NavbarItem>
+        <NavbarItem className="hidden sm:flex">
+          <CommandPalette />
         </NavbarItem>
         <NavbarItem>
           <UserMenu avatarOnly />
