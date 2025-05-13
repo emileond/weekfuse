@@ -7,9 +7,9 @@ import {
     useDisclosure,
     Spinner,
     ModalBody,
+    Kbd,
 } from '@heroui/react';
 import {
-    RiCommandLine,
     RiAddLine,
     RiSearchLine,
     RiQuestionLine,
@@ -94,7 +94,6 @@ const CommandPalette = () => {
         currentWorkspace,
         debouncedSearchTerm,
         10, // Limit results to 10
-        'pending',
     );
 
     // Handle keyboard shortcut to toggle the command palette
@@ -154,7 +153,6 @@ const CommandPalette = () => {
             e.preventDefault();
 
             const commandItems = filteredCommands || [];
-            const taskItems = searchData?.data || [];
 
             if (activeSection === 'commands') {
                 if (selectedIndex > 0) {
@@ -232,13 +230,20 @@ const CommandPalette = () => {
         <>
             {/* Command Palette Button */}
             <Button
+                variant="flat"
                 size="sm"
-                variant="light"
-                startContent={<RiCommandLine />}
                 onPress={onOpen}
-                className="ml-2"
+                className="text-default-500 hover:text-default-700 justify-between"
+                endContent={
+                    <Kbd className="text-xs" keys={['command']}>
+                        K
+                    </Kbd>
+                }
             >
-                Command Palette
+                <div className="flex items-center gap-2">
+                    <RiSearchLine fontSize="1rem" />
+                    Search
+                </div>
             </Button>
 
             {/* Command Palette Modal */}
