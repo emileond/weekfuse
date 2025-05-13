@@ -24,6 +24,7 @@ import debounce from '../utils/debounceUtils.js';
 import { useHotkeys } from 'react-hotkeys-hook';
 import UFuzzy from '@leeoniya/ufuzzy';
 import TaskCard from './tasks/TaskCard.jsx';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 const CommandPalette = () => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -34,6 +35,7 @@ const CommandPalette = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [activeSection, setActiveSection] = useState('commands'); // 'commands' or 'tasks'
     const searchInputRef = useRef(null);
+    const [parent] = useAutoAnimate();
 
     // Define the list of commands
     let commands;
@@ -245,7 +247,7 @@ const CommandPalette = () => {
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg" placement="top">
                 <ModalContent>
                     <ModalBody>
-                        <div className="p-2">
+                        <div className="p-2" ref={parent}>
                             {/* Search Input */}
                             <Input
                                 ref={searchInputRef}
