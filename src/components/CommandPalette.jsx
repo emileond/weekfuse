@@ -8,9 +8,6 @@ import {
     Spinner,
     ModalBody,
     Kbd,
-    Card,
-    CardHeader,
-    CardBody,
 } from '@heroui/react';
 import {
     RiAddLine,
@@ -19,30 +16,23 @@ import {
     RiPaletteLine,
     RiLightbulbLine,
     RiRobot2Line,
-    RiCalendarCloseLine,
 } from 'react-icons/ri';
 import { useFuzzySearchTasks } from '../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import NewTaskModal from './tasks/NewTaskModal.jsx';
-import TaskDetailModal from './tasks/TaskDetailModal.jsx';
-import EntityChip from './common/EntityChip.jsx';
-import IntegrationSourceIcon from './tasks/integrations/IntegrationSourceIcon.jsx';
 import debounce from '../utils/debounceUtils.js';
 import { useHotkeys } from 'react-hotkeys-hook';
 import UFuzzy from '@leeoniya/ufuzzy';
-import dayjs from 'dayjs';
+import TaskCard from './tasks/TaskCard.jsx';
 
 const CommandPalette = () => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const { isOpen: isNewTaskModalOpen, onOpenChange: onNewTaskModalOpenChange } = useDisclosure();
-    const { isOpen: isTaskDetailModalOpen, onOpenChange: onTaskDetailModalOpenChange } =
-        useDisclosure();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [activeSection, setActiveSection] = useState('commands'); // 'commands' or 'tasks'
-    const [selectedTask, setSelectedTask] = useState(null);
     const searchInputRef = useRef(null);
 
     // Define the list of commands
@@ -196,8 +186,6 @@ const CommandPalette = () => {
 
             if (activeSection === 'commands' && filteredCommands.length > 0) {
                 handleCommandSelect(filteredCommands[selectedIndex].id);
-            } else if (activeSection === 'tasks' && searchData?.data?.length > 0) {
-                handleTaskSelect(searchData.data[selectedIndex]);
             }
         },
         { enableOnFormElements: true },
@@ -231,13 +219,6 @@ const CommandPalette = () => {
             default:
                 console.log('Unknown command:', commandId);
         }
-    };
-
-    // Handle task selection
-    const handleTaskSelect = (task) => {
-        setSelectedTask(task);
-        onOpenChange();
-        onTaskDetailModalOpenChange(); // Open task detail modal
     };
 
     return (
@@ -279,135 +260,53 @@ const CommandPalette = () => {
 
                             {/* Commands Section */}
                             <div className="mb-4">
-                                <div className="text-xs text-default-500 mb-1 px-2">Commands</div>
-                                {filteredCommands?.length > 0 ? (
-                                    filteredCommands?.map((command, index) => (
-                                        <div
-                                            key={command.id}
-                                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${
-                                                activeSection === 'commands' &&
-                                                selectedIndex === index
-                                                    ? 'bg-primary-100'
-                                                    : 'hover:bg-default-100'
-                                            }`}
-                                            onClick={() => handleCommandSelect(command.id)}
-                                            onMouseEnter={() => {
-                                                setActiveSection('commands');
-                                                setSelectedIndex(index);
-                                            }}
-                                        >
-                                            {command.icon}
-                                            <span>{command.name}</span>
+                                {filteredCommands?.length > 0 && (
+                                    <>
+                                        <div className="text-xs text-default-500 mb-1 px-2">
+                                            Commands
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center p-4 text-default-500">
-                                        No commands found
-                                    </div>
+                                        {filteredCommands?.map((command, index) => (
+                                            <div
+                                                key={command.id}
+                                                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${
+                                                    activeSection === 'commands' &&
+                                                    selectedIndex === index
+                                                        ? 'bg-primary-100'
+                                                        : 'hover:bg-default-100'
+                                                }`}
+                                                onClick={() => handleCommandSelect(command.id)}
+                                                onMouseEnter={() => {
+                                                    setActiveSection('commands');
+                                                    setSelectedIndex(index);
+                                                }}
+                                            >
+                                                {command.icon}
+                                                <span>{command.name}</span>
+                                            </div>
+                                        ))}
+                                    </>
                                 )}
                             </div>
 
                             {/* Search Results Section */}
                             {debouncedSearchTerm && (
                                 <div>
-                                    <div className="text-xs text-default-500 mb-1 px-2">Tasks</div>
+                                    <div className="text-xs text-default-500 mb-1 px-2">
+                                        Tasks ({searchData?.data?.length})
+                                    </div>
                                     {isSearching ? (
                                         <div className="flex justify-center p-4">
                                             <Spinner size="sm" />
                                         </div>
                                     ) : searchData?.data?.length > 0 ? (
-                                        <div className="max-h-80 overflow-y-auto">
-                                            {searchData.data.map((task, index) => (
-                                                <Card
+                                        <div className="max-h-80 overflow-y-auto flex flex-col gap-3 p-3">
+                                            {searchData.data.map((task) => (
+                                                <TaskCard
+                                                    sm
+                                                    task={task}
                                                     key={task.id}
-                                                    isPressable
-                                                    onPress={() => handleTaskSelect(task)}
-                                                    className="w-full"
-                                                    onMouseEnter={() => {
-                                                        setActiveSection('tasks');
-                                                        setSelectedIndex(index);
-                                                    }}
-                                                >
-                                                    <CardHeader>{task.name}</CardHeader>
-                                                    <CardBody>
-                                                        {task.date &&
-                                                            dayjs(task.date).isBefore(
-                                                                dayjs().startOf('day'),
-                                                            ) &&
-                                                            task.status === 'pending' && (
-                                                                <span className="text-xs font-medium text-danger px-2 flex items-center gap-1">
-                                                                    <RiCalendarCloseLine fontSize="1rem" />
-                                                                    {Intl.DateTimeFormat(
-                                                                        navigator.language,
-                                                                        {
-                                                                            dateStyle: 'medium',
-                                                                        },
-                                                                    ).format(new Date(task?.date))}
-                                                                </span>
-                                                            )}
-                                                        {(task.project_id ||
-                                                            task.milestone_id ||
-                                                            task.tags ||
-                                                            task.tag_id ||
-                                                            (task.priority !== null &&
-                                                                task.priority !== undefined) ||
-                                                            task.integration_source) && (
-                                                            <div className="flex gap-2 flex-wrap mt-1">
-                                                                {task.project_id && (
-                                                                    <EntityChip
-                                                                        type="project"
-                                                                        entityId={task.project_id}
-                                                                        size="sm"
-                                                                        variant="light"
-                                                                    />
-                                                                )}
-                                                                {task.milestone_id && (
-                                                                    <EntityChip
-                                                                        type="milestone"
-                                                                        entityId={task.milestone_id}
-                                                                        size="sm"
-                                                                        variant="light"
-                                                                    />
-                                                                )}
-                                                                {task.tags &&
-                                                                Array.isArray(task.tags) &&
-                                                                task.tags.length > 0 ? (
-                                                                    <EntityChip
-                                                                        type="tag"
-                                                                        entityId={task.tags}
-                                                                        size="sm"
-                                                                        variant="light"
-                                                                    />
-                                                                ) : (
-                                                                    task.tag_id && (
-                                                                        <EntityChip
-                                                                            type="tag"
-                                                                            entityId={task.tag_id}
-                                                                            size="sm"
-                                                                            variant="light"
-                                                                        />
-                                                                    )
-                                                                )}
-                                                                {task.priority !== null &&
-                                                                    task.priority !== undefined && (
-                                                                        <EntityChip
-                                                                            type="priority"
-                                                                            entityId={task.priority}
-                                                                            size="sm"
-                                                                            variant="light"
-                                                                        />
-                                                                    )}
-                                                                {task.integration_source && (
-                                                                    <IntegrationSourceIcon
-                                                                        type={
-                                                                            task.integration_source
-                                                                        }
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </CardBody>
-                                                </Card>
+                                                    onPress={onOpenChange}
+                                                />
                                             ))}
                                         </div>
                                     ) : (
@@ -428,15 +327,6 @@ const CommandPalette = () => {
                 onOpenChange={onNewTaskModalOpenChange}
                 defaultDate={null}
             />
-
-            {/* Task Detail Modal */}
-            {selectedTask && (
-                <TaskDetailModal
-                    isOpen={isTaskDetailModalOpen}
-                    onOpenChange={onTaskDetailModalOpenChange}
-                    task={selectedTask}
-                />
-            )}
         </>
     );
 };
