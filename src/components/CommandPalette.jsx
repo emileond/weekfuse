@@ -8,6 +8,9 @@ import {
     Spinner,
     ModalBody,
     Kbd,
+    Card,
+    CardHeader,
+    CardBody,
 } from '@heroui/react';
 import {
     RiAddLine,
@@ -16,14 +19,18 @@ import {
     RiPaletteLine,
     RiLightbulbLine,
     RiRobot2Line,
+    RiCalendarCloseLine,
 } from 'react-icons/ri';
 import { useFuzzySearchTasks } from '../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import NewTaskModal from './tasks/NewTaskModal.jsx';
 import TaskDetailModal from './tasks/TaskDetailModal.jsx';
+import EntityChip from './common/EntityChip.jsx';
+import IntegrationSourceIcon from './tasks/integrations/IntegrationSourceIcon.jsx';
 import debounce from '../utils/debounceUtils.js';
 import { useHotkeys } from 'react-hotkeys-hook';
 import UFuzzy from '@leeoniya/ufuzzy';
+import dayjs from 'dayjs';
 
 const CommandPalette = () => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -309,29 +316,98 @@ const CommandPalette = () => {
                                             <Spinner size="sm" />
                                         </div>
                                     ) : searchData?.data?.length > 0 ? (
-                                        <div className="max-h-60 overflow-y-auto">
+                                        <div className="max-h-80 overflow-y-auto">
                                             {searchData.data.map((task, index) => (
-                                                <div
+                                                <Card
                                                     key={task.id}
-                                                    className={`p-2 rounded-lg cursor-pointer ${
-                                                        activeSection === 'tasks' &&
-                                                        selectedIndex === index
-                                                            ? 'bg-primary-100'
-                                                            : 'hover:bg-default-100'
-                                                    }`}
-                                                    onClick={() => handleTaskSelect(task)}
+                                                    isPressable
+                                                    onPress={() => handleTaskSelect(task)}
+                                                    className="w-full"
                                                     onMouseEnter={() => {
                                                         setActiveSection('tasks');
                                                         setSelectedIndex(index);
                                                     }}
                                                 >
-                                                    <div className="font-medium">{task.name}</div>
-                                                    {task.description && (
-                                                        <div className="text-xs text-default-500 truncate">
-                                                            {task.description}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                    <CardHeader>{task.name}</CardHeader>
+                                                    <CardBody>
+                                                        {task.date &&
+                                                            dayjs(task.date).isBefore(
+                                                                dayjs().startOf('day'),
+                                                            ) &&
+                                                            task.status === 'pending' && (
+                                                                <span className="text-xs font-medium text-danger px-2 flex items-center gap-1">
+                                                                    <RiCalendarCloseLine fontSize="1rem" />
+                                                                    {Intl.DateTimeFormat(
+                                                                        navigator.language,
+                                                                        {
+                                                                            dateStyle: 'medium',
+                                                                        },
+                                                                    ).format(new Date(task?.date))}
+                                                                </span>
+                                                            )}
+                                                        {(task.project_id ||
+                                                            task.milestone_id ||
+                                                            task.tags ||
+                                                            task.tag_id ||
+                                                            (task.priority !== null &&
+                                                                task.priority !== undefined) ||
+                                                            task.integration_source) && (
+                                                            <div className="flex gap-2 flex-wrap mt-1">
+                                                                {task.project_id && (
+                                                                    <EntityChip
+                                                                        type="project"
+                                                                        entityId={task.project_id}
+                                                                        size="sm"
+                                                                        variant="light"
+                                                                    />
+                                                                )}
+                                                                {task.milestone_id && (
+                                                                    <EntityChip
+                                                                        type="milestone"
+                                                                        entityId={task.milestone_id}
+                                                                        size="sm"
+                                                                        variant="light"
+                                                                    />
+                                                                )}
+                                                                {task.tags &&
+                                                                Array.isArray(task.tags) &&
+                                                                task.tags.length > 0 ? (
+                                                                    <EntityChip
+                                                                        type="tag"
+                                                                        entityId={task.tags}
+                                                                        size="sm"
+                                                                        variant="light"
+                                                                    />
+                                                                ) : (
+                                                                    task.tag_id && (
+                                                                        <EntityChip
+                                                                            type="tag"
+                                                                            entityId={task.tag_id}
+                                                                            size="sm"
+                                                                            variant="light"
+                                                                        />
+                                                                    )
+                                                                )}
+                                                                {task.priority !== null &&
+                                                                    task.priority !== undefined && (
+                                                                        <EntityChip
+                                                                            type="priority"
+                                                                            entityId={task.priority}
+                                                                            size="sm"
+                                                                            variant="light"
+                                                                        />
+                                                                    )}
+                                                                {task.integration_source && (
+                                                                    <IntegrationSourceIcon
+                                                                        type={
+                                                                            task.integration_source
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </CardBody>
+                                                </Card>
                                             ))}
                                         </div>
                                     ) : (
