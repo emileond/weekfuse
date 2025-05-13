@@ -20,6 +20,7 @@ import {
 import { useFuzzySearchTasks } from '../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import NewTaskModal from './tasks/NewTaskModal.jsx';
+import TaskDetailModal from './tasks/TaskDetailModal.jsx';
 import debounce from '../utils/debounceUtils.js';
 import { useHotkeys } from 'react-hotkeys-hook';
 import UFuzzy from '@leeoniya/ufuzzy';
@@ -28,14 +29,19 @@ const CommandPalette = () => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const { isOpen: isNewTaskModalOpen, onOpenChange: onNewTaskModalOpenChange } = useDisclosure();
+    const { isOpen: isTaskDetailModalOpen, onOpenChange: onTaskDetailModalOpenChange } =
+        useDisclosure();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [activeSection, setActiveSection] = useState('commands'); // 'commands' or 'tasks'
+    const [selectedTask, setSelectedTask] = useState(null);
     const searchInputRef = useRef(null);
 
     // Define the list of commands
-    const commands = [
+    let commands;
+
+    commands = [
         { id: 'ask-ai', name: 'Ask AI', icon: <RiRobot2Line className="text-primary" /> },
         { id: 'new-task', name: 'New task', icon: <RiAddLine className="text-primary" /> },
         {
@@ -69,11 +75,11 @@ const CommandPalette = () => {
         if (!searchTerm) return commands;
 
         const commandNames = commands.map((cmd) => cmd.name);
-        const results = uf.search(commandNames, searchTerm);
+        const results = uf.filter(commandNames, searchTerm);
 
-        if (!results) return commands;
+        if (!results) return [];
 
-        return results?.ids?.map((id) => commands[id]);
+        return results?.map((id) => commands[id]);
     }, [commands, searchTerm, uf]);
 
     // Create a debounced function to update search term
@@ -101,8 +107,9 @@ const CommandPalette = () => {
         onOpenChange();
     });
 
-    // Reset selected index when command palette opens or search term changes
+    // Reset selected index and search term when command palette opens
     useEffect(() => {
+        setSearchTerm('');
         if (isOpen) {
             setSelectedIndex(0);
             setActiveSection('commands');
@@ -114,7 +121,7 @@ const CommandPalette = () => {
                 }
             }, 0);
         }
-    }, [isOpen, searchTerm]);
+    }, [isOpen]);
 
     // Handle keyboard navigation
     useHotkeys(
@@ -200,7 +207,7 @@ const CommandPalette = () => {
                 // Implement Ask AI functionality
                 break;
             case 'new-task':
-                onNewTaskModalOpenChange(true); // Open new task modal
+                onNewTaskModalOpenChange(); // Open new task modal
                 break;
             case 'change-theme':
                 console.log('Change theme command selected');
@@ -221,9 +228,9 @@ const CommandPalette = () => {
 
     // Handle task selection
     const handleTaskSelect = (task) => {
-        // Here you would typically open the task detail modal
-        console.log('Selected task:', task);
-        onOpenChange(false); // Close command palette
+        setSelectedTask(task);
+        onOpenChange();
+        onTaskDetailModalOpenChange(); // Open task detail modal
     };
 
     return (
@@ -345,6 +352,15 @@ const CommandPalette = () => {
                 onOpenChange={onNewTaskModalOpenChange}
                 defaultDate={null}
             />
+
+            {/* Task Detail Modal */}
+            {selectedTask && (
+                <TaskDetailModal
+                    isOpen={isTaskDetailModalOpen}
+                    onOpenChange={onTaskDetailModalOpenChange}
+                    task={selectedTask}
+                />
+            )}
         </>
     );
 };
