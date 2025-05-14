@@ -16,6 +16,7 @@ import {
     RiPaletteLine,
     RiLightbulbLine,
     RiRobot2Line,
+    RiExternalLinkLine,
 } from 'react-icons/ri';
 import { useFuzzySearchTasks } from '../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
@@ -38,20 +39,34 @@ const CommandPalette = () => {
     const [parent] = useAutoAnimate();
 
     // Commands list
+    const ICON_SIZE = '1.2rem';
     const commands = [
-        { id: 'ask-ai', name: 'Ask AI', icon: <RiRobot2Line className="text-primary" /> },
-        { id: 'new-task', name: 'New task', icon: <RiAddLine className="text-primary" /> },
+        {
+            id: 'ask-ai',
+            name: 'Ask AI',
+            leftIcon: <RiRobot2Line fontSize={ICON_SIZE} className="text-default-500" />,
+        },
+        {
+            id: 'new-task',
+            name: 'New task',
+            leftIcon: <RiAddLine fontSize={ICON_SIZE} className="text-default-500" />,
+        },
         {
             id: 'change-theme',
             name: 'Change theme',
-            icon: <RiPaletteLine className="text-primary" />,
+            leftIcon: <RiPaletteLine fontSize={ICON_SIZE} className="text-default-500" />,
         },
         {
             id: 'suggest-feature',
             name: 'Suggest a feature',
-            icon: <RiLightbulbLine className="text-primary" />,
+            leftIcon: <RiLightbulbLine fontSize={ICON_SIZE} className="text-default-500" />,
+            rightIcon: <RiExternalLinkLine fontSize={ICON_SIZE} className="text-default-400" />,
         },
-        { id: 'help', name: 'Help', icon: <RiQuestionLine className="text-primary" /> },
+        {
+            id: 'help',
+            name: 'Help',
+            leftIcon: <RiQuestionLine fontSize={ICON_SIZE} className="text-default-500" />,
+        },
     ];
 
     // Setup UFuzzy for commands
@@ -220,7 +235,7 @@ const CommandPalette = () => {
                                     {filteredCommands.map((cmd, idx) => (
                                         <div
                                             key={cmd.id}
-                                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${
+                                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer ${
                                                 activeSection === 'commands' &&
                                                 selectedIndex === idx
                                                     ? 'bg-primary-100'
@@ -232,8 +247,9 @@ const CommandPalette = () => {
                                                 setSelectedIndex(idx);
                                             }}
                                         >
-                                            {cmd.icon}
+                                            {cmd?.leftIcon}
                                             <span>{cmd.name}</span>
+                                            {cmd?.rightIcon}
                                         </div>
                                     ))}
                                 </div>

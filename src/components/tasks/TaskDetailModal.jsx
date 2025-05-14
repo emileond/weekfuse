@@ -62,6 +62,9 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             setDescription(task.description || '');
             setSelectedDate(task.date ? new Date(task.date) : null);
 
+            // Update isCompleted state based on task status
+            setIsCompleted(task.status === 'completed');
+
             // Set initial project if task has one
             setSelectedProject(task.project_id ? { value: task.project_id } : null);
 
@@ -188,7 +191,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                 <div className="flex">
                                     <Checkbox
                                         size="lg"
-                                        defaultSelected={isCompleted}
+                                        isSelected={isCompleted}
                                         onValueChange={handleStatusToggle}
                                     />
 
