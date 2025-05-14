@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Modal,
     ModalContent,
@@ -37,10 +37,8 @@ const CommandPalette = () => {
     const searchInputRef = useRef(null);
     const [parent] = useAutoAnimate();
 
-    // Define the list of commands
-    let commands;
-
-    commands = [
+    // Commands list
+    const commands = [
         { id: 'ask-ai', name: 'Ask AI', icon: <RiRobot2Line className="text-primary" /> },
         { id: 'new-task', name: 'New task', icon: <RiAddLine className="text-primary" /> },
         {
@@ -56,176 +54,132 @@ const CommandPalette = () => {
         { id: 'help', name: 'Help', icon: <RiQuestionLine className="text-primary" /> },
     ];
 
-    // Setup UFuzzy for command filtering
+    // Setup UFuzzy for commands
     const uf = useMemo(
-        () =>
-            new UFuzzy({
-                intraMode: 1,
-                intraIns: 1,
-                intraSub: 1,
-                intraTrn: 1,
-                intraDel: 1,
-            }),
+        () => new UFuzzy({ intraMode: 1, intraIns: 1, intraSub: 1, intraTrn: 1, intraDel: 1 }),
         [],
     );
 
-    // Filter commands based on search term
+    // Filtered commands
     const filteredCommands = useMemo(() => {
         if (!searchTerm) return commands;
-
-        const commandNames = commands.map((cmd) => cmd.name);
-        const results = uf.filter(commandNames, searchTerm);
-
-        if (!results) return [];
-
-        return results?.map((id) => commands[id]);
+        const names = commands.map((cmd) => cmd.name);
+        const results = uf.filter(names, searchTerm);
+        return results ? results.map((idx) => commands[idx]) : [];
     }, [commands, searchTerm, uf]);
 
-    // Create a debounced function to update search term
+    // Debounce search term
     const debouncedSetSearchTerm = useCallback(
-        debounce((value) => {
-            setDebouncedSearchTerm(value);
-        }, 300),
+        debounce((value) => setDebouncedSearchTerm(value), 300),
         [],
     );
 
-    // Update debounced search term when search term changes
     useEffect(() => {
         debouncedSetSearchTerm(searchTerm);
     }, [searchTerm, debouncedSetSearchTerm]);
 
-    // Use the hook for fuzzy search with debounced search term
+    // Task search
     const { data: searchData, isLoading: isSearching } = useFuzzySearchTasks(
         currentWorkspace,
         debouncedSearchTerm,
-        10, // Limit results to 10
+        10,
     );
 
-    // Handle keyboard shortcut to toggle the command palette
-    useHotkeys('meta+k', () => {
-        onOpenChange();
-    });
+    // Toggle palette
+    useHotkeys('meta+k', () => onOpenChange(), [onOpenChange]);
 
-    // Reset selected index and search term when command palette opens
+    // Reset on open
     useEffect(() => {
-        setSearchTerm('');
         if (isOpen) {
+            setSearchTerm('');
             setSelectedIndex(0);
             setActiveSection('commands');
-
-            // Focus the search input when the command palette opens
-            setTimeout(() => {
-                if (searchInputRef.current) {
-                    searchInputRef.current.focus();
-                }
-            }, 0);
+            setTimeout(() => searchInputRef.current?.focus(), 0);
         }
     }, [isOpen]);
 
-    // Handle keyboard navigation
-    useHotkeys(
-        'down',
-        (e) => {
-            if (!isOpen) return;
-            e.preventDefault();
+    // Handle arrow & enter in input
+    const handleInputKeyDown = (e) => {
+        if (!isOpen) return;
+        const cmdCount = filteredCommands.length;
+        const taskCount = searchData?.data?.length || 0;
 
-            const commandItems = filteredCommands || [];
-            const taskItems = searchData?.data || [];
-
-            if (activeSection === 'commands') {
-                if (selectedIndex < commandItems.length - 1) {
-                    // Move to next command
-                    setSelectedIndex(selectedIndex + 1);
-                } else if (taskItems.length > 0 && debouncedSearchTerm) {
-                    // Move from commands to tasks section
-                    setActiveSection('tasks');
-                    setSelectedIndex(0);
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (activeSection === 'commands') {
+                    if (selectedIndex < cmdCount - 1) {
+                        setSelectedIndex((i) => i + 1);
+                    } else if (debouncedSearchTerm && taskCount > 0) {
+                        setActiveSection('tasks');
+                        setSelectedIndex(0);
+                    }
+                } else {
+                    if (selectedIndex < taskCount - 1) {
+                        setSelectedIndex((i) => i + 1);
+                    }
                 }
-            } else if (activeSection === 'tasks') {
-                if (selectedIndex < taskItems.length - 1) {
-                    // Move to next task
-                    setSelectedIndex(selectedIndex + 1);
+                break;
+
+            case 'ArrowUp':
+                e.preventDefault();
+                if (activeSection === 'tasks') {
+                    if (selectedIndex > 0) {
+                        setSelectedIndex((i) => i - 1);
+                    } else if (cmdCount > 0) {
+                        setActiveSection('commands');
+                        setSelectedIndex(cmdCount - 1);
+                    }
+                } else {
+                    if (selectedIndex > 0) {
+                        setSelectedIndex((i) => i - 1);
+                    }
                 }
-            }
-        },
-        { enableOnFormElements: true },
-        [isOpen, activeSection, selectedIndex, filteredCommands, searchData, debouncedSearchTerm],
-    );
+                break;
 
-    useHotkeys(
-        'up',
-        (e) => {
-            if (!isOpen) return;
-            e.preventDefault();
+            case 'Escape':
+                e.preventDefault();
+                onOpenChange();
+                break;
 
-            const commandItems = filteredCommands || [];
-
-            if (activeSection === 'commands') {
-                if (selectedIndex > 0) {
-                    // Move to previous command
-                    setSelectedIndex(selectedIndex - 1);
+            case 'Enter':
+                e.preventDefault();
+                if (activeSection === 'commands' && cmdCount > 0) {
+                    handleCommandSelect(filteredCommands[selectedIndex].id);
                 }
-            } else if (activeSection === 'tasks') {
-                if (selectedIndex > 0) {
-                    // Move to previous task
-                    setSelectedIndex(selectedIndex - 1);
-                } else if (commandItems.length > 0) {
-                    // Move from tasks to commands section
-                    setActiveSection('commands');
-                    setSelectedIndex(commandItems.length - 1);
-                }
-            }
-        },
-        { enableOnFormElements: true },
-        [isOpen, activeSection, selectedIndex, filteredCommands, searchData],
-    );
+                break;
 
-    useHotkeys(
-        'enter',
-        (e) => {
-            if (!isOpen) return;
-            e.preventDefault();
+            default:
+                // Let other keys propagate to change input
+                break;
+        }
+    };
 
-            if (activeSection === 'commands' && filteredCommands.length > 0) {
-                handleCommandSelect(filteredCommands[selectedIndex].id);
-            }
-        },
-        { enableOnFormElements: true },
-        [isOpen, activeSection, selectedIndex, filteredCommands, searchData],
-    );
-
-    // Handle command selection
     const handleCommandSelect = (commandId) => {
-        onOpenChange(); // Close command palette
-
+        onOpenChange();
         switch (commandId) {
             case 'ask-ai':
-                console.log('Ask AI command selected');
-                // Implement Ask AI functionality
+                console.log('Ask AI');
                 break;
             case 'new-task':
-                onNewTaskModalOpenChange(); // Open new task modal
+                onNewTaskModalOpenChange();
                 break;
             case 'change-theme':
-                console.log('Change theme command selected');
-                // Implement theme change functionality
+                console.log('Change theme');
                 break;
             case 'suggest-feature':
-                console.log('Suggest a feature command selected');
-                // Implement feature suggestion functionality
+                console.log('Suggest feature');
                 break;
             case 'help':
-                console.log('Help command selected');
-                // Implement help functionality
+                console.log('Help');
                 break;
             default:
-                console.log('Unknown command:', commandId);
+                break;
         }
     };
 
     return (
         <>
-            {/* Command Palette Button */}
             <Button
                 variant="flat"
                 size="sm"
@@ -238,63 +192,58 @@ const CommandPalette = () => {
                 }
             >
                 <div className="flex items-center gap-2">
-                    <RiSearchLine fontSize="1rem" />
-                    Search
+                    <RiSearchLine fontSize="1rem" /> Search
                 </div>
             </Button>
 
-            {/* Command Palette Modal */}
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg" placement="top">
                 <ModalContent>
-                    <ModalBody>
+                    <ModalBody className="p-0">
                         <div className="p-2" ref={parent}>
-                            {/* Search Input */}
                             <Input
                                 ref={searchInputRef}
-                                autoFocus
                                 size="lg"
                                 placeholder="Search tasks or type a command..."
                                 startContent={<RiSearchLine />}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                onKeyDown={handleInputKeyDown}
                                 className="mb-2"
                             />
 
-                            {/* Commands Section */}
-                            <div className="mb-4">
-                                {filteredCommands?.length > 0 && (
-                                    <>
-                                        <div className="text-xs text-default-500 mb-1 px-2">
-                                            Commands
+                            {/* Commands */}
+                            {filteredCommands.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="text-xs text-default-500 mb-1 p-2">
+                                        Commands
+                                    </div>
+                                    {filteredCommands.map((cmd, idx) => (
+                                        <div
+                                            key={cmd.id}
+                                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${
+                                                activeSection === 'commands' &&
+                                                selectedIndex === idx
+                                                    ? 'bg-primary-100'
+                                                    : 'hover:bg-default-100'
+                                            }`}
+                                            onClick={() => handleCommandSelect(cmd.id)}
+                                            onMouseEnter={() => {
+                                                setActiveSection('commands');
+                                                setSelectedIndex(idx);
+                                            }}
+                                        >
+                                            {cmd.icon}
+                                            <span>{cmd.name}</span>
                                         </div>
-                                        {filteredCommands?.map((command, index) => (
-                                            <div
-                                                key={command.id}
-                                                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${
-                                                    activeSection === 'commands' &&
-                                                    selectedIndex === index
-                                                        ? 'bg-primary-100'
-                                                        : 'hover:bg-default-100'
-                                                }`}
-                                                onClick={() => handleCommandSelect(command.id)}
-                                                onMouseEnter={() => {
-                                                    setActiveSection('commands');
-                                                    setSelectedIndex(index);
-                                                }}
-                                            >
-                                                {command.icon}
-                                                <span>{command.name}</span>
-                                            </div>
-                                        ))}
-                                    </>
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
 
-                            {/* Search Results Section */}
+                            {/* Tasks */}
                             {debouncedSearchTerm && (
-                                <div>
+                                <>
                                     <div className="text-xs text-default-500 mb-1 px-2">
-                                        Tasks ({searchData?.data?.length})
+                                        Tasks ({searchData?.data?.length || 0})
                                     </div>
                                     {isSearching ? (
                                         <div className="flex justify-center p-4">
@@ -302,12 +251,20 @@ const CommandPalette = () => {
                                         </div>
                                     ) : searchData?.data?.length > 0 ? (
                                         <div className="max-h-80 overflow-y-auto flex flex-col gap-3 p-3">
-                                            {searchData.data.map((task) => (
+                                            {searchData.data.map((task, idx) => (
                                                 <TaskCard
                                                     sm
-                                                    task={task}
                                                     key={task.id}
+                                                    task={task}
+                                                    highlighted={
+                                                        activeSection === 'tasks' &&
+                                                        selectedIndex === idx
+                                                    }
                                                     onPress={onOpenChange}
+                                                    onMouseEnter={() => {
+                                                        setActiveSection('tasks');
+                                                        setSelectedIndex(idx);
+                                                    }}
                                                 />
                                             ))}
                                         </div>
@@ -316,14 +273,13 @@ const CommandPalette = () => {
                                             No tasks found
                                         </div>
                                     )}
-                                </div>
+                                </>
                             )}
                         </div>
                     </ModalBody>
                 </ModalContent>
             </Modal>
 
-            {/* New Task Modal */}
             <NewTaskModal
                 isOpen={isNewTaskModalOpen}
                 onOpenChange={onNewTaskModalOpenChange}
