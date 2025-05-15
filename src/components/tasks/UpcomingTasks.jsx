@@ -53,11 +53,16 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
         };
     }, [isLoadingOpen]);
 
-    // Create an array of 37 days starting from today (current week + one month)
+    // Calculate the date range to display
     const days = useMemo(() => {
+        const today = dayjs();
+        const dayOfWeek = today.day(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
+        const daysToAddForCurrentWeek = dayOfWeek === 0 ? 6 : 6 - dayOfWeek; // Days remaining in the current week (ends on Saturday)
+        const totalDays = daysToAddForCurrentWeek + 14; // Remaining days in current week + 2 full weeks
+
         const result = [];
-        for (let i = 0; i < 21; i++) {
-            result.push(dayjs().add(i, 'day'));
+        for (let i = 0; i < totalDays; i++) {
+            result.push(today.add(i, 'day'));
         }
         return result;
     }, []);
@@ -89,7 +94,7 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
 
             // Clear the last plan response
             setLastPlanResponse(null);
-            toast.success('Changes reverted' )
+            toast.success('Changes reverted');
 
             await queryClient.cancelQueries({
                 queryKey: ['tasks', currentWorkspace?.workspace_id],
@@ -99,14 +104,14 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
             });
         } catch (error) {
             console.error('Error rolling back changes:', error);
-            toast.error('Error rolling back changes')
+            toast.error('Error rolling back changes');
         } finally {
             onLoadingClose();
         }
     };
 
     const autoPlan = async () => {
-        setIsBacklogCollapsed(true)
+        setIsBacklogCollapsed(true);
         // Show loading modal
         onLoadingOpen();
         setLoadingMessage('Optimizing plan...');
@@ -223,7 +228,9 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
                         Rollback
                     </Button>
                 )}
-                <p className="text-sm text-default-600">From start date - end date</p>
+                <p className="text-sm text-default-600">
+                    {dayjs(startDate).format('MMM D')} - {dayjs(endDate).format('MMM D')}
+                </p>
                 <Button
                     size="sm"
                     variant="flat"
