@@ -1,13 +1,4 @@
-import {
-    Modal,
-    ModalContent,
-    ModalBody,
-    ModalFooter,
-    Button,
-    Input,
-    Divider,
-    Checkbox,
-} from '@heroui/react';
+import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
@@ -20,10 +11,10 @@ import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
-import { RiCheckboxCircleFill, RiCheckboxCircleLine } from 'react-icons/ri';
+import { RiCheckboxCircleLine } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
-import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
 import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
+import TaskCheckbox from './TaskCheckbox.jsx';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -89,42 +80,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         }
     }, [isOpen, task, reset]);
 
-    const handleStatusToggle = async () => {
-        // Determine new value by inverting the current state
-        const newCompleted = !isCompleted;
-        setIsCompleted(newCompleted);
-        const newStatus = newCompleted ? 'completed' : 'pending';
-
-        try {
-            await updateTask({
-                taskId: task.id,
-                updates: {
-                    status: newStatus,
-                    completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
-                },
-            });
-        } catch (error) {
-            // If there is an error, revert the state change (you might need to do more error handling)
-            setIsCompleted(!newCompleted);
-            console.error('Error toggling task status:', error);
-        } finally {
-            if (newStatus === 'completed') {
-                const randomMessage =
-                    taskCompletedMessages[Math.floor(Math.random() * taskCompletedMessages.length)];
-                toast.success(randomMessage.message, {
-                    duration: 5000,
-                    icon: randomMessage?.icon || (
-                        <RiCheckboxCircleFill className="text-success" fontSize="2rem" />
-                    ),
-                    style: {
-                        fontWeight: 500,
-                    },
-                });
-            }
-        }
-
-    };
-
     const onSubmit = async (data) => {
         try {
             // Create the updates object
@@ -182,17 +137,22 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size={isExternal ? '5xl' : '3xl'} className="max-h-[85vh]">
+        <Modal
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            size={isExternal ? '5xl' : '3xl'}
+            className="max-h-[85vh]"
+        >
             <ModalContent>
                 <div className="flex gap-6">
                     <form onSubmit={handleSubmit(onSubmit)} className="basis-2/3 grow">
                         <ModalBody className="pt-6">
                             <div className="flex flex-col gap-6 ">
                                 <div className="flex">
-                                    <Checkbox
-                                        size="lg"
-                                        isSelected={isCompleted}
-                                        onValueChange={handleStatusToggle}
+                                    <TaskCheckbox
+                                        task={task}
+                                        isCompleted={isCompleted}
+                                        onChange={(val) => setIsCompleted(val)}
                                     />
 
                                     <Input

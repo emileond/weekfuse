@@ -1,10 +1,8 @@
 import {
-    Checkbox,
     Dropdown,
     DropdownTrigger,
     DropdownMenu,
     DropdownItem,
-    DropdownSection,
     useDisclosure,
     Modal,
     ModalContent,
@@ -13,58 +11,26 @@ import {
     ModalFooter,
     Button,
 } from '@heroui/react';
-import {
-    RiCalendarCloseLine,
-    RiCheckboxCircleFill,
-    RiMoreLine,
-    RiArrowDownSLine,
-} from 'react-icons/ri';
-import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
+import { RiCalendarCloseLine, RiMoreLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
-import {
-    useJiraTransitions,
-    useJiraTransitionIssue,
-} from '../../hooks/react-query/integrations/jira/useJiraTransitions.js';
-import { useUser } from '../../hooks/react-query/user/useUser.js';
-import { useUserIntegration } from '../../hooks/react-query/integrations/useUserIntegrations.js';
 import TaskDetailModal from './TaskDetailModal';
 import { useState, useEffect } from 'react';
 import EntityChip from '../common/EntityChip.jsx';
 import dayjs from 'dayjs';
-import toast from 'react-hot-toast';
-import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
 import IntegrationSourceIcon from './integrations/IntegrationSourceIcon.jsx';
-import ky from 'ky';
+import TaskCheckbox from './TaskCheckbox.jsx';
+import { useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
-    const [isJiraTransitionLoading, setIsJiraTransitionLoading] = useState(false);
-    const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
-    const { mutateAsync: updateTask } = useUpdateTask(currentWorkspace);
     const { mutateAsync: deleteTask } = useDeleteTask(currentWorkspace);
-    const { data: integration } = useUserIntegration(user?.id, task?.integration_source);
-    const { data: jiraTransitions } = useJiraTransitions(
-        task?.integration_source === 'jira' ? task?.external_id : null,
-        currentWorkspace?.workspace_id,
-    );
-    const { mutateAsync: transitionJiraIssue } = useJiraTransitionIssue();
     const { isOpen, onOpenChange } = useDisclosure();
     const { isOpen: isMenuOpen, onOpenChange: onMenuOpenChange } = useDisclosure();
     const {
         isOpen: isDeleteModalOpen,
         onOpen: onDeleteModalOpen,
         onClose: onDeleteModalClose,
-    } = useDisclosure();
-    const {
-        isOpen: isSyncModalOpen,
-        onOpen: onSyncModalOpen,
-        onClose: onSyncModalClose,
-    } = useDisclosure();
-    const {
-        isOpen: isJiraTransitionsModalOpen,
-        onOpen: onJiraTransitionsModalOpen,
-        onClose: onJiraTransitionsModalClose,
     } = useDisclosure();
 
     const taskDate = dayjs(task?.date);
@@ -75,132 +41,6 @@ const TaskCard = ({ task, sm }) => {
     useEffect(() => {
         setIsCompleted(task?.status === 'completed');
     }, [task.status]);
-
-    const handleStatusToggle = async () => {
-        // Determine new value by inverting the current state
-        const newCompleted = !isCompleted;
-        const newStatus = newCompleted ? 'completed' : 'pending';
-
-        setIsCompleted(newCompleted);
-
-        const syncStatus = integration?.config?.syncStatus;
-
-        if (task?.integration_source && syncStatus) {
-            switch (syncStatus) {
-                case 'auto':
-                    return handleSourceStatusUpdate({ newStatus });
-
-                case 'prompt':
-                    if (task.integration_source === 'jira') {
-                        await updateTaskStatus({ newStatus });
-                        return onJiraTransitionsModalOpen();
-                    } else {
-                        return onSyncModalOpen();
-                    }
-                case 'never':
-                    break;
-            }
-        } else return updateTaskStatus({ newStatus });
-    };
-
-    const handleSourceStatusUpdate = async ({ newStatus }) => {
-        await updateTaskStatus({ newStatus });
-        switch (task?.integration_source) {
-            case 'trello':
-                try {
-                    const state = newStatus;
-                    await ky.patch('/api/trello/task', {
-                        json: {
-                            external_id: task.external_id,
-                            state,
-                            user_id: user.id,
-                        },
-                    });
-                } catch (error) {
-                    console.error('Error updating Trello task:', error);
-                }
-                break;
-
-            case 'github':
-                try {
-                    const state = newStatus === 'completed' ? 'closed' : 'open';
-                    await ky.patch('/api/github/task', {
-                        json: {
-                            external_id: task.external_id,
-                            url: task.external_data?.url,
-                            state,
-                            user_id: user.id,
-                        },
-                    });
-                } catch (error) {
-                    console.error('Error updating GitHub task:', error);
-                }
-                break;
-
-            case 'jira':
-                // For Jira, we don't automatically update the status here
-                // Instead, we show the transitions modal when syncStatus is "prompt"
-                // and handle the transition in handleJiraTransition
-                break;
-
-            case 'clickup':
-                // call clickup status update api route (to do)
-                break;
-        }
-    };
-
-    const handleSyncConfirm = async () => {
-        const newStatus = isCompleted ? 'completed' : 'pending';
-        await handleSourceStatusUpdate({ newStatus });
-        onSyncModalClose();
-    };
-
-    const handleJiraTransition = async (transitionId) => {
-        setIsJiraTransitionLoading(true);
-        try {
-            await transitionJiraIssue({
-                issueIdOrKey: task?.external_id,
-                transitionId,
-                workspace_id: currentWorkspace?.workspace_id,
-            });
-            toast.success('Jira status updated');
-            onJiraTransitionsModalClose();
-        } catch (error) {
-            toast.error(error.message || 'Failed to update Jira status');
-        } finally {
-            setIsJiraTransitionLoading(false);
-        }
-    };
-
-    const updateTaskStatus = async ({ newStatus }) => {
-        try {
-            await updateTask({
-                taskId: task.id,
-                updates: {
-                    status: newStatus,
-                    completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
-                },
-            });
-        } catch (error) {
-            // If there is an error, revert the state change (you might need to do more error handling)
-            setIsCompleted(newStatus !== 'completed');
-            console.error('Error toggling task status:', error);
-        } finally {
-            if (newStatus === 'completed') {
-                const randomMessage =
-                    taskCompletedMessages[Math.floor(Math.random() * taskCompletedMessages.length)];
-                toast.success(randomMessage.message, {
-                    duration: 5000,
-                    icon: randomMessage?.icon || (
-                        <RiCheckboxCircleFill className="text-success" fontSize="2rem" />
-                    ),
-                    style: {
-                        fontWeight: 500,
-                    },
-                });
-            }
-        }
-    };
 
     const handleAction = (key) => {
         switch (key) {
@@ -247,70 +87,6 @@ const TaskCard = ({ task, sm }) => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-
-            {/* Sync Status Modal */}
-            <Modal isOpen={isSyncModalOpen} onClose={onSyncModalClose}>
-                <ModalContent>
-                    <ModalHeader>Update External Task</ModalHeader>
-                    <ModalBody>
-                        <p>
-                            Do you want to update the status in {task?.integration_source} as well?
-                        </p>
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="flat" onPress={onSyncModalClose}>
-                            No
-                        </Button>
-                        <Button color="primary" onPress={handleSyncConfirm}>
-                            Yes, Update
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
-
-            {/* Jira Transitions Modal */}
-            <Modal isOpen={isJiraTransitionsModalOpen} onClose={onJiraTransitionsModalClose}>
-                <ModalContent>
-                    <ModalHeader>Update Jira Status</ModalHeader>
-                    <ModalBody>
-                        <p className="mb-3">Do you want to move the issue in Jira?</p>
-                        <div>
-                            <p className="mb-1 text-sm font-medium">Status:</p>
-                            <Dropdown>
-                                <DropdownTrigger>
-                                    <Button
-                                        size="sm"
-                                        variant="flat"
-                                        className="font-medium w-full"
-                                        endContent={<RiArrowDownSLine fontSize="1rem" />}
-                                        isLoading={isJiraTransitionLoading}
-                                    >
-                                        {task?.external_data?.fields?.status?.name ||
-                                            'Select status'}
-                                    </Button>
-                                </DropdownTrigger>
-                                <DropdownMenu>
-                                    <DropdownSection title="Move to:">
-                                        {jiraTransitions?.map((item) => (
-                                            <DropdownItem
-                                                key={item.id}
-                                                onPress={() => handleJiraTransition(item.id)}
-                                            >
-                                                {item.name}
-                                            </DropdownItem>
-                                        ))}
-                                    </DropdownSection>
-                                </DropdownMenu>
-                            </Dropdown>
-                        </div>
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="flat" onPress={onJiraTransitionsModalClose}>
-                            Close
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
             <div
                 id={task.id}
                 className="w-full border-1 border-content3 rounded-xl p-3 bg-content1 hover:bg-content2/50 transition-bg duration-300 ease-in-out cursor-grabbing hover:cursor-pointer"
@@ -318,10 +94,11 @@ const TaskCard = ({ task, sm }) => {
             >
                 <div className="flex justify-between items-center">
                     <div className="flex gap-1 grow items-center">
-                        <Checkbox
-                            size={sm ? 'md' : 'lg'}
-                            isSelected={isCompleted}
-                            onValueChange={handleStatusToggle}
+                        <TaskCheckbox
+                            task={task}
+                            isCompleted={isCompleted}
+                            onChange={(val) => setIsCompleted(val)}
+                            sm={sm}
                         />
                         <span
                             className={`font-medium ${
