@@ -33,12 +33,10 @@ const TrelloIntegrationCard = () => {
 
     // Form setup with react-hook-form
     const {
-        register,
         handleSubmit,
         setValue,
         control,
         formState: { errors },
-        reset,
     } = useForm();
 
     const handleConnect = () => {
@@ -180,7 +178,6 @@ const TrelloIntegrationCard = () => {
                                         <RadioGroup
                                             value={field.value}
                                             onValueChange={field.onChange}
-                                            // label={`Sync status changes from ${import.meta.env.VITE_APP_NAME} to Trello?`}
                                         >
                                             <Radio value="auto">Update on Trello</Radio>
                                             <Radio value="prompt">

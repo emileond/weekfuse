@@ -27,7 +27,7 @@ export async function onRequestDelete(context) {
                     headers: {
                         Accept: 'application/json',
                     },
-                }
+                },
             );
 
             console.log(`Successfully revoked Trello token: ${access_token}`);
@@ -85,6 +85,7 @@ export async function onRequestPost(context) {
             workspace_id,
             status: 'active',
             last_sync: toUTC(),
+            config: { syncStatus: 'prompt' },
         });
 
         if (updateError) {

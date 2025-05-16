@@ -118,6 +118,7 @@ export async function onRequestPost(context) {
             status: 'active',
             last_sync: toUTC(),
             expires_at,
+            config: { syncStatus: 'prompt' },
         });
 
         if (updateError) {
