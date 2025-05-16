@@ -15,6 +15,8 @@ import {
 import { RiCalendarCloseLine, RiCheckboxCircleFill, RiMoreLine } from 'react-icons/ri';
 import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
+import { useUser } from '../../hooks/react-query/user/useUser.js';
+import { useUserIntegration } from '../../hooks/react-query/integrations/useUserIntegrations.js';
 import TaskDetailModal from './TaskDetailModal';
 import { useState, useEffect } from 'react';
 import CreatableSelect from '../form/CreatableSelect.jsx';
@@ -23,12 +25,15 @@ import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
 import IntegrationSourceIcon from './integrations/IntegrationSourceIcon.jsx';
+import ky from 'ky';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
+    const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask } = useUpdateTask(currentWorkspace);
     const { mutateAsync: deleteTask } = useDeleteTask(currentWorkspace);
+    const { data: integration } = useUserIntegration(user?.id, task?.integration_source);
     const { isOpen, onOpenChange } = useDisclosure();
     const { isOpen: isMenuOpen, onOpenChange: onMenuOpenChange } = useDisclosure();
     const {
@@ -41,6 +46,11 @@ const TaskCard = ({ task, sm }) => {
         onOpen: onMoveModalOpen,
         onClose: onMoveModalClose,
     } = useDisclosure();
+    const {
+        isOpen: isSyncModalOpen,
+        onOpen: onSyncModalOpen,
+        onClose: onSyncModalClose,
+    } = useDisclosure();
 
     const taskDate = dayjs(task?.date);
     const today = dayjs().startOf('day');
@@ -51,11 +61,56 @@ const TaskCard = ({ task, sm }) => {
         setIsCompleted(task?.status === 'completed');
     }, [task.status]);
 
+    const handleSourceStatusUpdate = async ({ newStatus }) => {
+        switch (task?.integration_source) {
+            case 'trello':
+                try {
+                    const state = newStatus === 'completed' ? 'complete' : 'incomplete';
+                    await ky.patch('/api/trello/task', {
+                        json: {
+                            external_id: task.external_id,
+                            state,
+                            user_id: user.id,
+                        },
+                    });
+                } catch (error) {
+                    console.error('Error updating Trello task:', error);
+                }
+                break;
+
+            case 'github':
+                try {
+                    const state = newStatus === 'completed' ? 'closed' : 'open';
+                    await ky.patch('/api/github/task', {
+                        json: {
+                            external_id: task.external_id,
+                            url: task.external_data?.url,
+                            state,
+                            user_id: user.id,
+                        },
+                    });
+                } catch (error) {
+                    console.error('Error updating GitHub task:', error);
+                }
+                break;
+
+            case 'jira':
+                // call /api/jira/transitions to update the status
+                break;
+
+            case 'clickup':
+                // call clickup status update api route (to do)
+                break;
+        }
+    };
+
     const handleStatusToggle = async () => {
         // Determine new value by inverting the current state
         const newCompleted = !isCompleted;
         setIsCompleted(newCompleted);
         const newStatus = newCompleted ? 'completed' : 'pending';
+
+        const syncStatus = integration?.config?.syncStatus;
 
         try {
             await updateTask({
@@ -65,6 +120,21 @@ const TaskCard = ({ task, sm }) => {
                     completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
                 },
             });
+            switch (syncStatus) {
+                case 'auto':
+                    // call update fn
+                    await handleSourceStatusUpdate({ newStatus });
+                    break;
+
+                case 'prompt':
+                    // open modal
+                    onSyncModalOpen();
+                    break;
+
+                case 'never':
+                    displayCompletionToast();
+                    break;
+            }
         } catch (error) {
             // If there is an error, revert the state change (you might need to do more error handling)
             setIsCompleted(!newCompleted);
@@ -108,6 +178,25 @@ const TaskCard = ({ task, sm }) => {
         }
     };
 
+    const handleSyncConfirm = async () => {
+        await handleSourceStatusUpdate();
+        onSyncModalClose();
+    };
+
+    const displayCompletionToast = () => {
+        const randomMessage =
+            taskCompletedMessages[Math.floor(Math.random() * taskCompletedMessages.length)];
+        toast.success(randomMessage.message, {
+            duration: 5000,
+            icon: randomMessage?.icon || (
+                <RiCheckboxCircleFill className="text-success" fontSize="2rem" />
+            ),
+            style: {
+                fontWeight: 500,
+            },
+        });
+    };
+
     return (
         <>
             <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
@@ -128,6 +217,26 @@ const TaskCard = ({ task, sm }) => {
                         </Button>
                         <Button color="danger" onPress={handleDelete}>
                             Delete
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Sync Status Modal */}
+            <Modal isOpen={isSyncModalOpen} onClose={onSyncModalClose}>
+                <ModalContent>
+                    <ModalHeader>Update External Task</ModalHeader>
+                    <ModalBody>
+                        <p>
+                            Do you want to update the status in {task?.integration_source} as well?
+                        </p>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="flat" onPress={onSyncModalClose}>
+                            No
+                        </Button>
+                        <Button color="primary" onPress={handleSyncConfirm}>
+                            Yes, Update
                         </Button>
                     </ModalFooter>
                 </ModalContent>

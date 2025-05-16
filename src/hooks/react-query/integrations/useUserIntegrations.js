@@ -6,7 +6,7 @@ import ky from 'ky';
 const fetchIntegration = async ({ user_id, type }) => {
     const { data, error } = await supabaseClient
         .from('user_integrations')
-        .select('id, status, installation_id')
+        .select('id, status, installation_id, config')
         .eq('user_id', user_id)
         .eq('type', type)
         .single();
@@ -32,7 +32,7 @@ export const useUserIntegration = (user_id, type) => {
                 type,
             }),
         staleTime: 1000 * 60 * 60, // 60 minutes
-        enabled: !!user_id, // Only fetch if workspace_id is provided
+        enabled: !!type && !!user_id,
     });
 };
 
@@ -66,6 +66,36 @@ const deleteIntegration = async ({ id, installation_id, type, access_token }) =>
     }
 
     return { success: true };
+};
+
+// Update integration config
+const updateIntegrationConfig = async ({ id, config }) => {
+    const { error } = await supabaseClient
+        .from('user_integrations')
+        .update({ config })
+        .eq('id', id);
+
+    if (error) {
+        throw new Error('Failed to update integration config');
+    }
+
+    return { success: true };
+};
+
+// Hook to update an integration's config
+export const useUpdateIntegrationConfig = (user_id, type) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateIntegrationConfig,
+        onSuccess: () => {
+            // Invalidate the relevant query
+            queryClient.invalidateQueries({
+                queryKey: ['user_integration', user_id, type],
+                exact: true,
+            });
+        },
+    });
 };
 
 // Hook to delete an integration
