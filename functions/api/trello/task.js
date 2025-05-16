@@ -23,11 +23,11 @@ export async function onRequestPatch(context) {
         }
 
         // Validate state value
-        if (state !== 'complete' && state !== 'incomplete') {
+        if (state !== 'completed' && state !== 'pending') {
             return Response.json(
                 {
                     success: false,
-                    error: 'Invalid state value. Must be "complete" or "incomplete".',
+                    error: 'Invalid state value. Must be "completed" or "pending".',
                 },
                 { status: 400 },
             );
@@ -61,7 +61,7 @@ export async function onRequestPatch(context) {
                 `https://api.trello.com/1/cards/${external_id}?key=${context.env.TRELLO_API_KEY}&token=${accessToken}`,
                 {
                     json: {
-                        dueComplete: state === 'complete',
+                        dueComplete: state === 'completed',
                     },
                     headers: {
                         Accept: 'application/json',
@@ -69,6 +69,8 @@ export async function onRequestPatch(context) {
                 },
             )
             .json();
+
+        console.log(response);
 
         return Response.json({
             success: true,

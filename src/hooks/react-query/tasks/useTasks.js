@@ -63,7 +63,7 @@ export const useTasks = (currentWorkspace, filters = {}) => {
                 milestone_id: filters.milestone_id,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
-        enabled: !!currentWorkspace?.workspace_id, // Only fetch if workspace_id is provided
+        enabled: !!currentWorkspace, // Only fetch if workspace is provided
     });
 };
 
