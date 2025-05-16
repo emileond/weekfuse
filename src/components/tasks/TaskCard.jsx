@@ -29,6 +29,7 @@ import ky from 'ky';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
+    const [currentTaskStatus, setCurrentTaskStatus] = useState(null);
     const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask } = useUpdateTask(currentWorkspace);
@@ -128,6 +129,7 @@ const TaskCard = ({ task, sm }) => {
 
                 case 'prompt':
                     // open modal
+                    setCurrentTaskStatus(newStatus);
                     onSyncModalOpen();
                     break;
 
@@ -179,7 +181,9 @@ const TaskCard = ({ task, sm }) => {
     };
 
     const handleSyncConfirm = async () => {
-        await handleSourceStatusUpdate();
+        if (currentTaskStatus) {
+            await handleSourceStatusUpdate({ newStatus: currentTaskStatus });
+        }
         onSyncModalClose();
     };
 
