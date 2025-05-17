@@ -56,7 +56,7 @@ function IntegrationCard({
         onConfigure();
     };
 
-    // Handle configure action
+    // Handle error action
     const handleError = () => {
         onReset();
     };

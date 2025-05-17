@@ -133,6 +133,7 @@ const JiraIntegrationCard = () => {
                 status={status}
                 onConnect={handleConnect}
                 onDisconnect={handleDisconnect}
+                onReset={handleDisconnect}
                 onConfigure={handleConfigure}
                 hasConfigOptions={true}
             />

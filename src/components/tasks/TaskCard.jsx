@@ -10,6 +10,8 @@ import {
     ModalBody,
     ModalFooter,
     Button,
+    Card,
+    CardBody,
 } from '@heroui/react';
 import { RiCalendarCloseLine, RiMoreLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
@@ -94,12 +96,14 @@ const TaskCard = ({ task, sm }) => {
             >
                 <div className="flex justify-between items-center">
                     <div className="flex gap-1 grow items-center">
-                        <TaskCheckbox
-                            task={task}
-                            isCompleted={isCompleted}
-                            onChange={(val) => setIsCompleted(val)}
-                            sm={sm}
-                        />
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <TaskCheckbox
+                                task={task}
+                                isCompleted={isCompleted}
+                                onChange={(val) => setIsCompleted(val)}
+                                sm={sm}
+                            />
+                        </div>
                         <span
                             className={`font-medium ${
                                 isCompleted ? 'line-through text-default-400' : ''

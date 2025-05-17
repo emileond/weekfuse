@@ -214,7 +214,7 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
             />
             {/* Sync Status Modal */}
             <Modal isOpen={isSyncModalOpen} onClose={onSyncModalClose}>
-                <ModalContent onClick={(e) => e.stopPropagation()}>
+                <ModalContent>
                     <ModalHeader>Update External Task</ModalHeader>
                     <ModalBody>
                         <p>
@@ -234,7 +234,7 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
 
             {/* Jira Transitions Modal */}
             <Modal isOpen={isJiraTransitionsModalOpen} onClose={onJiraTransitionsModalClose}>
-                <ModalContent onClick={(e) => e.stopPropagation()}>
+                <ModalContent>
                     <ModalHeader>Update Jira Status</ModalHeader>
                     <ModalBody>
                         <p className="mb-3">Do you want to move the issue in Jira?</p>
@@ -277,8 +277,12 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
             </Modal>
 
             {/* ClickUp Status Modal */}
-            <Modal isOpen={isClickUpStatusModalOpen} onClose={onClickUpStatusModalClose}>
-                <ModalContent onClick={(e) => e.stopPropagation()}>
+            <Modal
+                isOpen={isClickUpStatusModalOpen}
+                onClose={onClickUpStatusModalClose}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <ModalContent>
                     <ModalHeader>Update ClickUp Status</ModalHeader>
                     <ModalBody>
                         <p className="mb-3">Do you want to move the task in ClickUp?</p>
