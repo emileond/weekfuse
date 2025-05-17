@@ -10,7 +10,7 @@ export async function onRequestPatch(context) {
         // Get the request body
         const { external_id, status, user_id } = await context.request.json();
 
-        if (!external_id || !user_id || (!state && !status)) {
+        if (!external_id || !user_id || !status) {
             return Response.json(
                 {
                     success: false,
