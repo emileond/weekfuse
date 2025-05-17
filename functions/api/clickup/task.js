@@ -59,7 +59,7 @@ export async function onRequestPatch(context) {
 
         return Response.json({
             success: true,
-            message: `ClickUp task status updated to ${clickupStatus}`,
+            message: `ClickUp task status updated to ${status}`,
         });
     } catch (error) {
         console.log('Error updating ClickUp task:', error);
