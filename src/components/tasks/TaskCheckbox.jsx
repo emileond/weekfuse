@@ -33,6 +33,7 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
     const { data: integration } = useUserIntegration(user?.id, task?.integration_source);
     const { mutateAsync: updateTask } = useUpdateTask(currentWorkspace);
     const [isJiraTransitionLoading, setIsJiraTransitionLoading] = useState(false);
+    const [isClickUpStatusLoading, setIsClickUpStatusLoading] = useState(false);
     const { data: jiraTransitions } = useJiraTransitions(
         task?.integration_source === 'jira' ? task?.external_id : null,
         currentWorkspace?.workspace_id,
@@ -47,6 +48,11 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
         isOpen: isJiraTransitionsModalOpen,
         onOpen: onJiraTransitionsModalOpen,
         onClose: onJiraTransitionsModalClose,
+    } = useDisclosure();
+    const {
+        isOpen: isClickUpStatusModalOpen,
+        onOpen: onClickUpStatusModalOpen,
+        onClose: onClickUpStatusModalClose,
     } = useDisclosure();
 
     const handleStatusToggle = async () => {
@@ -67,6 +73,9 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
                     if (task.integration_source === 'jira') {
                         await updateTaskStatus({ newStatus });
                         return onJiraTransitionsModalOpen();
+                    } else if (task.integration_source === 'clickup') {
+                        await updateTaskStatus({ newStatus });
+                        return onClickUpStatusModalOpen();
                     } else {
                         return onSyncModalOpen();
                     }
@@ -117,7 +126,9 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
                 break;
 
             case 'clickup':
-                // call clickup status update api route (to do)
+                // For ClickUp, we don't automatically update the status here when syncStatus is "prompt"
+                // Instead, we show the status selection modal when syncStatus is "prompt"
+                // and handle the status update in handleClickUpStatus
                 break;
         }
     };
@@ -142,6 +153,25 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
             toast.error(error.message || 'Failed to update Jira status');
         } finally {
             setIsJiraTransitionLoading(false);
+        }
+    };
+
+    const handleClickUpStatus = async (status) => {
+        setIsClickUpStatusLoading(true);
+        try {
+            await ky.patch('/api/clickup/task', {
+                json: {
+                    external_id: task.external_id,
+                    status,
+                    user_id: user.id,
+                },
+            });
+            toast.success('ClickUp status updated');
+            onClickUpStatusModalClose();
+        } catch (error) {
+            toast.error(error.message || 'Failed to update ClickUp status');
+        } finally {
+            setIsClickUpStatusLoading(false);
         }
     };
 
@@ -240,6 +270,54 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
                     </ModalBody>
                     <ModalFooter>
                         <Button variant="flat" onPress={onJiraTransitionsModalClose}>
+                            Close
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* ClickUp Status Modal */}
+            <Modal isOpen={isClickUpStatusModalOpen} onClose={onClickUpStatusModalClose}>
+                <ModalContent onClick={(e) => e.stopPropagation()}>
+                    <ModalHeader>Update ClickUp Status</ModalHeader>
+                    <ModalBody>
+                        <p className="mb-3">Do you want to move the task in ClickUp?</p>
+                        <div>
+                            <p className="mb-1 text-sm font-medium">Status:</p>
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <Button
+                                        size="sm"
+                                        variant="flat"
+                                        className="font-medium w-full"
+                                        endContent={<RiArrowDownSLine fontSize="1rem" />}
+                                        isLoading={isClickUpStatusLoading}
+                                    >
+                                        {task?.external_data?.status?.status || 'Select status'}
+                                    </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu>
+                                    <DropdownSection title="Move to:">
+                                        <DropdownItem onPress={() => handleClickUpStatus('to do')}>
+                                            To Do
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            onPress={() => handleClickUpStatus('in progress')}
+                                        >
+                                            In Progress
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            onPress={() => handleClickUpStatus('complete')}
+                                        >
+                                            Complete
+                                        </DropdownItem>
+                                    </DropdownSection>
+                                </DropdownMenu>
+                            </Dropdown>
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="flat" onPress={onClickUpStatusModalClose}>
                             Close
                         </Button>
                     </ModalFooter>
