@@ -13,11 +13,13 @@ const ProjectSelect = ({
     placement = 'bottom',
     className = '',
     disabled = false,
+    multiSelect = false,
 }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: projects, isLoading } = useProjects(currentWorkspace);
     const { mutateAsync: createProject } = useCreateProject(currentWorkspace);
     const [selectedProject, setSelectedProject] = useState();
+    const [selectedProjects, setSelectedProjects] = useState([]);
 
     // Convert projects to options format for CreatableSelect
     const projectOptions = projects
@@ -47,12 +49,26 @@ const ProjectSelect = ({
         return mappedNew;
     };
 
-    // Update parent component when selected project changes
+    // Update parent component when selected project(s) change
     useEffect(() => {
-        if (selectedProject && onChange) {
-            onChange(selectedProject);
+        if (onChange) {
+            if (multiSelect) {
+                if (selectedProjects.length > 0) {
+                    onChange(selectedProjects.map(project => project.value));
+                }
+            } else if (selectedProject) {
+                onChange(selectedProject);
+            }
         }
-    }, [selectedProject, onChange]);
+    }, [selectedProject, selectedProjects, onChange, multiSelect]);
+
+    // Set default selection for multi-select mode
+    useEffect(() => {
+        if (multiSelect && projects && projects.length > 0 && selectedProjects.length === 0) {
+            // Set all projects as default for multi-select mode
+            setSelectedProjects(projectOptions);
+        }
+    }, [multiSelect, projects, projectOptions, selectedProjects.length]);
 
     return isLoading ? (
         <Spinner color="default" variant="wave" size="sm" />
@@ -61,16 +77,30 @@ const ProjectSelect = ({
             label={label}
             placeholder={placeholder}
             options={projectOptions}
-            defaultValue={projectOptions?.find((opt) => opt.value === defaultValue)}
+            defaultValue={multiSelect 
+                ? projectOptions // Default to all projects in multi-select mode
+                : projectOptions?.find((opt) => opt.value === defaultValue)
+            }
             onChange={(value) => {
-                const option = projectOptions.find((opt) => opt.value === value);
-                setSelectedProject(option);
+                if (multiSelect) {
+                    // For multi-select, value is an array of project IDs
+                    const selectedOptions = Array.isArray(value) 
+                        ? value.map(id => projectOptions.find(opt => opt.value === id)).filter(Boolean)
+                        : [];
+                    setSelectedProjects(selectedOptions);
+                } else {
+                    // For single select, value is a single project ID
+                    const option = projectOptions.find((opt) => opt.value === value);
+                    setSelectedProject(option);
+                }
             }}
-            onCreate={handleCreateProject}
+            onCreate={!multiSelect ? handleCreateProject : undefined} // Disable creation in multi-select mode
             placement={placement}
             className={className}
             disabled={disabled}
             icon={<RiListCheck3 fontSize="1rem" />}
+            multiple={multiSelect}
+            allSelectedLabel={multiSelect ? "All projects" : null}
         />
     );
 };

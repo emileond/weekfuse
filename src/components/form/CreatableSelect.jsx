@@ -23,6 +23,7 @@ const CreatableSelect = ({
     disabled = false,
     icon,
     multiple = false,
+    allSelectedLabel = null,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -110,6 +111,8 @@ const CreatableSelect = ({
                 return label;
             } else if (selectedOptions.length === 1) {
                 return selectedOptions[0].label;
+            } else if (allSelectedLabel && options.length > 0 && selectedOptions.length === options.length) {
+                return allSelectedLabel;
             } else {
                 return `${selectedOptions.length} ${label}s`;
             }

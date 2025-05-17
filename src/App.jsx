@@ -32,6 +32,8 @@ import ProjectsPage from './pages/Projects.jsx';
 import ProjectTasksPage from './pages/ProjectTasks.jsx';
 import NotesPage from './pages/Notes.jsx';
 import OauthCallback from './pages/integrations/OauthCallback.jsx';
+import ReflectPage from './pages/reflect/Reflect.jsx';
+import ReflectSessionPage from './pages/reflect/ReflectSession.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -71,6 +73,22 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <UpcomingPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/reflect',
+            element: (
+                <ProtectedRoute>
+                    <ReflectPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/reflect/session/:id', // Dynamic route with "id" as the parameter
+            element: (
+                <ProtectedRoute>
+                    <ReflectSessionPage />
                 </ProtectedRoute>
             ),
         },
