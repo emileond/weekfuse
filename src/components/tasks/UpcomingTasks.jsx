@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { supabaseClient } from '../../lib/supabase.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { Button, useDisclosure, Modal, ModalContent, ModalBody, Spinner } from '@heroui/react';
-import { RiExpandLeftLine, RiContractRightLine, RiArrowGoBackLine } from 'react-icons/ri';
+import { RiExpandLeftLine, RiContractRightLine } from 'react-icons/ri';
 import BacklogPanel from './BacklogPanel.jsx';
 import { useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import utc from 'dayjs/plugin/utc';
@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 // Extend dayjs with the plugins
 dayjs.extend(utc);
 
-const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) => {
+const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanResponse }) => {
     const queryClient = useQueryClient();
     const [currentWorkspace] = useCurrentWorkspace();
     const {
@@ -192,7 +192,7 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
         }
     };
 
-    // This function is now called by the parent component through the onAutoPlan prop
+    // These functions are now called by the parent component through refs
     useEffect(() => {
         // Set up the onAutoPlan function to be called from the parent
         if (onAutoPlan && currentWorkspace) {
@@ -200,7 +200,14 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
                 return autoPlan();
             };
         }
-    }, [onAutoPlan, currentWorkspace]);
+
+        // Set up the onRollback function to be called from the parent
+        if (onRollback && currentWorkspace) {
+            onRollback.current = () => {
+                return handleRollback();
+            };
+        }
+    }, [onAutoPlan, onRollback, currentWorkspace]);
 
     return (
         <>
@@ -218,16 +225,6 @@ const UpcomingTasks = ({ onAutoPlan, lastPlanResponse, setLastPlanResponse }) =>
                 </ModalContent>
             </Modal>
             <div className="flex justify-between mb-2">
-                {lastPlanResponse && (
-                    <Button
-                        color="danger"
-                        variant="flat"
-                        onPress={handleRollback}
-                        startContent={<RiArrowGoBackLine fontSize="1rem" />}
-                    >
-                        Rollback
-                    </Button>
-                )}
                 <p className="text-sm text-default-600">
                     {dayjs(startDate).format('MMM D')} - {dayjs(endDate).format('MMM D')}
                 </p>
