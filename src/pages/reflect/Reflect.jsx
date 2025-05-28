@@ -3,6 +3,7 @@ import PageLayout from '../../components/layout/PageLayout';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useReflectSessions } from '../../hooks/react-query/reflect-sessions/useReflectSessions.js';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     Button,
     Modal,
@@ -30,6 +31,7 @@ function ReflectPage() {
     const { data: user } = useUser();
     const { data } = useReflectSessions(user?.id);
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
@@ -78,6 +80,13 @@ function ReflectPage() {
             // After a success response, redirect user to /reflect/session/{id}
             if (response?.id) {
                 toast.success('Reflection session created successfully');
+
+                // Invalidate and refetch the reflect sessions query to update UI
+                queryClient.invalidateQueries({
+                    queryKey: ['reflectSessions', user.id],
+                    refetchType: 'all', // Force refetch to update UI
+                });
+
                 navigate(`/reflect/session/${response.id}`);
             } else {
                 toast.error('Failed to create reflection session');

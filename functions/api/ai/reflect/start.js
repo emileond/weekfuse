@@ -71,18 +71,40 @@ export async function onRequestPost(context) {
         }
 
         // Prepare prompt for Gemini API
-        const prompt = `You are an AI assistant that analyzes task data and generates a narrative summary of the work accomplished, highlighting key themes and trends.
+        const prompt = `You are a Productivity Coach AI. Your goal is to help users reflect on their work by analyzing their completed tasks and providing clear, actionable insights in a supportive tone.
 
-Analyze the following tasks completed between ${dayjs(start_date).format('MMMM D,<ctrl3348>')} and ${dayjs(end_date).format('MMMM D,<ctrl3348>')}.
+Analyze the following task data for the period between ${dayjs(start_date).format('YYYY-MM-DD')} and ${dayjs(end_date).format('YYYY-MM-DD')}.
 
 Tasks data: ${JSON.stringify(tasks)}
 
-Provide a concise analysis with the following sections. Avoid verbose:
-1. Achievements: Highlight 1-3 key accomplishments and completed milestones or positive trends.
-3. Patterns: Identify 2-3 overarching themes or focus areas that emerged during this period based on the tasks completed (e.g., a strong push on a specific project, a focus on a particular type of task, a period of high-volume but shorter tasks). Explain why these themes are significant based on the data..
-4. Challenges: Identify 1-2 potential challenges or bottlenecks identified from the task data. Explain the data points that suggest these areas.
+**Important:** Assume the 'tasks' array contains objects with at least these keys: 'id', 'title', date, 'completion_date' (optional), 'due_date' (optional), 'project' (optional), 'tags' (optional, array), 'priority' (optional).
 
-Format your response as a structured JSON object with these sections as keys.`;
+Generate a concise analysis. Your response MUST be a valid JSON object with the following structure:
+
+{
+  "key_metrics": {
+    "total_tasks": ${JSON.stringify(tasks.length)},
+    "on_time_percentage": "Calculate the percentage of tasks completed on or before their due_date (ignore tasks without a due_date).",
+    "top_focus_area": "Identify the project or tag with the most completed tasks. State the area and the count/percentage.",
+    "overdue_tasks": "Count the number of tasks completed *after* their due_date."
+  },
+  "achievements": [
+    "List 1-3 significant accomplishments or positive outcomes observed from the tasks (e.g., completing a major project phase, high output in a key area)."
+  ],
+  "patterns": [
+    "List 1-2 Identify a distinct work pattern (e.g., 'Focus on X Project', 'High Volume of Small Tasks', 'Emphasis on Y Skill').",
+  ],
+  "challenges": [
+    "List 1-2 potential challenges or area for improvement (e.g., 'Risk of Burnout', 'Planning Gaps', 'Project Bottleneck')."
+  ]
+}
+
+**Guidelines:**
+- Be concise and to the point.
+- Ensure all text is supportive and constructive.
+- Base your analysis *only* on the provided task data.
+- If data for a metric (like due_dates) is largely missing, indicate that or return 'N/A'.
+- Ensure the final output is a single, valid JSON object.`;
 
         // Send tasks data to Gemini API to generate insights
         const response = await ai.models.generateContent({
@@ -93,11 +115,42 @@ Format your response as a structured JSON object with these sections as keys.`;
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
-                        achievements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        key_metrics: {
+                            type: Type.OBJECT,
+                            properties: {
+                                total_completed: {
+                                    type: Type.NUMBER, // Or Type.STRING if you prefer it as text
+                                    description: 'The total number of tasks completed.',
+                                },
+                                on_time_percentage: {
+                                    type: Type.STRING, // String to handle 'N/A' or '%'
+                                    description:
+                                        "The percentage of tasks completed on time (e.g., '85%' or 'N/A').",
+                                },
+                                overdue_tasks: {
+                                    type: Type.NUMBER, // Or Type.STRING
+                                    description:
+                                        'The count of tasks completed after their due date.',
+                                },
+                            },
+                            required: [
+                                'total_completed',
+                                'on_time_percentage',
+                                'top_focus_area',
+                                'overdue_tasks',
+                            ],
+                        },
+                        achievements: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.STRING,
+                            },
+                            description: 'A list of 1-3 key accomplishments.',
+                        },
                         patterns: { type: Type.ARRAY, items: { type: Type.STRING } },
                         challenges: { type: Type.ARRAY, items: { type: Type.STRING } },
                     },
-                    required: ['achievements', 'patterns', 'challenges'],
+                    required: ['key_metrics', 'achievements', 'patterns', 'challenges'],
                 },
             },
         });

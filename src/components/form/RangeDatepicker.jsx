@@ -9,7 +9,7 @@ const RangeDatepicker = ({ defaultValue, trigger, placement = 'bottom', onChange
     const getDefaultDateRange = () => {
         if (defaultValue) return defaultValue;
 
-        const to = dayjs();
+        const to = dayjs().endOf('day').subtract(1, 'day');
         const from = to.subtract(7, 'day');
         return {
             from: from.toDate(),
@@ -46,7 +46,7 @@ const RangeDatepicker = ({ defaultValue, trigger, placement = 'bottom', onChange
     }, [dateRange]);
 
     const handlePresetSelection = (days, presetLabel) => {
-        const to = dayjs();
+        const to = dayjs().endOf('day').subtract(1, 'day');
         const from = to.subtract(days, 'day');
 
         setDateRange({

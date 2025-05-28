@@ -73,7 +73,10 @@ export const useCreateReflectSession = (user_id) => {
         mutationFn: createReflectSession,
         onSuccess: () => {
             // Invalidate and refetch the reflect sessions query for the user
-            queryClient.invalidateQueries(['reflectSessions', user_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['reflectSessions', user_id],
+                refetchType: 'all', // Force refetch to update UI
+            });
         },
     });
 };
@@ -101,9 +104,15 @@ export const useUpdateReflectSession = (user_id) => {
         },
         onSuccess: (_, variables) => {
             // Invalidate and refetch the reflect sessions query for the user
-            queryClient.invalidateQueries(['reflectSessions', user_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['reflectSessions', user_id],
+                refetchType: 'all', // Force refetch to update UI
+            });
             // Also invalidate the specific session query
-            queryClient.invalidateQueries(['reflectSession', variables.session_id]);
+            queryClient.invalidateQueries({
+                queryKey: ['reflectSession', variables.session_id],
+                refetchType: 'all', // Force refetch to update UI
+            });
         },
     });
 };
@@ -127,9 +136,20 @@ export const useDeleteReflectSession = (user_id) => {
             console.error('Error deleting reflect session:', error);
         },
         onSuccess: (_, variables) => {
-            // Invalidate and refetch the reflect sessions query for the user
-            queryClient.invalidateQueries(['reflectSessions', user_id]);
-            // Also remove the specific session from the cache
+            // Option 1 (Recommended): Optimistically update the 'reflectSessions' cache
+            queryClient.setQueryData(['reflectSessions', user_id], (oldData) => {
+                if (oldData) {
+                    return oldData.filter((session) => session.id !== variables.session_id);
+                }
+                return oldData;
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['reflectSessions', user_id],
+                refetchType: 'all',
+            });
+
+            // Remove the specific session from the cache (good practice for single item queries)
             queryClient.removeQueries(['reflectSession', variables.session_id]);
         },
     });

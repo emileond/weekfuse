@@ -36,6 +36,7 @@ const ReflectSessionCard = ({ session }) => {
         try {
             await deleteReflectSession({ session_id: session.id });
             onDeleteModalClose();
+            toast('Session deleted');
         } catch (error) {
             toast.error('Failed to delete session');
             console.error('Error deleting session:', error);
