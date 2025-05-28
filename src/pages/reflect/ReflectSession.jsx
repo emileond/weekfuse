@@ -6,18 +6,8 @@ import {
     useUpdateReflectSession,
 } from '../../hooks/react-query/reflect-sessions/useReflectSessions.js';
 import { useForm } from 'react-hook-form';
-import {
-    Alert,
-    Button,
-    Input,
-    Textarea,
-    Card,
-    CardBody,
-    CardHeader,
-    Divider,
-    CardFooter,
-} from '@heroui/react';
-import { RiErrorWarningLine, RiSparkling2Line, RiAwardLine, RiThumbUpLine } from 'react-icons/ri';
+import { Alert, Button, Textarea, Card, CardBody, CardHeader, CardFooter } from '@heroui/react';
+import { RiErrorWarningLine, RiSparkling2Line, RiThumbUpLine } from 'react-icons/ri';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useState, useEffect } from 'react';
 
@@ -76,8 +66,6 @@ function ReflectSessionPage() {
         }
     };
 
-    console.log(session?.ai_insights);
-
     if (isLoading) {
         return (
             <AppLayout>
@@ -97,11 +85,11 @@ function ReflectSessionPage() {
                     {/* Left section - AI Insights */}
                     <div className="space-y-9">
                         <div className="flex gap-3">
-                            {session?.ai_insights?.key_metrics?.total_tasks !== undefined && (
+                            {session?.ai_insights?.key_metrics?.total_tasks && (
                                 <Card className="basis-1/5" shadow="sm">
                                     <CardBody>
                                         <span className="font-semibold text-xl text-default-600">
-                                            {session.ai_insights.key_metrics.total_completed}
+                                            {session.ai_insights.key_metrics.total_tasks}
                                         </span>
                                     </CardBody>
                                     <CardFooter className="pt-0">

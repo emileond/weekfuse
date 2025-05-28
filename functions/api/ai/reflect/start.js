@@ -134,7 +134,7 @@ Generate a concise analysis. Your response MUST be a valid JSON object with the 
                                 },
                             },
                             required: [
-                                'total_completed',
+                                'total_tasks',
                                 'on_time_percentage',
                                 'top_focus_area',
                                 'overdue_tasks',
