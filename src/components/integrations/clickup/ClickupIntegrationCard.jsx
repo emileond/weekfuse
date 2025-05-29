@@ -40,7 +40,7 @@ const ClickupIntegrationCard = () => {
 
     const handleConnect = () => {
         window.location.href =
-            'https://app.clickup.com/api?client_id=MZHWY0X3R4B24M2XKEV344LUGJZLRVBH&redirect_uri=http://localhost:8788/integrations/oauth/callback/clickup';
+            'https://app.clickup.com/api?client_id=MZHWY0X3R4B24M2XKEV344LUGJZLRVBH&redirect_uri=https://weekfuse.com/integrations/oauth/callback/clickup';
     };
 
     const handleDisconnect = async () => {

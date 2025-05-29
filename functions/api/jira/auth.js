@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
 
+// Webhook events to listen for
+const WEBHOOK_EVENTS = ['jira:issue_created', 'jira:issue_updated'];
+
 // Handle POST requests for initiating Jira OAuth flow
 export async function onRequestPost(context) {
     const body = await context.request.json();
@@ -61,6 +64,7 @@ export async function onRequestPost(context) {
             status: 'active',
             last_sync: toUTC(),
             expires_at,
+            config: { resources: [] }, // Will store Jira cloud instance IDs
         });
 
         if (updateError) {
@@ -146,6 +150,89 @@ export async function onRequestPost(context) {
                     console.log(`Issue ${issuesData[index].id} imported successfully`);
                 }
             });
+        }
+
+        // Get the current integration to update its config
+        const { data: integrationData, error: fetchError } = await supabase
+            .from('user_integrations')
+            .select('config')
+            .eq('type', 'jira')
+            .eq('user_id', user_id)
+            .eq('workspace_id', workspace_id)
+            .single();
+
+        if (fetchError) {
+            console.error('Error fetching integration data:', fetchError);
+        }
+
+        // Initialize resourceIds array to store the IDs of resources we register webhooks for
+        const resourceIds = [];
+
+        // Register webhooks for each resource
+        for (const resource of resources) {
+            try {
+                // Add resource ID to the array
+                resourceIds.push(resource.id);
+
+                // Check if webhook already exists
+                const webhooksResponse = await ky
+                    .get(`https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`, {
+                        headers: {
+                            Authorization: `Bearer ${access_token}`,
+                            Accept: 'application/json',
+                        },
+                    })
+                    .json();
+
+                // Check if our webhook URL is already registered
+                const webhookUrl = `https://weekfuse.com/functions/webhooks/jira`;
+                const existingWebhook = webhooksResponse.values.find(webhook => 
+                    webhook.url === webhookUrl && 
+                    webhook.events.some(event => WEBHOOK_EVENTS.includes(event))
+                );
+
+                if (!existingWebhook) {
+                    // Register new webhook
+                    await ky
+                        .post(`https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`, {
+                            json: {
+                                url: webhookUrl,
+                                events: WEBHOOK_EVENTS,
+                                filters: {
+                                    'issue-related-events-section': 'assignee = currentUser()'
+                                },
+                                name: 'Weekfuse Integration',
+                                excludeBody: false
+                            },
+                            headers: {
+                                Authorization: `Bearer ${access_token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                    console.log(`Webhook registered successfully for resource ${resource.id}`);
+                } else {
+                    console.log(`Webhook already exists for resource ${resource.id}`);
+                }
+            } catch (webhookError) {
+                console.error(`Error registering webhook for resource ${resource.id}:`, webhookError);
+                // Continue with other resources even if webhook registration fails for one
+            }
+        }
+
+        // Update the integration with the resource IDs
+        const config = integrationData?.config || {};
+        config.resources = resourceIds;
+
+        const { error: updateConfigError } = await supabase
+            .from('user_integrations')
+            .update({ config })
+            .eq('type', 'jira')
+            .eq('user_id', user_id)
+            .eq('workspace_id', workspace_id);
+
+        if (updateConfigError) {
+            console.error('Error updating integration config:', updateConfigError);
         }
 
         return Response.json({ success: true });
