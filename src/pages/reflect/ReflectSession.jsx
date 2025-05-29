@@ -24,12 +24,18 @@ import {
     RiSparkling2Line,
     RiThumbUpLine,
     RiCalendar2Line,
+    RiLightbulbLine,
+    RiStarFill,
+    RiStarLine,
 } from 'react-icons/ri';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
 import ky from 'ky';
 import toast from 'react-hot-toast';
+import ReflectSessionStatus from '../../components/common/ReflectSessionStatus.jsx';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 function ReflectSessionPage() {
     const { id } = useParams();
@@ -39,6 +45,8 @@ function ReflectSessionPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [activeTab, setActiveTab] = useState('insights');
+    const [rating, setRating] = useState(0);
+    const [parent] = useAutoAnimate();
 
     // Set the active tab based on whether ai_summary exists
     useEffect(() => {
@@ -48,6 +56,30 @@ function ReflectSessionPage() {
             setActiveTab('insights');
         }
     }, [session?.ai_summary]);
+
+    // Set initial rating from session if available
+    useEffect(() => {
+        if (session?.feedback_score) {
+            setRating(session.feedback_score);
+        }
+    }, [session?.feedback_score]);
+
+    // Handle rating change
+    const handleRatingChange = async (newRating) => {
+        setRating(newRating);
+        try {
+            await updateSession.mutateAsync({
+                session_id: id,
+                updates: { feedback_score: newRating },
+            });
+            toast.success('Rating updated successfully');
+        } catch (error) {
+            console.error('Error updating rating:', error);
+            toast.error('Failed to update rating');
+            // Revert to previous rating on error
+            setRating(session?.feedback_score || 0);
+        }
+    };
 
     const {
         register,
@@ -112,13 +144,7 @@ function ReflectSessionPage() {
 
     // Create custom elements for the page header
     const headerElements = session && (
-        <>
-            {session.status && (
-                <Chip size="sm" variant="dot">
-                    {session.status}
-                </Chip>
-            )}
-        </>
+        <>{session.status && <ReflectSessionStatus status={session.status} size="sm" />}</>
     );
 
     return (
@@ -314,13 +340,14 @@ function ReflectSessionPage() {
                                                         </label>
                                                         <Textarea
                                                             id="went_well"
+                                                            size="lg"
                                                             placeholder="Enter what went well during this period..."
                                                             {...register('went_well', {
                                                                 required: 'This field is required',
                                                             })}
                                                             isInvalid={!!errors.went_well}
                                                             errorMessage={errors.went_well?.message}
-                                                            minRows={3}
+                                                            minRows={4}
                                                         />
                                                     </div>
 
@@ -333,6 +360,7 @@ function ReflectSessionPage() {
                                                         </label>
                                                         <Textarea
                                                             id="could_be_better"
+                                                            size="lg"
                                                             placeholder="Enter what could have gone better..."
                                                             {...register('could_be_better', {
                                                                 required: 'This field is required',
@@ -341,7 +369,7 @@ function ReflectSessionPage() {
                                                             errorMessage={
                                                                 errors.could_be_better?.message
                                                             }
-                                                            minRows={3}
+                                                            minRows={4}
                                                         />
                                                     </div>
 
@@ -354,13 +382,14 @@ function ReflectSessionPage() {
                                                         </label>
                                                         <Textarea
                                                             id="ideas"
+                                                            size="lg"
                                                             placeholder="Enter your ideas for improvement..."
                                                             {...register('ideas', {
                                                                 required: 'This field is required',
                                                             })}
                                                             isInvalid={!!errors.ideas}
                                                             errorMessage={errors.ideas?.message}
-                                                            minRows={3}
+                                                            minRows={4}
                                                         />
                                                     </div>
 
@@ -388,41 +417,88 @@ function ReflectSessionPage() {
 
                             {session?.ai_summary && (
                                 <Tab key="recommendations" title="Recommendations">
-                                    <div className="mt-4">
-                                        <Card>
+                                    <div className="flex justify-center mt-4 mb-12">
+                                        <Card className="max-w-3xl p-3" shadow="sm">
+                                            <div className="h-64">
+                                                <DotLottieReact
+                                                    src="/lottie/sun.lottie"
+                                                    autoplay
+                                                    loop
+                                                />
+                                            </div>
                                             <CardHeader>
-                                                <h2 className="font-semibold">
-                                                    AI Recommendations
+                                                <h2 className="font-semibold text-md text-default-800">
+                                                    Reflect session complete
                                                 </h2>
                                             </CardHeader>
-                                            <CardBody className="space-y-6">
-                                                <p>{session.ai_summary.summary}</p>
+                                            <CardBody className="space-y-3">
+                                                <p className="text-default-500">
+                                                    {session.ai_summary.summary}
+                                                </p>
+                                                {session.ai_summary.recommendations && (
+                                                    <h3 className="text-sm text-default-800 py-3">
+                                                        Recommendations
+                                                    </h3>
+                                                )}
                                                 {session.ai_summary.recommendations?.map(
                                                     (recommendation, index) => (
-                                                        <Card
+                                                        <Alert
+                                                            variant="faded"
                                                             key={index}
-                                                            shadow="sm"
-                                                            className="border-none"
-                                                        >
-                                                            <CardHeader className="pb-0">
-                                                                <div className="flex justify-between items-center">
-                                                                    <h3 className="text-lg font-semibold">
-                                                                        {recommendation.title}
-                                                                    </h3>
-                                                                    <Chip size="sm" variant="flat">
+                                                            classNames={{
+                                                                alertIcon: 'text-primary',
+                                                            }}
+                                                            icon={
+                                                                <RiLightbulbLine fontSize="1.2rem" />
+                                                            }
+                                                            title={
+                                                                <div className="flex items-center gap-3 mb-1">
+                                                                    {recommendation.title}
+                                                                    <Chip
+                                                                        size="sm"
+                                                                        variant="faded"
+                                                                        color="primary"
+                                                                    >
                                                                         {recommendation.category}
                                                                     </Chip>
                                                                 </div>
-                                                            </CardHeader>
-                                                            <CardBody>
-                                                                <p className="text-default-600">
-                                                                    {recommendation.description}
-                                                                </p>
-                                                            </CardBody>
-                                                        </Card>
+                                                            }
+                                                            description={recommendation.description}
+                                                        />
                                                     ),
                                                 )}
                                             </CardBody>
+                                            <CardFooter>
+                                                <div className="w-full flex flex-col gap-3 items-center justify-center py-9">
+                                                    <p className="text-sm text-default-500 font-medium">
+                                                        How useful was this?
+                                                    </p>
+                                                    <div className="flex items-center gap-1">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <button
+                                                                key={star}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleRatingChange(star)
+                                                                }
+                                                                className="text-2xl focus:outline-none transition-colors"
+                                                                aria-label={`Rate ${star} stars`}
+                                                            >
+                                                                {star <= rating ? (
+                                                                    <RiStarFill className="text-warning-500" />
+                                                                ) : (
+                                                                    <RiStarLine className="text-gray-300 hover:text-warning-500" />
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                        {rating > 0 && (
+                                                            <span className="ml-2 text-sm text-default-500">
+                                                                {rating}/5
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </CardFooter>
                                         </Card>
                                     </div>
                                 </Tab>

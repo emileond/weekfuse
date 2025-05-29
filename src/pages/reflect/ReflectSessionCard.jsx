@@ -20,6 +20,7 @@ import toast from 'react-hot-toast';
 import { useDeleteReflectSession } from '../../hooks/react-query/reflect-sessions/useReflectSessions.js';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useNavigate } from 'react-router-dom';
+import ReflectSessionStatus from '../../components/common/ReflectSessionStatus.jsx';
 
 const ReflectSessionCard = ({ session }) => {
     const navigate = useNavigate();
@@ -92,7 +93,7 @@ const ReflectSessionCard = ({ session }) => {
                             })}
                         </Chip>
                         <Chip variant="light">{session?.projects?.length} projects</Chip>
-                        <Chip variant="dot">{session?.status}</Chip>
+                        <ReflectSessionStatus status={session?.status} />
                         <Dropdown isOpen={isMenuOpen} onOpenChange={onMenuOpenChange}>
                             <DropdownTrigger>
                                 <div

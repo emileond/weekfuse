@@ -86,12 +86,12 @@ Guidelines:
                                 properties: {
                                     title: {
                                         type: Type.STRING,
-                                        description: 'A short, catchy title (max 5 words).', // Emphasized brevity
+                                        description: 'A short, catchy title (max 5 words).',
                                     },
                                     description: {
                                         type: Type.STRING,
                                         description:
-                                            'A concise (1-2 sentences) explanation and how-to.', // Emphasized brevity
+                                            'A concise (1-2 sentences) explanation and how-to.',
                                     },
                                     category: {
                                         type: Type.STRING,
@@ -100,17 +100,14 @@ Guidelines:
                                 },
                                 required: ['title', 'description', 'category'],
                             },
-                            description: 'A list of 1-3 concise recommendations', // Updated description
+                            description: 'A list of 1-3 concise recommendations',
                         },
                     },
-                    required: ['summary', 'recommendations'], // Updated required fields
+                    required: ['summary', 'recommendations'],
                 },
             },
         });
-
-        // Parse the AI response (using .text() might not be ideal for JSON, check SDK docs)
-        // It's often better to access the structured response directly if the SDK provides it.
-        // Assuming response.text is the correct way for your setup:
+        
         let ai_summary;
         try {
             // Check if response.text exists and is a string
