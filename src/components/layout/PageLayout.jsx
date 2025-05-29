@@ -12,6 +12,7 @@ function PageLayout({
     icon,
     onClick,
     backBtn,
+    startElements,
     customElements,
 }) {
     const navigate = useNavigate();
@@ -29,13 +30,14 @@ function PageLayout({
             <div className={`w-full max-w-${maxW} flex flex-col gap-6`}>
                 <div>
                     <div className="w-full flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex gap-3">
+                        <div className="flex items-center gap-3">
                             {backBtn && (
                                 <Button isIconOnly variant="light" onPress={() => navigate(-1)}>
                                     <RiArrowLeftLine fontSize="1.2rem" />
                                 </Button>
                             )}
                             {title && <h1 className="font-semibold text-2xl">{title}</h1>}
+                            {startElements}
                         </div>
                         <div className="flex gap-3">
                             {customElements}

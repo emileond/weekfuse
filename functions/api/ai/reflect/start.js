@@ -118,7 +118,7 @@ Generate a concise analysis. Your response MUST be a valid JSON object with the 
                         key_metrics: {
                             type: Type.OBJECT,
                             properties: {
-                                total_completed: {
+                                total_tasks: {
                                     type: Type.NUMBER, // Or Type.STRING if you prefer it as text
                                     description: 'The total number of tasks completed.',
                                 },
@@ -133,12 +133,7 @@ Generate a concise analysis. Your response MUST be a valid JSON object with the 
                                         'The count of tasks completed after their due date.',
                                 },
                             },
-                            required: [
-                                'total_tasks',
-                                'on_time_percentage',
-                                'top_focus_area',
-                                'overdue_tasks',
-                            ],
+                            required: ['total_tasks', 'on_time_percentage', 'overdue_tasks'],
                         },
                         achievements: {
                             type: Type.ARRAY,
