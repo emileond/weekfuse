@@ -185,37 +185,43 @@ export async function onRequestPost(context) {
                     .json();
 
                 // Check if our webhook URL is already registered
-                const webhookUrl = `https://weekfuse.com/functions/webhooks/jira`;
-                const existingWebhook = webhooksResponse.values.find(webhook => 
-                    webhook.url === webhookUrl && 
-                    webhook.events.some(event => WEBHOOK_EVENTS.includes(event))
+                const webhookUrl = `https://weekfuse.com/webhooks/jira`;
+                const existingWebhook = webhooksResponse.values.find(
+                    (webhook) =>
+                        webhook.url === webhookUrl &&
+                        webhook.events.some((event) => WEBHOOK_EVENTS.includes(event)),
                 );
 
                 if (!existingWebhook) {
                     // Register new webhook
-                    await ky
-                        .post(`https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`, {
+                    await ky.post(
+                        `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`,
+                        {
                             json: {
                                 url: webhookUrl,
                                 events: WEBHOOK_EVENTS,
                                 filters: {
-                                    'issue-related-events-section': 'assignee = currentUser()'
+                                    'issue-related-events-section': 'assignee = currentUser()',
                                 },
                                 name: 'Weekfuse Integration',
-                                excludeBody: false
+                                excludeBody: false,
                             },
                             headers: {
                                 Authorization: `Bearer ${access_token}`,
                                 'Content-Type': 'application/json',
                             },
-                        });
+                        },
+                    );
 
                     console.log(`Webhook registered successfully for resource ${resource.id}`);
                 } else {
                     console.log(`Webhook already exists for resource ${resource.id}`);
                 }
             } catch (webhookError) {
-                console.error(`Error registering webhook for resource ${resource.id}:`, webhookError);
+                console.error(
+                    `Error registering webhook for resource ${resource.id}:`,
+                    webhookError,
+                );
                 // Continue with other resources even if webhook registration fails for one
             }
         }
