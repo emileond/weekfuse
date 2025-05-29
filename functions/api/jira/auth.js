@@ -189,7 +189,9 @@ export async function onRequestPost(context) {
                 const existingWebhook = webhooksResponse.values.find(
                     (webhook) =>
                         webhook.url === webhookUrl &&
-                        webhook.events.some((event) => WEBHOOK_EVENTS.includes(event)),
+                        webhook.webhooks?.some(wh => 
+                            wh.events?.some((event) => WEBHOOK_EVENTS.includes(event))
+                        ),
                 );
 
                 if (!existingWebhook) {
@@ -199,12 +201,12 @@ export async function onRequestPost(context) {
                         {
                             json: {
                                 url: webhookUrl,
-                                events: WEBHOOK_EVENTS,
-                                filters: {
-                                    'issue-related-events-section': 'assignee = currentUser()',
-                                },
-                                name: 'Weekfuse Integration',
-                                excludeBody: false,
+                                webhooks: [
+                                    {
+                                        events: WEBHOOK_EVENTS,
+                                        jqlFilter: 'assignee = currentUser()',
+                                    }
+                                ]
                             },
                             headers: {
                                 Authorization: `Bearer ${access_token}`,
