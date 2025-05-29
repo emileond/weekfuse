@@ -43,14 +43,13 @@ const ClickupIntegrationCard = () => {
             'https://app.clickup.com/api?client_id=MZHWY0X3R4B24M2XKEV344LUGJZLRVBH&redirect_uri=http://localhost:8788/integrations/oauth/callback/clickup';
     };
 
-    const handleDisconnect = () => {
+    const handleDisconnect = async () => {
         if (!integration) return;
 
         setLoading(true);
-        deleteIntegration.mutate(
+        await deleteIntegration.mutate(
             {
                 id: integration.id,
-                access_token: integration.access_token,
                 type: 'clickup',
             },
             {

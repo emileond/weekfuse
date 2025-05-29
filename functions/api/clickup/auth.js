@@ -162,13 +162,10 @@ export async function onRequestPost(context) {
 export async function onRequestDelete(context) {
     try {
         const body = await context.request.json();
-        const { access_token } = body;
+        const { id } = body;
 
-        if (!access_token) {
-            return Response.json(
-                { success: false, error: 'Missing access_token' },
-                { status: 400 },
-            );
+        if (!id) {
+            return Response.json({ success: false, error: 'Missing id' }, { status: 400 });
         }
 
         // Initialize Supabase client
@@ -179,7 +176,7 @@ export async function onRequestDelete(context) {
             .from('user_integrations')
             .delete()
             .eq('type', 'clickup')
-            .eq('access_token', access_token);
+            .eq('id', id);
 
         if (deleteError) {
             console.error('Error deleting ClickUp integration from database:', deleteError);

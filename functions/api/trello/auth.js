@@ -7,17 +7,31 @@ import { markdownToTipTap } from '../../../src/utils/editorUtils.js';
 export async function onRequestDelete(context) {
     try {
         const body = await context.request.json();
-        const { access_token } = body;
+        const { id } = body;
 
-        if (!access_token) {
-            return Response.json(
-                { success: false, error: 'Missing access_token' },
-                { status: 400 },
-            );
+        if (!id) {
+            return Response.json({ success: false, error: 'Missing id' }, { status: 400 });
         }
 
         // Initialize Supabase client
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
+
+        const { data, error } = await supabase
+            .from('user_integrations')
+            .select('access_token')
+            .eq('type', 'trello')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching Trello integration from database:', error);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
+        }
+
+        const { access_token } = data;
 
         try {
             // Revoke the token with Trello's API

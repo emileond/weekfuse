@@ -38,34 +38,58 @@ export const useUserIntegration = (user_id, type) => {
 
 // Delete integration
 const deleteIntegration = async ({ id, installation_id, type, access_token }) => {
-    if (type === 'github' && installation_id) {
-        // First, make a DELETE request to the API
-        await ky.delete('/api/github/auth', {
-            json: { id, installation_id },
-        });
-    }
+    try {
+        if (type === 'github' && installation_id) {
+            await ky.delete('/api/github/auth', {
+                json: { id, installation_id },
+            });
+        } else if (type === 'trello' && id) {
+            await ky.delete('/api/trello/auth', {
+                json: { id },
+            });
+        } else if (type === 'clickup' && id) {
+            await ky.delete('/api/clickup/auth', {
+                json: { id },
+            });
+            console.log('ClickUp integration deletion API call successful.');
+        } else if (type === 'jira' && id) {
+            // For Jira, we also delete from the database
+            const { error: dbError } = await supabaseClient
+                .from('user_integrations')
+                .delete()
+                .eq('id', id);
 
-    if (type === 'trello' && access_token) {
-        // First, make a DELETE request to the API
-        await ky.delete('/api/trello/auth', {
-            json: { access_token },
-        });
-    }
-    if (type === 'clickup' && access_token) {
-        // First, make a DELETE request to the API
-        await ky.delete('/api/trello/auth', {
-            json: { access_token },
-        });
-    }
-    if (type === 'jira' && id) {
-        // Then delete from the database
-        const { error } = await supabaseClient.from('user_integrations').delete().eq('id', id);
-        if (error) {
-            throw new Error('Failed to delete integration');
+            if (dbError) {
+                console.error('Failed to delete Jira integration from database:', dbError);
+                throw new Error(
+                    `Failed to delete Jira integration from database: ${dbError.message}`,
+                );
+            }
+        } else {
+            // Optional: Handle cases where type is not recognized or parameters are missing
+            console.warn('Delete operation skipped: Invalid type or missing parameters.', {
+                type,
+                id,
+                installation_id,
+                access_token,
+            });
+            throw new Error('Invalid type or missing parameters for deletion.');
         }
-    }
 
-    return { success: true };
+        // If we reach here, the specific operation was successful
+        return { success: true, message: `${type} integration deleted successfully.` };
+    } catch (error) {
+        console.error(`Failed to delete ${type} integration:`, error);
+
+        // Ky throws HTTPError for non-2xx responses, which has a `response` property
+        if (error.name === 'HTTPError') {
+            const errorBody = await error.response.json().catch(() => error.response.text());
+            throw new Error(`API error: ${error.message}`);
+        }
+
+        // For other errors (e.g., network issues, Supabase errors re-thrown)
+        throw error;
+    }
 };
 
 // Update integration config
