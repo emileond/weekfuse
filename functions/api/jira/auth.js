@@ -66,7 +66,7 @@ export async function onRequestPost(context) {
                 status: 'active',
                 last_sync: toUTC(),
                 expires_at,
-                config: { resources: [] }, // Will store Jira cloud instance IDs
+                config: { syncStatus: 'prompt' },
             })
             .select('id')
             .single();

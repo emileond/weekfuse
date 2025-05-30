@@ -40,7 +40,7 @@ const JiraIntegrationCard = () => {
 
     const handleConnect = () => {
         window.location.href =
-            'https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=O4tGSfMVVADbcB7j7ZtiQKvDuN4ExclE&scope=offline_access%20read%3Ajira-work%20write%3Ajira-work%20manage%3Ajira-webhook&redirect_uri=https%3A%2F%2Fweekfuse.com%2Fintegrations%2Foauth%2Fcallback%2Fjira&response_type=code&prompt=consent';
+            'https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=O4tGSfMVVADbcB7j7ZtiQKvDuN4ExclE&scope=offline_access%20read%3Ajira-work%20write%3Ajira-work%20manage%3Ajira-webhook%20read%3Ajira-user&redirect_uri=https%3A%2F%2Fweekfuse.com%2Fintegrations%2Foauth%2Fcallback%2Fjira&response_type=code&prompt=consent';
     };
 
     const handleDisconnect = () => {
