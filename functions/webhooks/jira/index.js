@@ -91,7 +91,7 @@ export async function onRequestPost(context) {
                     external_data: issue,
                 })
                 .eq('integration_source', 'jira')
-                .eq('external_data->>self', issue.self)
+                .eq('external_data ->> self', issue.self)
                 .select();
 
             console.log(updateData);
