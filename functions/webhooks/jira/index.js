@@ -80,7 +80,7 @@ export async function onRequestPost(context) {
             console.log(convertedDesc);
 
             // Upsert the task in the database
-            const { error: updateError } = await supabase
+            const { data: updateData, error: updateError } = await supabase
                 .from('tasks')
                 .update({
                     name: issue.fields.summary,
@@ -90,17 +90,19 @@ export async function onRequestPost(context) {
                     external_data: issue,
                 })
                 .eq('integration_source', 'jira')
-                .eq('external_data->>self', issue.self);
+                .eq('external_data->>self', issue.self)
+                .select('id')
+                .single();
 
             if (updateError) {
-                console.error(`Upsert error for issue ${issue.id}:`, updateError);
+                console.error(`Update error for issue ${issue.id}:`, updateError);
                 return Response.json(
                     { success: false, error: 'Failed to update task' },
                     { status: 500 },
                 );
             }
 
-            console.log(`Issue ${issue.id} updated successfully`);
+            console.log(`Task ${updateData.id} updated successfully`);
             return Response.json({ success: true });
         }
 
