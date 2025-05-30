@@ -50,6 +50,17 @@ export async function onRequestPost(context) {
             // Convert description to Tiptap format if available
             const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
 
+            // Extract host from issue.self URL
+            let host = null;
+            if (issue.self) {
+                try {
+                    const url = new URL(issue.self);
+                    host = `${url.protocol}//${url.hostname}`;
+                } catch (e) {
+                    console.error('Error extracting host from issue.self:', e);
+                }
+            }
+
             // Upsert the task in the database
             const { error: insertError } = await supabase.from('tasks').insert({
                 name: issue.fields.summary,
@@ -59,6 +70,7 @@ export async function onRequestPost(context) {
                 integration_source: 'jira',
                 external_id: issue.id,
                 external_data: issue,
+                host: host,
             });
 
             if (insertError) {
@@ -76,11 +88,19 @@ export async function onRequestPost(context) {
         if (webhookEvent === 'jira:issue_updated') {
             // Convert description to Tiptap format if available
             const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
+            
+            // Extract host from issue.self URL
+            let host = null;
+            if (issue.self) {
+                try {
+                    const url = new URL(issue.self);
+                    host = `${url.protocol}//${url.hostname}`;
+                } catch (e) {
+                    console.error('Error extracting host from issue.self:', e);
+                }
+            }
 
-            console.log(convertedDesc);
-            console.log(issue);
-
-            // Upsert the task in the database
+            // Update the task in the database
             const { data: updateData, error: updateError } = await supabase
                 .from('tasks')
                 .update({
@@ -91,7 +111,8 @@ export async function onRequestPost(context) {
                     external_data: issue,
                 })
                 .eq('integration_source', 'jira')
-                .eq('external_data ->> self', issue.self)
+                .eq('external_id', issue.id)
+                .eq('host', host)
                 .select();
 
             console.log(updateData);
