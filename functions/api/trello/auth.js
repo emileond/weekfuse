@@ -92,7 +92,7 @@ export async function onRequestPost(context) {
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
         // Save the access token in Supabase
-        const { error: updateError } = await supabase.from('user_integrations').upsert({
+        const { data: upsertData, error: updateError } = await supabase.from('user_integrations').upsert({
             type: 'trello',
             access_token: access_token,
             user_id,
@@ -100,7 +100,7 @@ export async function onRequestPost(context) {
             status: 'active',
             last_sync: toUTC(),
             config: { syncStatus: 'prompt' },
-        });
+        }).select('id').single();
 
         if (updateError) {
             console.error('Supabase update error:', updateError);
@@ -112,6 +112,8 @@ export async function onRequestPost(context) {
                 { status: 500 },
             );
         }
+
+        const integration_id = upsertData.id;
 
         // Get boards the member belongs to
         const boards = await ky
@@ -145,6 +147,43 @@ export async function onRequestPost(context) {
 
             // Combine all cards from all boards
             allCards = boardCardsResults.flat();
+        }
+
+        // Create webhooks for each board
+        if (boards && Array.isArray(boards)) {
+            try {
+                const webhookUrl = 'https://weekfuse.com/webhooks/trello';
+
+                // Create webhooks for each board
+                const webhookPromises = boards.map(async (board) => {
+                    try {
+                        // Create a webhook for this board
+                        await ky.post(
+                            `https://api.trello.com/1/tokens/${access_token}/webhooks/?key=${context.env.TRELLO_API_KEY}`,
+                            {
+                                json: {
+                                    description: `Weekfuse webhook for board ${board.name}`,
+                                    callbackURL: webhookUrl,
+                                    idModel: board.id,
+                                },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                            }
+                        );
+                        console.log(`Webhook created successfully for board ${board.id} (${board.name})`);
+                        return { success: true, boardId: board.id };
+                    } catch (webhookError) {
+                        console.error(`Error creating webhook for board ${board.id}:`, webhookError);
+                        return { success: false, boardId: board.id, error: webhookError };
+                    }
+                });
+
+                await Promise.all(webhookPromises);
+            } catch (webhooksError) {
+                console.error('Error creating webhooks:', webhooksError);
+                // Continue with the flow even if webhook creation fails
+            }
         }
 
         const cardsData = allCards;
