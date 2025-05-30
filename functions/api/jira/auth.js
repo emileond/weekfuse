@@ -124,7 +124,8 @@ export async function onRequestPost(context) {
             // Continue with the flow even if user data fetch fails
         }
 
-        let issuesData = [];
+        let allUpsertPromises = [];
+        let allIssuesData = [];
 
         for (const resource of resources) {
             let startAt = 0;
@@ -155,37 +156,46 @@ export async function onRequestPost(context) {
                 startAt += maxResults;
             } while (startAt < total);
 
-            // Merge the issues from this resource into the overall issuesData array
-            issuesData = [...issuesData, ...resourceIssues];
+            // Process and store issues for this resource
+            if (resourceIssues && Array.isArray(resourceIssues)) {
+                const resourceUrl = resource.url;
+
+                const upsertPromises = resourceIssues.map((issue) => {
+                    const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
+                    return supabase.from('tasks').upsert(
+                        {
+                            name: issue.fields.summary,
+                            description: convertedDesc || null,
+                            workspace_id,
+                            integration_source: 'jira',
+                            external_id: issue.id,
+                            external_data: issue,
+                            jira_host: resourceUrl,
+                        },
+                        {
+                            onConflict: ['integration_source', 'external_id, jira_host'],
+                        },
+                    );
+                });
+
+                // Add the promises and issues to our arrays for later processing
+                allUpsertPromises = [...allUpsertPromises, ...upsertPromises];
+                allIssuesData = [...allIssuesData, ...resourceIssues];
+            }
         }
 
-        // Process and store issues (simplified for now)
-        if (issuesData && Array.isArray(issuesData)) {
-            const upsertPromises = issuesData.map((issue) => {
-                const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
-                return supabase.from('tasks').upsert(
-                    {
-                        name: issue.fields.summary,
-                        description: convertedDesc || null,
-                        workspace_id,
-                        integration_source: 'jira',
-                        external_id: issue.id,
-                        external_data: issue,
-                        // created_at: issue.created_at,
-                    },
-                    {
-                        onConflict: ['integration_source', 'external_id'],
-                    },
-                );
-            });
-
-            const results = await Promise.all(upsertPromises);
+        // Wait for all upsert operations to complete
+        if (allUpsertPromises.length > 0) {
+            const results = await Promise.all(allUpsertPromises);
 
             results.forEach((result, index) => {
                 if (result.error) {
-                    console.error(`Upsert error for issue ${issuesData[index].id}:`, result.error);
+                    console.error(
+                        `Upsert error for issue ${allIssuesData[index].id}:`,
+                        result.error,
+                    );
                 } else {
-                    console.log(`Issue ${issuesData[index].id} imported successfully`);
+                    console.log(`Issue ${allIssuesData[index].id} imported successfully`);
                 }
             });
         }
