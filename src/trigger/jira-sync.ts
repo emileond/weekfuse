@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import { toUTC, calculateExpiresAt } from '../utils/dateUtils';
 import ky from 'ky';
-import { tinymceToTiptap } from '../utils/editorUtils';
+import { convertJiraAdfToTiptap } from '../utils/editorUtils';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -138,7 +138,7 @@ export const jiraSync = task({
                 // Process and store issues
                 if (issuesData && Array.isArray(issuesData)) {
                     const upsertPromises = issuesData.map((issue) => {
-                        const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+                        const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
                         return supabase.from('tasks').upsert(
                             {
                                 name: issue.fields.summary,

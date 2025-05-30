@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
+import { convertJiraAdfToTiptap } from '../../../src/utils/editorUtils.js';
 
 export async function onRequestPost(context) {
     try {
@@ -48,12 +48,12 @@ export async function onRequestPost(context) {
             const user_id = integrationData.user_id;
 
             // Convert description to Tiptap format if available
-            const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+            const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
 
             // Upsert the task in the database
             const { error: insertError } = await supabase.from('tasks').insert({
                 name: issue.fields.summary,
-                description: convertedDesc || null,
+                description: JSON.stringify(convertedDesc) || null,
                 workspace_id,
                 user_id,
                 integration_source: 'jira',
@@ -76,7 +76,9 @@ export async function onRequestPost(context) {
 
         if (webhookEvent === 'jira:issue_updated') {
             // Convert description to Tiptap format if available
-            const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+            const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
+
+            console.log(convertedDesc);
 
             // Upsert the task in the database
             const { error: updateError } = await supabase

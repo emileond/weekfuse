@@ -1,7 +1,7 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
 import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
-import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
+import { convertJiraAdfToTiptap } from '../../../src/utils/editorUtils.js';
 
 // Webhook events to listen for
 const WEBHOOK_EVENTS = ['jira:issue_created', 'jira:issue_updated'];
@@ -162,7 +162,7 @@ export async function onRequestPost(context) {
         // Process and store issues (simplified for now)
         if (issuesData && Array.isArray(issuesData)) {
             const upsertPromises = issuesData.map((issue) => {
-                const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+                const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
                 return supabase.from('tasks').upsert(
                     {
                         name: issue.fields.summary,
