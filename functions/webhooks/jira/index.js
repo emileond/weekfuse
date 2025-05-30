@@ -78,13 +78,14 @@ export async function onRequestPost(context) {
             const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
 
             console.log(convertedDesc);
+            console.log(issue);
 
             // Upsert the task in the database
             const { data: updateData, error: updateError } = await supabase
                 .from('tasks')
                 .update({
                     name: issue.fields.summary,
-                    description: convertedDesc || null,
+                    description: convertedDesc ? JSON.stringify(convertedDesc) : null,
                     integration_source: 'jira',
                     external_id: issue.id,
                     external_data: issue,
