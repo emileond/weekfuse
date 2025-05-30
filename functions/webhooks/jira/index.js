@@ -12,62 +12,103 @@ export async function onRequestPost(context) {
         // Extract the webhook event type and issue data
         const webhookEvent = payload.webhookEvent;
         const issue = payload.issue;
-        const cloudId = payload.cloudId || payload.resourceId;
+        const user = payload.user;
 
-        if (!webhookEvent || !issue || !cloudId) {
-            return Response.json({ success: false, error: 'Invalid webhook payload' }, { status: 400 });
+        if (!webhookEvent || !issue || !user) {
+            return Response.json(
+                { success: false, error: 'Invalid webhook payload' },
+                { status: 400 },
+            );
         }
 
         // Handle different webhook events
-        if (webhookEvent === 'jira:issue_created' || webhookEvent === 'jira:issue_updated') {
+        if (webhookEvent === 'jira:issue_created') {
             // Get the user integration to find the workspace_id
             const { data: integrationData, error: integrationError } = await supabase
                 .from('user_integrations')
                 .select('workspace_id, user_id')
                 .eq('type', 'jira')
                 .eq('status', 'active')
-                .contains('config', { resources: [cloudId] });
+                .eq('external_data->>accountId', user.accountId)
+                .single();
 
             if (integrationError || !integrationData || integrationData.length === 0) {
-                console.error('Error fetching integration data:', integrationError || 'No matching integration found');
-                return Response.json({ success: false, error: 'Integration not found' }, { status: 404 });
+                console.error(
+                    'Error fetching integration data:',
+                    integrationError || 'No matching integration found',
+                );
+                return Response.json(
+                    { success: false, error: 'Integration not found' },
+                    { status: 404 },
+                );
             }
 
             // Use the first matching integration
-            const workspace_id = integrationData[0].workspace_id;
-            const user_id = integrationData[0].user_id;
+            const workspace_id = integrationData.workspace_id;
+            const user_id = integrationData.user_id;
 
             // Convert description to Tiptap format if available
             const convertedDesc = tinymceToTiptap(issue?.fields?.description);
 
             // Upsert the task in the database
-            const { error: upsertError } = await supabase.from('tasks').upsert(
-                {
+            const { error: insertError } = await supabase.from('tasks').insert({
+                name: issue.fields.summary,
+                description: convertedDesc || null,
+                workspace_id,
+                user_id,
+                integration_source: 'jira',
+                external_id: issue.id,
+                external_data: issue,
+                last_updated: new Date().toISOString(),
+            });
+
+            if (insertError) {
+                console.error(`Upsert error for issue ${issue.id}:`, insertError);
+                return Response.json(
+                    { success: false, error: 'Failed to create task' },
+                    { status: 500 },
+                );
+            }
+
+            console.log(`Issue ${issue.id} created successfully`);
+            return Response.json({ success: true });
+        }
+
+        if (webhookEvent === 'jira:issue_updated') {
+            // Convert description to Tiptap format if available
+            const convertedDesc = tinymceToTiptap(issue?.fields?.description);
+
+            // Upsert the task in the database
+            const { error: updateError } = await supabase
+                .from('tasks')
+                .update({
                     name: issue.fields.summary,
                     description: convertedDesc || null,
-                    workspace_id,
-                    user_id,
                     integration_source: 'jira',
                     external_id: issue.id,
                     external_data: issue,
                     last_updated: new Date().toISOString(),
-                },
-                {
-                    onConflict: ['integration_source', 'external_id'],
-                }
-            );
+                })
+                .eq('integration_source', 'jira')
+                .eq('external_data->>self', issue.self);
 
-            if (upsertError) {
-                console.error(`Upsert error for issue ${issue.id}:`, upsertError);
-                return Response.json({ success: false, error: 'Failed to update task' }, { status: 500 });
+            if (updateError) {
+                console.error(`Upsert error for issue ${issue.id}:`, updateError);
+                return Response.json(
+                    { success: false, error: 'Failed to update task' },
+                    { status: 500 },
+                );
             }
 
-            console.log(`Issue ${issue.id} ${webhookEvent === 'jira:issue_created' ? 'created' : 'updated'} successfully`);
+            console.log(`Issue ${issue.id} updated successfully`);
             return Response.json({ success: true });
         }
 
         // If we reach here, the webhook event type is not supported
-        return Response.json({ success: false, error: 'Unsupported webhook event' }, { status: 400 });
+        return Response.json(
+            { success: false, error: 'Unsupported webhook event' },
+            { status: 400 },
+        );
     } catch (error) {
         console.error('Error processing Jira webhook:', error);
         return Response.json(
@@ -75,7 +116,7 @@ export async function onRequestPost(context) {
                 success: false,
                 error: 'Internal server error',
             },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }

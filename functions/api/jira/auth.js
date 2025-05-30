@@ -55,17 +55,23 @@ export async function onRequestPost(context) {
         }
 
         // Save the access token in Supabase
-        const { error: updateError } = await supabase.from('user_integrations').upsert({
-            type: 'jira',
-            access_token: access_token,
-            refresh_token: refresh_token,
-            user_id,
-            workspace_id,
-            status: 'active',
-            last_sync: toUTC(),
-            expires_at,
-            config: { resources: [] }, // Will store Jira cloud instance IDs
-        });
+        const { data: upsertData, error: updateError } = await supabase
+            .from('user_integrations')
+            .upsert({
+                type: 'jira',
+                access_token: access_token,
+                refresh_token: refresh_token,
+                user_id,
+                workspace_id,
+                status: 'active',
+                last_sync: toUTC(),
+                expires_at,
+                config: { resources: [] }, // Will store Jira cloud instance IDs
+            })
+            .select('id')
+            .single();
+
+        const integration_id = upsertData.id;
 
         if (updateError) {
             console.error('Supabase update error:', updateError);
@@ -80,11 +86,46 @@ export async function onRequestPost(context) {
 
         const maxResults = 50; // Define the maximum number of issues per page
 
+        // Fetch accessible resources
         const resources = await ky
             .get('https://api.atlassian.com/oauth/token/accessible-resources', {
                 headers: { Authorization: `Bearer ${access_token}`, Accept: 'application/json' },
             })
             .json();
+
+        // Fetch user data from Jira API
+        try {
+            if (resources && resources.length > 0) {
+                // Use the first resource to fetch user data
+                const userData = await ky
+                    .get(
+                        `https://api.atlassian.com/ex/jira/${resources[0].id}/rest/api/3/user?accountId=me`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${access_token}`,
+                                Accept: 'application/json',
+                            },
+                        },
+                    )
+                    .json();
+
+                // Update user_integrations with the user data
+                const { error: userDataUpdateError } = await supabase
+                    .from('user_integrations')
+                    .update({ external_data: userData })
+                    .eq('type', 'jira')
+                    .eq('id', integration_id);
+
+                if (userDataUpdateError) {
+                    console.error('Error updating user data:', userDataUpdateError);
+                } else {
+                    console.log('User data updated successfully');
+                }
+            }
+        } catch (userDataError) {
+            console.error('Error fetching user data:', userDataError);
+            // Continue with the flow even if user data fetch fails
+        }
 
         let issuesData = [];
 
@@ -152,29 +193,10 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Get the current integration to update its config
-        const { data: integrationData, error: fetchError } = await supabase
-            .from('user_integrations')
-            .select('config')
-            .eq('type', 'jira')
-            .eq('user_id', user_id)
-            .eq('workspace_id', workspace_id)
-            .single();
-
-        if (fetchError) {
-            console.error('Error fetching integration data:', fetchError);
-        }
-
-        // Initialize resourceIds array to store the IDs of resources we register webhooks for
-        const resourceIds = [];
-
         // Register webhooks for each resource
         for (const resource of resources) {
             try {
-                // Add resource ID to the array
-                resourceIds.push(resource.id);
-
-                // Check if webhook already exists
+                // Check if a webhook already exists
                 const webhooksResponse = await ky
                     .get(`https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`, {
                         headers: {
@@ -189,8 +211,8 @@ export async function onRequestPost(context) {
                 const existingWebhook = webhooksResponse.values.find(
                     (webhook) =>
                         webhook.url === webhookUrl &&
-                        webhook.webhooks?.some(wh => 
-                            wh.events?.some((event) => WEBHOOK_EVENTS.includes(event))
+                        webhook.webhooks?.some((wh) =>
+                            wh.events?.some((event) => WEBHOOK_EVENTS.includes(event)),
                         ),
                 );
 
@@ -205,8 +227,8 @@ export async function onRequestPost(context) {
                                     {
                                         events: WEBHOOK_EVENTS,
                                         jqlFilter: 'assignee = currentUser()',
-                                    }
-                                ]
+                                    },
+                                ],
                             },
                             headers: {
                                 Authorization: `Bearer ${access_token}`,
@@ -226,21 +248,6 @@ export async function onRequestPost(context) {
                 );
                 // Continue with other resources even if webhook registration fails for one
             }
-        }
-
-        // Update the integration with the resource IDs
-        const config = integrationData?.config || {};
-        config.resources = resourceIds;
-
-        const { error: updateConfigError } = await supabase
-            .from('user_integrations')
-            .update({ config })
-            .eq('type', 'jira')
-            .eq('user_id', user_id)
-            .eq('workspace_id', workspace_id);
-
-        if (updateConfigError) {
-            console.error('Error updating integration config:', updateConfigError);
         }
 
         return Response.json({ success: true });
