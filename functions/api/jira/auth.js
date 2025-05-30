@@ -170,10 +170,10 @@ export async function onRequestPost(context) {
                             integration_source: 'jira',
                             external_id: issue.id,
                             external_data: issue,
-                            jira_host: resourceUrl,
+                            host: resourceUrl,
                         },
                         {
-                            onConflict: ['integration_source', 'external_id, jira_host'],
+                            onConflict: ['integration_source', 'external_id', 'host'],
                         },
                     );
                 });
