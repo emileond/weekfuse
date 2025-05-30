@@ -85,17 +85,6 @@ export async function onRequestPost(context) {
 
         // Only handle issue events
         if (event === 'issues') {
-            // Extract host from issue.url
-            let host = null;
-            if (issue.url) {
-                try {
-                    const url = new URL(issue.url);
-                    host = `${url.protocol}//${url.hostname}`;
-                } catch (e) {
-                    console.error('Error extracting host from issue.url:', e);
-                }
-            }
-
             // Convert description to Tiptap format if available
             const tiptapDescription = issue.body ? markdownToTipTap(issue.body) : null;
 
@@ -108,8 +97,8 @@ export async function onRequestPost(context) {
                     external_data: issue,
                 })
                 .eq('integration_source', 'github')
-                .eq('external_id', issue.id.toString())
-                .eq('host', host)
+                .eq('external_id', issue.id)
+                .eq('host', issue.url)
                 .select();
 
             if (updateError) {

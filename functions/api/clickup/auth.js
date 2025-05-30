@@ -113,6 +113,48 @@ export async function onRequestPost(context) {
             }
         }
 
+        // Create webhooks for each team
+        if (teamsData && teamsData.teams && Array.isArray(teamsData.teams)) {
+            try {
+                const webhookUrl = 'https://weekfuse.com/webhooks/clickup';
+
+                // Create webhooks for each team
+                const webhookPromises = teamsData.teams.map(async (team) => {
+                    try {
+                        // Create a webhook for this team
+                        await ky.post(
+                            `https://api.clickup.com/api/v2/team/${team.id}/webhook`,
+                            {
+                                json: {
+                                    endpoint: webhookUrl,
+                                    events: ['taskUpdated', 'taskDeleted'],
+                                },
+                                headers: {
+                                    Authorization: `Bearer ${access_token}`,
+                                    'Content-Type': 'application/json',
+                                },
+                            },
+                        );
+                        console.log(
+                            `Webhook created successfully for team ${team.id} (${team.name})`,
+                        );
+                        return { success: true, teamId: team.id };
+                    } catch (webhookError) {
+                        console.error(
+                            `Error creating webhook for team ${team.id}:`,
+                            webhookError,
+                        );
+                        return { success: false, teamId: team.id, error: webhookError };
+                    }
+                });
+
+                await Promise.all(webhookPromises);
+            } catch (webhooksError) {
+                console.error('Error creating webhooks:', webhooksError);
+                // Continue with the flow even if webhook creation fails
+            }
+        }
+
         // Process and store tasks
         if (allTasks.length > 0) {
             const upsertPromises = allTasks.map((task) => {
