@@ -97,7 +97,7 @@ export async function onRequestPost(context) {
                 // Get all tasks assigned to the user that are not completed
                 const tasksData = await ky
                     .get(
-                        `https://api.clickup.com/api/v2/team/${team.id}/task?assignees[]=${userID}`,
+                        `https://api.clickup.com/api/v2/team/${team.id}/task?assignees[]=${userID}?include_markdown_description=true`,
                         {
                             headers: {
                                 Authorization: `Bearer ${access_token}`,
