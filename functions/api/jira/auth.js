@@ -98,15 +98,12 @@ export async function onRequestPost(context) {
             if (resources && resources.length > 0) {
                 // Use the first resource to fetch user data
                 const userData = await ky
-                    .get(
-                        `https://api.atlassian.com/ex/jira/${resources[0].id}/rest/api/3/user?accountId=me`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${access_token}`,
-                                Accept: 'application/json',
-                            },
+                    .get(`https://api.atlassian.com/ex/jira/${resources[0].id}/rest/api/3/user`, {
+                        headers: {
+                            Authorization: `Bearer ${access_token}`,
+                            Accept: 'application/json',
                         },
-                    )
+                    })
                     .json();
 
                 // Update user_integrations with the user data
