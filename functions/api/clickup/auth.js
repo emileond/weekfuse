@@ -122,28 +122,22 @@ export async function onRequestPost(context) {
                 const webhookPromises = teamsData.teams.map(async (team) => {
                     try {
                         // Create a webhook for this team
-                        await ky.post(
-                            `https://api.clickup.com/api/v2/team/${team.id}/webhook`,
-                            {
-                                json: {
-                                    endpoint: webhookUrl,
-                                    events: ['taskUpdated', 'taskDeleted'],
-                                },
-                                headers: {
-                                    Authorization: `Bearer ${access_token}`,
-                                    'Content-Type': 'application/json',
-                                },
+                        await ky.post(`https://api.clickup.com/api/v2/team/${team.id}/webhook`, {
+                            json: {
+                                endpoint: webhookUrl,
+                                events: ['taskUpdated', 'taskDeleted'],
                             },
-                        );
+                            headers: {
+                                Authorization: `Bearer ${access_token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
                         console.log(
                             `Webhook created successfully for team ${team.id} (${team.name})`,
                         );
                         return { success: true, teamId: team.id };
                     } catch (webhookError) {
-                        console.error(
-                            `Error creating webhook for team ${team.id}:`,
-                            webhookError,
-                        );
+                        console.error(`Error creating webhook for team ${team.id}:`, webhookError);
                         return { success: false, teamId: team.id, error: webhookError };
                     }
                 });
@@ -158,6 +152,7 @@ export async function onRequestPost(context) {
         // Process and store tasks
         if (allTasks.length > 0) {
             const upsertPromises = allTasks.map((task) => {
+                console.log(task);
                 // Convert description to Tiptap format if available
                 const convertedDesc = task?.description ? tinymceToTiptap(task.description) : null;
 
