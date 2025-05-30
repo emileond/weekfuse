@@ -1,7 +1,7 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
 import { toUTC } from '../../../src/utils/dateUtils.js';
-import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
+import { markdownToTipTap } from '../../../src/utils/editorUtils.js';
 
 // Handle POST requests for initiating ClickUp OAuth flow
 export async function onRequestPost(context) {
@@ -154,12 +154,14 @@ export async function onRequestPost(context) {
             const upsertPromises = allTasks.map((task) => {
                 console.log(task);
                 // Convert description to Tiptap format if available
-                const convertedDesc = task?.description ? tinymceToTiptap(task.description) : null;
+                const convertedDesc = task?.markdown_description
+                    ? markdownToTipTap(task.description)
+                    : null;
 
                 return supabase.from('tasks').upsert(
                     {
                         name: task.name,
-                        description: convertedDesc || null,
+                        description: JSON.stringify(convertedDesc) || null,
                         workspace_id,
                         integration_source: 'clickup',
                         external_id: task.id,
