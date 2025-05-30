@@ -9,7 +9,7 @@
  * @returns {Object} - Content in Tiptap format
  */
 export const markdownToTipTap = (markdown) => {
-    // If input is null or undefined, return empty document
+    // If input is null or undefined, return an empty document
     if (!markdown) {
         return {
             type: 'doc',
@@ -26,92 +26,245 @@ export const markdownToTipTap = (markdown) => {
     // Split the markdown into lines
     const lines = markdown.split('\n');
 
-    // Process the lines
+    /**
+     * Helper function to parse inline markdown (bold, italic, strikethrough, inline code).
+     * This function will iterate through the text and create appropriate text nodes with marks.
+     */
+    const parseInlineMarkdown = (text) => {
+        const nodes = [];
+        let currentIndex = 0;
+
+        // Regular expressions for inline formatting in order of precedence (more specific first)
+        // Note: Order can matter for nested formatting.
+        const inlineParsers = [
+            // Inline code: `code`
+            {
+                regex: /(`)([^`]+)\1/g,
+                type: 'code',
+            },
+            // Bold: **text** or __text__
+            {
+                regex: /(\*\*|__)(.*?)\1/g,
+                type: 'bold',
+            },
+            // Italic: *text* or _text_
+            {
+                regex: /(\*|_)(.*?)\1/g,
+                type: 'italic',
+            },
+            // Strikethrough: ~~text~~
+            {
+                regex: /(~~)(.*?)\1/g,
+                type: 'strike',
+            },
+            // Add more inline parsers here if needed (e.g., links, images)
+            // For links and images, you'd need more complex parsing to extract href/src and text/alt
+        ];
+
+        let lastMatchEnd = 0;
+
+        // Iterate through the text, applying parsers
+        while (currentIndex < text.length) {
+            let bestMatch = null;
+            let bestParser = null;
+
+            // Find the earliest match among all inline parsers
+            for (const parser of inlineParsers) {
+                parser.regex.lastIndex = currentIndex; // Start search from current index
+                const match = parser.regex.exec(text);
+
+                if (match && (bestMatch === null || match.index < bestMatch.index)) {
+                    bestMatch = match;
+                    bestParser = parser;
+                }
+            }
+
+            if (bestMatch) {
+                // Add plain text before the current match
+                if (bestMatch.index > currentIndex) {
+                    nodes.push({
+                        type: 'text',
+                        text: text.substring(currentIndex, bestMatch.index),
+                    });
+                }
+
+                // Add the formatted text node
+                const content = bestMatch[2]; // Content inside the markdown delimiters
+                nodes.push({
+                    type: 'text',
+                    marks: [{ type: bestParser.type }],
+                    text: content,
+                });
+
+                currentIndex = bestMatch.index + bestMatch[0].length; // Move current index past the matched pattern
+            } else {
+                // No more inline markdown found, add the rest of the text as plain text
+                nodes.push({ type: 'text', text: text.substring(currentIndex) });
+                currentIndex = text.length; // End parsing
+            }
+        }
+
+        // If no inline markdown was found at all, return the original text as a single node
+        if (nodes.length === 0 && text.length > 0) {
+            nodes.push({ type: 'text', text: text });
+        }
+
+        return nodes;
+    };
+
+    /**
+     * Helper function to parse list items, handling nesting through recursion.
+     * It tracks indentation to determine nesting levels.
+     */
+    const parseListItems = (startLineIndex, currentIndentation) => {
+        const listItems = [];
+        let i = startLineIndex;
+
+        while (i < lines.length) {
+            const line = lines[i];
+            const trimmedLine = line.trim();
+            const leadingSpaces = line.length - trimmedLine.length;
+
+            // Check if this line is less indented than the current list level,
+            // meaning it belongs to a higher-level list or is not a list item.
+            if (leadingSpaces < currentIndentation) {
+                return { items: listItems, newIndex: i };
+            }
+
+            // Check if it's a list item (bullet or numbered) with correct or greater indentation
+            const isBullet = trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ');
+            const isNumbered = /^\d+\.\s/.test(trimmedLine);
+
+            if (!isBullet && !isNumbered) {
+                // Not a list item, break the loop for list parsing
+                return { items: listItems, newIndex: i };
+            }
+
+            // Extract the text content of the list item
+            const itemText = isBullet
+                ? trimmedLine.substring(2)
+                : trimmedLine.replace(/^\d+\.\s/, '');
+
+            const listItemContent = [];
+            // Add paragraph for the item's main content, parsing inline markdown within it
+            listItemContent.push({
+                type: 'paragraph',
+                content: parseInlineMarkdown(itemText),
+            });
+
+            let nextLineIndex = i + 1; // Move to the next line to check for nested items
+
+            // Check for nested lists (more indentation)
+            while (nextLineIndex < lines.length) {
+                const nextLine = lines[nextLineIndex];
+                const nextTrimmedLine = nextLine.trim();
+                const nextLeadingSpaces = nextLine.length - nextTrimmedLine.length;
+
+                // If the next line has more indentation and is a list item, it's a nested list
+                if (
+                    nextLeadingSpaces > leadingSpaces &&
+                    (nextTrimmedLine.startsWith('- ') ||
+                        nextTrimmedLine.startsWith('* ') ||
+                        /^\d+\.\s/.test(nextTrimmedLine))
+                ) {
+                    const nestedListIsBullet =
+                        nextTrimmedLine.startsWith('- ') || nextTrimmedLine.startsWith('* ');
+                    const { items: nestedItems, newIndex: newI } = parseListItems(
+                        nextLineIndex,
+                        nextLeadingSpaces,
+                    );
+
+                    if (nestedItems.length > 0) {
+                        listItemContent.push({
+                            type: nestedListIsBullet ? 'bulletList' : 'orderedList',
+                            content: nestedItems,
+                        });
+                    }
+                    nextLineIndex = newI; // Update index after processing nested list
+                } else if (
+                    nextLeadingSpaces === leadingSpaces &&
+                    (nextTrimmedLine.startsWith('- ') ||
+                        nextTrimmedLine.startsWith('* ') ||
+                        /^\d+\.\s/.test(nextTrimmedLine))
+                ) {
+                    // Next line is a sibling list item, so stop looking for nested items for current listItem
+                    break;
+                } else if (!nextTrimmedLine) {
+                    // Handle empty lines within a list block
+                    nextLineIndex++;
+                    continue;
+                } else if (nextLeadingSpaces < leadingSpaces) {
+                    // Line is less indented, means it's part of a higher-level structure or new block
+                    break;
+                } else {
+                    // It's a continuation of the current list item's content (e.g., a paragraph under a list item)
+                    // Or it's a new block element that's not a list item
+                    // For now, we'll assume a new block if not a list item, but more sophisticated parsers
+                    // might handle multi-line list items.
+                    break;
+                }
+            }
+
+            listItems.push({
+                type: 'listItem',
+                content: listItemContent,
+            });
+
+            i = nextLineIndex; // Move to the index after the current list item (and any nested lists)
+        }
+        return { items: listItems, newIndex: i };
+    };
+
     let i = 0;
     while (i < lines.length) {
-        const line = lines[i].trim();
+        const line = lines[i]; // Use original line to check indentation
+        const trimmedLine = line.trim();
 
         // Skip empty lines
-        if (!line) {
+        if (!trimmedLine) {
             i++;
             continue;
         }
 
         // Check for headings (# Heading)
-        if (line.startsWith('#')) {
-            const level = line.match(/^#+/)[0].length;
+        if (trimmedLine.startsWith('#')) {
+            const level = trimmedLine.match(/^#+/)[0].length;
             if (level <= 6) {
-                const headingText = line.substring(level).trim();
+                const headingText = trimmedLine.substring(level).trim();
                 tiptapDoc.content.push({
                     type: 'heading',
                     attrs: { level },
-                    content: [{ type: 'text', text: headingText }],
+                    content: parseInlineMarkdown(headingText), // Parse inline markdown in headings
                 });
                 i++;
                 continue;
             }
         }
 
-        // Check for bullet lists (- item or * item)
-        if (line.startsWith('- ') || line.startsWith('* ')) {
-            const listItems = [];
+        // Check for bullet lists (- item or * item) or numbered lists (1. item)
+        // We capture the starting indentation to correctly parse nested lists
+        if (
+            trimmedLine.startsWith('- ') ||
+            trimmedLine.startsWith('* ') ||
+            /^\d+\.\s/.test(trimmedLine)
+        ) {
+            const listStartIndentation = line.length - trimmedLine.length;
+            const isBulletList = trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ');
+            const { items, newIndex } = parseListItems(i, listStartIndentation);
 
-            // Collect all consecutive list items
-            while (
-                i < lines.length &&
-                (lines[i].trim().startsWith('- ') || lines[i].trim().startsWith('* '))
-            ) {
-                const itemText = lines[i].trim().substring(2);
-                listItems.push({
-                    type: 'listItem',
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: [{ type: 'text', text: itemText }],
-                        },
-                    ],
+            if (items.length > 0) {
+                tiptapDoc.content.push({
+                    type: isBulletList ? 'bulletList' : 'orderedList',
+                    content: items,
                 });
-                i++;
             }
-
-            tiptapDoc.content.push({
-                type: 'bulletList',
-                content: listItems,
-            });
-
-            continue;
-        }
-
-        // Check for numbered lists (1. item)
-        if (/^\d+\.\s/.test(line)) {
-            const listItems = [];
-
-            // Collect all consecutive list items
-            while (i < lines.length && /^\d+\.\s/.test(lines[i].trim())) {
-                const itemText = lines[i].trim().replace(/^\d+\.\s/, '');
-                listItems.push({
-                    type: 'listItem',
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: [{ type: 'text', text: itemText }],
-                        },
-                    ],
-                });
-                i++;
-            }
-
-            tiptapDoc.content.push({
-                type: 'orderedList',
-                content: listItems,
-            });
-
+            i = newIndex; // Update index after processing the entire list block
             continue;
         }
 
         // Check for code blocks (```code```)
-        if (line.startsWith('```')) {
-            const language = line.substring(3).trim();
+        if (trimmedLine.startsWith('```')) {
+            const language = trimmedLine.substring(3).trim();
             const codeLines = [];
             i++;
 
@@ -136,7 +289,7 @@ export const markdownToTipTap = (markdown) => {
         }
 
         // Check for blockquotes (> quote)
-        if (line.startsWith('> ')) {
+        if (trimmedLine.startsWith('> ')) {
             const quoteLines = [];
 
             // Collect all consecutive blockquote lines
@@ -150,7 +303,7 @@ export const markdownToTipTap = (markdown) => {
                 content: [
                     {
                         type: 'paragraph',
-                        content: [{ type: 'text', text: quoteLines.join('\n') }],
+                        content: parseInlineMarkdown(quoteLines.join('\n')), // Parse inline markdown in blockquotes
                     },
                 ],
             });
@@ -158,11 +311,10 @@ export const markdownToTipTap = (markdown) => {
             continue;
         }
 
-        // Default: treat as paragraph
-        // Process inline formatting (bold, italic, etc.)
+        // Default: treat as a paragraph, and parse inline formatting
         tiptapDoc.content.push({
             type: 'paragraph',
-            content: [{ type: 'text', text: line }],
+            content: parseInlineMarkdown(trimmedLine),
         });
 
         i++;
@@ -273,8 +425,10 @@ const convertJiraNode = (node) => {
 const convertJiraParagraph = (paragraph) => {
     return {
         type: 'paragraph',
-        content: paragraph.content 
-            ? paragraph.content.map((node) => convertJiraInlineNode(node)).filter(node => node !== null)
+        content: paragraph.content
+            ? paragraph.content
+                  .map((node) => convertJiraInlineNode(node))
+                  .filter((node) => node !== null)
             : [],
     };
 };
@@ -319,8 +473,10 @@ const convertJiraHeading = (heading) => {
     return {
         type: 'heading',
         attrs: heading.attrs || { level: 1 },
-        content: heading.content 
-            ? heading.content.map((node) => convertJiraInlineNode(node)).filter(node => node !== null)
+        content: heading.content
+            ? heading.content
+                  .map((node) => convertJiraInlineNode(node))
+                  .filter((node) => node !== null)
             : [],
     };
 };
@@ -335,7 +491,9 @@ const convertJiraBlockquote = (blockquote) => {
     return {
         type: 'blockquote',
         content: blockquote.content
-            ? blockquote.content.map((node) => convertJiraNode(node)).filter((node) => node !== null)
+            ? blockquote.content
+                  .map((node) => convertJiraNode(node))
+                  .filter((node) => node !== null)
             : [],
     };
 };
@@ -350,8 +508,10 @@ const convertJiraCodeBlock = (codeBlock) => {
     return {
         type: 'codeBlock',
         attrs: codeBlock.attrs || { language: null },
-        content: codeBlock.content 
-            ? codeBlock.content.map((node) => convertJiraInlineNode(node)).filter(node => node !== null)
+        content: codeBlock.content
+            ? codeBlock.content
+                  .map((node) => convertJiraInlineNode(node))
+                  .filter((node) => node !== null)
             : [],
     };
 };
