@@ -63,7 +63,7 @@ export async function onRequestPost(context) {
                         headers: {
                             Accept: 'application/json',
                         },
-                    }
+                    },
                 );
 
                 if (boardResponse.ok) {
@@ -71,7 +71,10 @@ export async function onRequestPost(context) {
                     break;
                 }
             } catch (error) {
-                console.error(`Error checking board access for integration ${integration.id}:`, error);
+                console.error(
+                    `Error checking board access for integration ${integration.id}:`,
+                    error,
+                );
                 // Continue to the next integration
             }
         }
@@ -98,7 +101,7 @@ export async function onRequestPost(context) {
                     headers: {
                         Accept: 'application/json',
                     },
-                }
+                },
             );
 
             if (!cardResponse.ok) {
@@ -115,16 +118,20 @@ export async function onRequestPost(context) {
             const tiptapDescription = cardData.desc ? markdownToTipTap(cardData.desc) : null;
 
             // Upsert the task in the database
-            const { error: upsertError } = await supabase.from('tasks').upsert({
-                name: cardData.name,
-                description: tiptapDescription,
-                workspace_id,
-                user_id,
-                integration_source: 'trello',
-                external_id: cardData.id,
-                external_data: cardData,
-                host: cardData.url,
-            });
+            const { error: upsertError } = await supabase.from('tasks').upsert(
+                {
+                    name: cardData.name,
+                    description: tiptapDescription,
+                    workspace_id,
+                    integration_source: 'trello',
+                    external_id: cardData.id,
+                    external_data: cardData,
+                    host: cardData.url,
+                },
+                {
+                    onConflict: ['integration_source', 'external_id', 'host'],
+                },
+            );
 
             if (upsertError) {
                 console.error(`Upsert error for card ${cardData.id}:`, upsertError);
@@ -134,15 +141,14 @@ export async function onRequestPost(context) {
                 );
             }
 
-            console.log(`Card ${cardData.id} ${action.type === 'createCard' ? 'created' : 'updated'} successfully`);
+            console.log(
+                `Card ${cardData.id} ${action.type === 'createCard' ? 'created' : 'updated'} successfully`,
+            );
             return Response.json({ success: true });
         }
 
         // If we reach here, the action type is not supported
-        return Response.json(
-            { success: false, error: 'Unsupported action type' },
-            { status: 400 },
-        );
+        return Response.json({ success: false, error: 'Unsupported action type' }, { status: 400 });
     } catch (error) {
         console.error('Error processing Trello webhook:', error);
         return Response.json(

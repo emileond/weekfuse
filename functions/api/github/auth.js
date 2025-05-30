@@ -158,7 +158,7 @@ export async function onRequestPost(context) {
                         host: issue.url,
                     },
                     {
-                        onConflict: ['integration_source', 'external_id, host'],
+                        onConflict: ['integration_source', 'external_id', 'host'],
                     },
                 ),
             );

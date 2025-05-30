@@ -130,7 +130,7 @@ export async function onRequestPost(context) {
                         host: task.url,
                     },
                     {
-                        onConflict: ['integration_source', 'external_id, host'],
+                        onConflict: ['integration_source', 'external_id', 'host'],
                     },
                 );
             });

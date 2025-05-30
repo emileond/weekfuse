@@ -92,15 +92,19 @@ export async function onRequestPost(context) {
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
         // Save the access token in Supabase
-        const { data: upsertData, error: updateError } = await supabase.from('user_integrations').upsert({
-            type: 'trello',
-            access_token: access_token,
-            user_id,
-            workspace_id,
-            status: 'active',
-            last_sync: toUTC(),
-            config: { syncStatus: 'prompt' },
-        }).select('id').single();
+        const { data: upsertData, error: updateError } = await supabase
+            .from('user_integrations')
+            .upsert({
+                type: 'trello',
+                access_token: access_token,
+                user_id,
+                workspace_id,
+                status: 'active',
+                last_sync: toUTC(),
+                config: { syncStatus: 'prompt' },
+            })
+            .select('id')
+            .single();
 
         if (updateError) {
             console.error('Supabase update error:', updateError);
@@ -169,12 +173,17 @@ export async function onRequestPost(context) {
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
-                            }
+                            },
                         );
-                        console.log(`Webhook created successfully for board ${board.id} (${board.name})`);
+                        console.log(
+                            `Webhook created successfully for board ${board.id} (${board.name})`,
+                        );
                         return { success: true, boardId: board.id };
                     } catch (webhookError) {
-                        console.error(`Error creating webhook for board ${board.id}:`, webhookError);
+                        console.error(
+                            `Error creating webhook for board ${board.id}:`,
+                            webhookError,
+                        );
                         return { success: false, boardId: board.id, error: webhookError };
                     }
                 });
@@ -205,7 +214,7 @@ export async function onRequestPost(context) {
                         host: card.url,
                     },
                     {
-                        onConflict: ['integration_source', 'external_id, host'],
+                        onConflict: ['integration_source', 'external_id', 'host'],
                     },
                 );
             });
