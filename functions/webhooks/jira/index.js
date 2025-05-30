@@ -88,7 +88,6 @@ export async function onRequestPost(context) {
                     integration_source: 'jira',
                     external_id: issue.id,
                     external_data: issue,
-                    last_updated: new Date().toISOString(),
                 })
                 .eq('integration_source', 'jira')
                 .eq('external_data->>self', issue.self);
