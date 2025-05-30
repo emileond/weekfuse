@@ -17,129 +17,129 @@ export const githubSync = task({
     run: async (payload: any) => {
         logger.log('Starting GitHub sync task');
 
-            try {
-                // Check if token has expired
-                const currentTime = dayjs().utc();
-                const tokenExpired =
-                    !payload.expires_at || currentTime.isAfter(dayjs(payload.expires_at));
+        try {
+            // Check if token has expired
+            const currentTime = dayjs().utc();
+            const tokenExpired =
+                !payload.expires_at || currentTime.isAfter(dayjs(payload.expires_at));
 
-                let access_token = payload.access_token;
-                let refresh_token = payload.refresh_token;
-                let expires_at = payload.expires_at;
+            let access_token = payload.access_token;
+            let refresh_token = payload.refresh_token;
+            let expires_at = payload.expires_at;
 
-                // Only refresh token if it has expired
-                if (tokenExpired) {
-                    logger.log(`Access token expired, refreshing`);
-                    const res = await ky
-                        .post('https://github.com/login/oauth/access_token', {
-                            searchParams: {
-                                client_id: process.env.GITHUB_CLIENT_ID,
-                                client_secret: process.env.GITHUB_CLIENT_SECRET,
-                                grant_type: 'refresh_token',
-                                refresh_token: payload.refresh_token,
-                            },
-                            headers: {
-                                Accept: 'application/json',
-                            },
-                        })
-                        .json();
+            // Only refresh token if it has expired
+            if (tokenExpired) {
+                logger.log(`Access token expired, refreshing`);
+                const res = await ky
+                    .post('https://github.com/login/oauth/access_token', {
+                        searchParams: {
+                            client_id: process.env.GITHUB_CLIENT_ID,
+                            client_secret: process.env.GITHUB_CLIENT_SECRET,
+                            grant_type: 'refresh_token',
+                            refresh_token: payload.refresh_token,
+                        },
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    })
+                    .json();
 
-                    if (res.error) {
-                        logger.error('Failed to refresh access token', res.error);
-                        await supabase
-                            .from('user_integrations')
-                            .update({
-                                status: 'error',
-                            })
-                            .eq('id', payload.id);
-                    } else {
-                        // Update token information
-                        access_token = res.access_token;
-                        refresh_token = res.refresh_token;
-                        expires_at = calculateExpiresAt(res.expires_in);
-
-                        // Update the database with new token information
-                        await supabase
-                            .from('user_integrations')
-                            .update({
-                                access_token,
-                                refresh_token,
-                                expires_at,
-                                last_sync: toUTC(),
-                            })
-                            .eq('id', payload.id);
-                    }
-                } else {
-                    // Token is still valid, just update the last_sync timestamp
+                if (res.error) {
+                    logger.error('Failed to refresh access token', res.error);
                     await supabase
                         .from('user_integrations')
                         .update({
+                            status: 'error',
+                        })
+                        .eq('id', payload.id);
+                } else {
+                    // Update token information
+                    access_token = res.access_token;
+                    refresh_token = res.refresh_token;
+                    expires_at = calculateExpiresAt(res.expires_in);
+
+                    // Update the database with new token information
+                    await supabase
+                        .from('user_integrations')
+                        .update({
+                            access_token,
+                            refresh_token,
+                            expires_at,
                             last_sync: toUTC(),
                         })
                         .eq('id', payload.id);
                 }
+            } else {
+                // Token is still valid, just update the last_sync timestamp
+                await supabase
+                    .from('user_integrations')
+                    .update({
+                        last_sync: toUTC(),
+                    })
+                    .eq('id', payload.id);
+            }
 
-                const octokit = new Octokit({ auth: access_token });
+            const octokit = new Octokit({ auth: access_token });
 
-                const issuesData = await octokit.paginate('GET /issues?state=open');
+            const issuesData = await octokit.paginate('GET /issues?state=open');
 
-                // Process and store issues
-                if (issuesData && Array.isArray(issuesData)) {
-                    const upsertPromises = issuesData.map((issue) =>
-                        supabase.from('tasks').upsert(
-                            {
-                                name: issue.title,
-                                description: {
-                                    type: 'doc',
-                                    content: [
-                                        {
-                                            type: 'paragraph',
-                                            content: [{ type: 'text', text: issue.body || '' }],
-                                        },
-                                    ],
-                                },
-                                workspace_id: payload.workspace_id,
-                                integration_source: 'github',
-                                external_id: issue.id,
-                                external_data: issue,
-                                created_at: issue.created_at,
+            // Process and store issues
+            if (issuesData && Array.isArray(issuesData)) {
+                const upsertPromises = issuesData.map((issue) =>
+                    supabase.from('tasks').upsert(
+                        {
+                            name: issue.title,
+                            description: {
+                                type: 'doc',
+                                content: [
+                                    {
+                                        type: 'paragraph',
+                                        content: [{ type: 'text', text: issue.body || '' }],
+                                    },
+                                ],
                             },
-                            {
-                                onConflict: ['integration_source', 'external_id'],
-                            },
-                        ),
-                    );
+                            workspace_id: payload.workspace_id,
+                            integration_source: 'github',
+                            external_id: issue.id,
+                            external_data: issue,
+                            host: issue.url,
+                        },
+                        {
+                            onConflict: ['integration_source', 'external_id, host'],
+                        },
+                    ),
+                );
 
-                    const results = await Promise.all(upsertPromises);
+                const results = await Promise.all(upsertPromises);
 
-                    let issueSuccessCount = 0;
-                    let issueFailCount = 0;
+                let issueSuccessCount = 0;
+                let issueFailCount = 0;
 
-                    results.forEach((result, index) => {
-                        if (result.error) {
-                            logger.error(
-                                `Upsert error for issue ${issuesData[index].id}: ${result.error.message}`,
-                            );
-                            issueFailCount++;
-                        } else {
-                            issueSuccessCount++;
-                        }
-                    });
-
-                    logger.log(
-                        `Processed ${issuesData.length} issues for workspace ${payload.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`,
-                    );
-                }
+                results.forEach((result, index) => {
+                    if (result.error) {
+                        logger.error(
+                            `Upsert error for issue ${issuesData[index].id}: ${result.error.message}`,
+                        );
+                        issueFailCount++;
+                    } else {
+                        issueSuccessCount++;
+                    }
+                });
 
                 logger.log(
-                    `Successfully synced GitHub integration for workspace ${payload.workspace_id}`,
-                );
-            } catch (error) {
-                console.log(error);
-                logger.error(
-                    `Error syncing GitHub integration for workspace ${payload.workspace_id}: ${error.message}`,
+                    `Processed ${issuesData.length} issues for workspace ${payload.workspace_id}: ${issueSuccessCount} succeeded, ${issueFailCount} failed`,
                 );
             }
+
+            logger.log(
+                `Successfully synced GitHub integration for workspace ${payload.workspace_id}`,
+            );
+        } catch (error) {
+            console.log(error);
+            logger.error(
+                `Error syncing GitHub integration for workspace ${payload.workspace_id}: ${error.message}`,
+            );
+        }
 
         return {
             success: true,

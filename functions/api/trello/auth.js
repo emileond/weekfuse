@@ -163,10 +163,10 @@ export async function onRequestPost(context) {
                         integration_source: 'trello',
                         external_id: card.id,
                         external_data: card,
-                        // created_at: card.dateLastActivity,
+                        host: card.url,
                     },
                     {
-                        onConflict: ['integration_source', 'external_id'],
+                        onConflict: ['integration_source', 'external_id, host'],
                     },
                 );
             });

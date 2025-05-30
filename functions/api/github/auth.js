@@ -155,10 +155,10 @@ export async function onRequestPost(context) {
                         integration_source: 'github',
                         external_id: issue.id,
                         external_data: issue,
-                        created_at: issue.created_at,
+                        host: issue.url,
                     },
                     {
-                        onConflict: ['integration_source', 'external_id'],
+                        onConflict: ['integration_source', 'external_id, host'],
                     },
                 ),
             );

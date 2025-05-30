@@ -127,9 +127,10 @@ export async function onRequestPost(context) {
                         integration_source: 'clickup',
                         external_id: task.id,
                         external_data: task,
+                        host: task.url,
                     },
                     {
-                        onConflict: ['integration_source', 'external_id'],
+                        onConflict: ['integration_source', 'external_id, host'],
                     },
                 );
             });

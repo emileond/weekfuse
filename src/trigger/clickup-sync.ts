@@ -17,117 +17,117 @@ export const clickupSync = task({
     run: async (payload: any) => {
         logger.log('Starting Clickup sync task');
 
-            try {
-                // Update the last_sync timestamp
-                await supabase
-                    .from('user_integrations')
-                    .update({
-                        last_sync: toUTC(),
-                    })
-                    .eq('id', payload.id);
+        try {
+            // Update the last_sync timestamp
+            await supabase
+                .from('user_integrations')
+                .update({
+                    last_sync: toUTC(),
+                })
+                .eq('id', payload.id);
 
-                const access_token = payload.access_token;
+            const access_token = payload.access_token;
 
-                // Get user profile
-                const userData = await ky
-                    .get('https://api.clickup.com/api/v2/user', {
-                        headers: {
-                            Authorization: `Bearer ${access_token}`,
-                            accept: 'application/json',
-                        },
-                    })
-                    .json();
+            // Get user profile
+            const userData = await ky
+                .get('https://api.clickup.com/api/v2/user', {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                        accept: 'application/json',
+                    },
+                })
+                .json();
 
-                // Get user's authorized teams
-                const teamsData = await ky
-                    .get('https://api.clickup.com/api/v2/team', {
-                        headers: {
-                            Authorization: `Bearer ${access_token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    })
-                    .json();
+            // Get user's authorized teams
+            const teamsData = await ky
+                .get('https://api.clickup.com/api/v2/team', {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .json();
 
-                const userID = userData.user.id;
+            const userID = userData.user.id;
 
-                let allTasks = [];
+            let allTasks = [];
 
-                // For each team, get the user's tasks
-                if (teamsData && teamsData.teams && Array.isArray(teamsData.teams)) {
-                    for (const team of teamsData.teams) {
-                        // Get all tasks assigned to the user
-                        const tasksData = await ky
-                            .get(
-                                `https://api.clickup.com/api/v2/team/${team.id}/task?assignees[]=${userID}`,
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${access_token}`,
-                                        'Content-Type': 'application/json',
-                                    },
+            // For each team, get the user's tasks
+            if (teamsData && teamsData.teams && Array.isArray(teamsData.teams)) {
+                for (const team of teamsData.teams) {
+                    // Get all tasks assigned to the user
+                    const tasksData = await ky
+                        .get(
+                            `https://api.clickup.com/api/v2/team/${team.id}/task?assignees[]=${userID}`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${access_token}`,
+                                    'Content-Type': 'application/json',
                                 },
-                            )
-                            .json();
+                            },
+                        )
+                        .json();
 
-                        if (tasksData && tasksData.tasks && Array.isArray(tasksData.tasks)) {
-                            allTasks = [...allTasks, ...tasksData.tasks];
-                        }
+                    if (tasksData && tasksData.tasks && Array.isArray(tasksData.tasks)) {
+                        allTasks = [...allTasks, ...tasksData.tasks];
                     }
                 }
+            }
 
-                // Process and store tasks
-                if (allTasks.length > 0) {
-                    const upsertPromises = allTasks.map((task) => {
-                        // Convert description to Tiptap format if available
-                        const convertedDesc = task?.description
-                            ? plainTextToTiptap(task.description)
-                            : null;
+            // Process and store tasks
+            if (allTasks.length > 0) {
+                const upsertPromises = allTasks.map((task) => {
+                    // Convert description to Tiptap format if available
+                    const convertedDesc = task?.description
+                        ? plainTextToTiptap(task.description)
+                        : null;
 
-                        return supabase.from('tasks').upsert(
-                            {
-                                name: task.name,
-                                description: convertedDesc,
-                                workspace_id: payload.workspace_id,
-                                integration_source: 'clickup',
-                                external_id: task.id,
-                                external_data: task,
-                            },
-                            {
-                                onConflict: ['integration_source', 'external_id'],
-                            },
-                        );
-                    });
-
-                    const results = await Promise.all(upsertPromises);
-
-                    let taskSuccessCount = 0;
-                    let taskFailCount = 0;
-
-                    results.forEach((result, index) => {
-                        if (result.error) {
-                            logger.error(
-                                `Upsert error for task ${allTasks[index].id}: ${result.error.message}`,
-                            );
-                            taskFailCount++;
-                        } else {
-                            taskSuccessCount++;
-                        }
-                    });
-
-                    logger.log(
-                        `Processed ${allTasks.length} tasks for workspace ${payload.workspace_id}: ${taskSuccessCount} succeeded, ${taskFailCount} failed`,
+                    return supabase.from('tasks').upsert(
+                        {
+                            name: task.name,
+                            description: convertedDesc,
+                            workspace_id: payload.workspace_id,
+                            integration_source: 'clickup',
+                            external_id: task.id,
+                            external_data: task,
+                            host: task.url,
+                        },
+                        {
+                            onConflict: ['integration_source', 'external_id, host'],
+                        },
                     );
-                }
+                });
+
+                const results = await Promise.all(upsertPromises);
+
+                let taskSuccessCount = 0;
+                let taskFailCount = 0;
+
+                results.forEach((result, index) => {
+                    if (result.error) {
+                        logger.error(
+                            `Upsert error for task ${allTasks[index].id}: ${result.error.message}`,
+                        );
+                        taskFailCount++;
+                    } else {
+                        taskSuccessCount++;
+                    }
+                });
 
                 logger.log(
-                    `Successfully synced ClickUp integration for workspace ${payload.workspace_id}`,
-                );
-            } catch (error) {
-                console.log(error);
-                logger.error(
-                    `Error syncing ClickUp integration for workspace ${payload.workspace_id}: ${error.message}`,
+                    `Processed ${allTasks.length} tasks for workspace ${payload.workspace_id}: ${taskSuccessCount} succeeded, ${taskFailCount} failed`,
                 );
             }
 
+            logger.log(
+                `Successfully synced ClickUp integration for workspace ${payload.workspace_id}`,
+            );
+        } catch (error) {
+            console.log(error);
+            logger.error(
+                `Error syncing ClickUp integration for workspace ${payload.workspace_id}: ${error.message}`,
+            );
+        }
 
         return {
             success: true,
