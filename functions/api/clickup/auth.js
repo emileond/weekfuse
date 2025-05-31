@@ -129,6 +129,7 @@ export async function onRequestPost(context) {
                             },
                             headers: {
                                 Authorization: `Bearer ${access_token}`,
+                                Accept: 'application/json',
                                 'Content-Type': 'application/json',
                             },
                         });
