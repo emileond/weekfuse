@@ -55,13 +55,17 @@ export async function onRequestPost(context) {
                 case 'name':
                     updatedTask.name = updatedValue;
                     break;
-                case 'description':
-                    updatedTask.description = JSON.stringify(markdownToTipTap(updatedValue));
+                case 'description': {
+                    const convertedDescription = markdownToTipTap(updatedValue);
+                    updatedTask.description = convertedDescription
+                        ? JSON.stringify(convertedDescription)
+                        : null;
                     break;
+                }
 
                 // if it's anything else, update it in the external_data column
-                default: // Get the current external_data for the task
-                {
+                default: {
+                    // Get the current external_data for the task
                     const { data: task, error: selectError } = await supabase
                         .from('tasks')
                         .select('external_data')
@@ -104,6 +108,8 @@ export async function onRequestPost(context) {
                     return Response.json({ success: true });
                 }
             }
+
+            console.log(updatedTask);
 
             // Only proceed with this update if we're updating name or description
             // For other fields, we've already handled the update in the default case
