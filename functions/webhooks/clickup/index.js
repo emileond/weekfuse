@@ -44,113 +44,84 @@ export async function onRequestPost(context) {
             );
         }
 
-        // Get the user integration to find the workspace_id
-        const { data: integrationData, error: integrationError } = await supabase
-            .from('user_integrations')
-            .select('workspace_id, user_id, access_token')
-            .eq('type', 'clickup')
-            .eq('status', 'active');
-
-        if (integrationError || !integrationData || integrationData.length === 0) {
-            console.error(
-                'Error fetching integration data:',
-                integrationError || 'No matching integration found',
-            );
-            return Response.json(
-                { success: false, error: 'Integration not found' },
-                { status: 404 },
-            );
-        }
-
-        // Find the integration that has access to the task
-        let validIntegration = null;
-
-        // Try each integration until we find one that works
-        for (const integration of integrationData) {
-            try {
-                // Check if this integration has access to the task
-                const taskResponse = await fetch(`https://api.clickup.com/api/v2/task/${task_id}`, {
-                    headers: {
-                        Authorization: `Bearer ${integration.access_token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (taskResponse.ok) {
-                    validIntegration = integration;
-                    break;
-                }
-            } catch (error) {
-                console.error(
-                    `Error checking task access for integration ${integration.id}:`,
-                    error,
-                );
-                // Continue to the next integration
-            }
-        }
-
-        if (!validIntegration) {
-            console.error('No integration found with access to the task:', task_id);
-            return Response.json(
-                { success: false, error: 'No integration found with access to the task' },
-                { status: 404 },
-            );
-        }
-
-        // Use the valid integration data
-        const workspace_id = validIntegration.workspace_id;
-        const access_token = validIntegration.access_token;
-
         // Handle different event types
         if (event === 'taskUpdated') {
-            // Get the full task data using the task ID
-            const taskResponse = await fetch(`https://api.clickup.com/api/v2/task/${task_id}`, {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
+            const updatedField = history_items[0].field;
+            const updatedValue = history_items[0].after;
 
-            if (!taskResponse.ok) {
-                console.error(`Error fetching task data: ${taskResponse.statusText}`);
-                return Response.json(
-                    { success: false, error: 'Failed to fetch task data' },
-                    { status: 500 },
-                );
+            let updatedTask = {};
+
+            switch (updatedField) {
+                case 'name':
+                    updatedTask.name = updatedValue;
+                    break;
+                case 'description':
+                    updatedTask.description = JSON.stringify(markdownToTipTap(updatedValue));
+                    break;
+
+                // if it's anything else, update it in the external_data column
+                default: // Get the current external_data for the task
+                {
+                    const { data: task, error: selectError } = await supabase
+                        .from('tasks')
+                        .select('external_data')
+                        .eq('external_id', task_id)
+                        .eq('integration_source', 'clickup')
+                        .single();
+
+                    if (selectError) {
+                        console.error(`Error fetching task ${task_id}:`, selectError);
+                        return Response.json(
+                            { success: false, error: 'Failed to fetch task data' },
+                            { status: 500 },
+                        );
+                    }
+
+                    // Create updated external_data with the new field value
+                    const updatedExternalData = {
+                        ...task.external_data,
+                        [updatedField]: updatedValue,
+                    };
+
+                    // Update only the external_data column
+                    const { error: updateError } = await supabase
+                        .from('tasks')
+                        .update({ external_data: updatedExternalData })
+                        .eq('integration_source', 'clickup')
+                        .eq('external_id', task_id);
+
+                    if (updateError) {
+                        console.error(`Update error for task ${task_id}:`, updateError);
+                        return Response.json(
+                            { success: false, error: 'Failed to update task external data' },
+                            { status: 500 },
+                        );
+                    }
+
+                    console.log(
+                        `Task ${task_id} external_data.${updatedField} updated successfully`,
+                    );
+                    return Response.json({ success: true });
+                }
             }
 
-            const taskData = await taskResponse.json();
+            // Only proceed with this update if we're updating name or description
+            // For other fields, we've already handled the update in the default case
+            const { error: updateError } = await supabase
+                .from('tasks')
+                .update(updatedTask)
+                .eq('integration_source', 'clickup')
+                .eq('external_id', task_id);
 
-            // Convert description to Tiptap format if available
-            const convertedDesc = taskData.description
-                ? markdownToTipTap(taskData.description)
-                : null;
-
-            // Upsert the task in the database
-            const { error: upsertError } = await supabase.from('tasks').upsert(
-                {
-                    name: taskData.name,
-                    description: convertedDesc || null,
-                    workspace_id,
-                    integration_source: 'clickup',
-                    external_id: taskData.id,
-                    external_data: taskData,
-                    host: taskData.url,
-                },
-                {
-                    onConflict: ['integration_source', 'external_id', 'host'],
-                },
-            );
-
-            if (upsertError) {
-                console.error(`Upsert error for task ${taskData.id}:`, upsertError);
+            if (updateError) {
+                console.error(`Update error for task ${task_id}:`, updateError);
                 return Response.json(
                     { success: false, error: 'Failed to update task' },
                     { status: 500 },
                 );
             }
 
-            console.log(`Task ${taskData.id} updated successfully`);
+            console.log(`Task ${task_id} updated successfully`);
             return Response.json({ success: true });
         } else if (event === 'taskDeleted') {
             // Delete the task from the database
