@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { tinymceToTiptap } from '../../../src/utils/editorUtils.js';
+import { markdownToTipTap } from '../../../src/utils/editorUtils.js';
 
 export async function onRequestPost(context) {
     try {
@@ -69,15 +69,12 @@ export async function onRequestPost(context) {
         for (const integration of integrationData) {
             try {
                 // Check if this integration has access to the task
-                const taskResponse = await fetch(
-                    `https://api.clickup.com/api/v2/task/${task_id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${integration.access_token}`,
-                            'Content-Type': 'application/json',
-                        },
+                const taskResponse = await fetch(`https://api.clickup.com/api/v2/task/${task_id}`, {
+                    headers: {
+                        Authorization: `Bearer ${integration.access_token}`,
+                        'Content-Type': 'application/json',
                     },
-                );
+                });
 
                 if (taskResponse.ok) {
                     validIntegration = integration;
@@ -107,15 +104,12 @@ export async function onRequestPost(context) {
         // Handle different event types
         if (event === 'taskUpdated') {
             // Get the full task data using the task ID
-            const taskResponse = await fetch(
-                `https://api.clickup.com/api/v2/task/${task_id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${access_token}`,
-                        'Content-Type': 'application/json',
-                    },
+            const taskResponse = await fetch(`https://api.clickup.com/api/v2/task/${task_id}`, {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
                 },
-            );
+            });
 
             if (!taskResponse.ok) {
                 console.error(`Error fetching task data: ${taskResponse.statusText}`);
@@ -128,7 +122,9 @@ export async function onRequestPost(context) {
             const taskData = await taskResponse.json();
 
             // Convert description to Tiptap format if available
-            const convertedDesc = taskData.description ? tinymceToTiptap(taskData.description) : null;
+            const convertedDesc = taskData.description
+                ? markdownToTipTap(taskData.description)
+                : null;
 
             // Upsert the task in the database
             const { error: upsertError } = await supabase.from('tasks').upsert(

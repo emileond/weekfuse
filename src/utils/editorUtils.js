@@ -47,7 +47,7 @@ export const markdownToTipTap = (markdown) => {
 
         // Process token based on its type
         switch (token.type) {
-            case 'heading_open':
+            case 'heading_open': {
                 const headingLevel = parseInt(token.tag.slice(1));
                 const headingContent = tokens[i + 1].content;
                 tiptapDoc.content.push({
@@ -57,8 +57,9 @@ export const markdownToTipTap = (markdown) => {
                 });
                 i += 3; // Skip the heading_content and heading_close tokens
                 break;
+            }
 
-            case 'paragraph_open':
+            case 'paragraph_open': {
                 const paragraphContent = tokens[i + 1].content;
                 if (paragraphContent.trim()) {
                     tiptapDoc.content.push({
@@ -68,8 +69,9 @@ export const markdownToTipTap = (markdown) => {
                 }
                 i += 3; // Skip the paragraph_content and paragraph_close tokens
                 break;
+            }
 
-            case 'bullet_list_open':
+            case 'bullet_list_open': {
                 const bulletListContent = parseBulletList(tokens, i);
                 tiptapDoc.content.push({
                     type: 'bulletList',
@@ -77,8 +79,9 @@ export const markdownToTipTap = (markdown) => {
                 });
                 i = bulletListContent.endIndex + 1;
                 break;
+            }
 
-            case 'ordered_list_open':
+            case 'ordered_list_open': {
                 const orderedListContent = parseOrderedList(tokens, i);
                 tiptapDoc.content.push({
                     type: 'orderedList',
@@ -86,8 +89,9 @@ export const markdownToTipTap = (markdown) => {
                 });
                 i = orderedListContent.endIndex + 1;
                 break;
+            }
 
-            case 'blockquote_open':
+            case 'blockquote_open': {
                 const blockquoteContent = parseBlockquote(tokens, i);
                 tiptapDoc.content.push({
                     type: 'blockquote',
@@ -95,6 +99,7 @@ export const markdownToTipTap = (markdown) => {
                 });
                 i = blockquoteContent.endIndex + 1;
                 break;
+            }
 
             case 'code_block':
                 tiptapDoc.content.push({
@@ -130,7 +135,7 @@ export const markdownToTipTap = (markdown) => {
 
 /**
  * Parses inline content (text with formatting) to Tiptap format
- * 
+ *
  * @param {string} content - Text content with markdown formatting
  * @returns {Array} - Array of Tiptap inline nodes
  */
@@ -147,9 +152,7 @@ const parseInlineContent = (content) => {
     // Process the content character by character
     for (let i = 0; i < content.length; i++) {
         // Check for bold (**text**)
-        if (content.substring(i, i + 2) === '**' && 
-            content.indexOf('**', i + 2) !== -1) {
-
+        if (content.substring(i, i + 2) === '**' && content.indexOf('**', i + 2) !== -1) {
             // Add any accumulated text before the bold marker
             if (currentText) {
                 result.push({
@@ -177,10 +180,11 @@ const parseInlineContent = (content) => {
         }
 
         // Check for italic (*text*)
-        if (content.charAt(i) === '*' && 
+        if (
+            content.charAt(i) === '*' &&
             content.indexOf('*', i + 1) !== -1 &&
-            content.substring(i, i + 2) !== '**') {
-
+            content.substring(i, i + 2) !== '**'
+        ) {
             // Add any accumulated text before the italic marker
             if (currentText) {
                 result.push({
@@ -208,9 +212,7 @@ const parseInlineContent = (content) => {
         }
 
         // Check for strikethrough (~~text~~)
-        if (content.substring(i, i + 2) === '~~' && 
-            content.indexOf('~~', i + 2) !== -1) {
-
+        if (content.substring(i, i + 2) === '~~' && content.indexOf('~~', i + 2) !== -1) {
             // Add any accumulated text before the strikethrough marker
             if (currentText) {
                 result.push({
@@ -238,9 +240,7 @@ const parseInlineContent = (content) => {
         }
 
         // Check for inline code (`text`)
-        if (content.charAt(i) === '`' && 
-            content.indexOf('`', i + 1) !== -1) {
-
+        if (content.charAt(i) === '`' && content.indexOf('`', i + 1) !== -1) {
             // Add any accumulated text before the code marker
             if (currentText) {
                 result.push({
@@ -268,10 +268,11 @@ const parseInlineContent = (content) => {
         }
 
         // Check for links ([text](url))
-        if (content.charAt(i) === '[' && 
-            content.indexOf('](', i) !== -1 && 
-            content.indexOf(')', content.indexOf('](', i)) !== -1) {
-
+        if (
+            content.charAt(i) === '[' &&
+            content.indexOf('](', i) !== -1 &&
+            content.indexOf(')', content.indexOf('](', i)) !== -1
+        ) {
             // Add any accumulated text before the link marker
             if (currentText) {
                 result.push({
@@ -318,7 +319,7 @@ const parseInlineContent = (content) => {
 
 /**
  * Parses a bullet list from markdown-it tokens
- * 
+ *
  * @param {Array} tokens - Array of markdown-it tokens
  * @param {number} startIndex - Starting index of the bullet list
  * @returns {Object} - Object containing list items and end index
@@ -340,11 +341,15 @@ const parseBulletList = (tokens, startIndex) => {
                         content: parseInlineContent(paragraphContent),
                     });
                     j += 3; // Skip paragraph_content and paragraph_close
-                } else if (tokens[j].type === 'bullet_list_open' || tokens[j].type === 'ordered_list_open') {
+                } else if (
+                    tokens[j].type === 'bullet_list_open' ||
+                    tokens[j].type === 'ordered_list_open'
+                ) {
                     // Handle nested lists
-                    const nestedList = tokens[j].type === 'bullet_list_open' 
-                        ? parseBulletList(tokens, j)
-                        : parseOrderedList(tokens, j);
+                    const nestedList =
+                        tokens[j].type === 'bullet_list_open'
+                            ? parseBulletList(tokens, j)
+                            : parseOrderedList(tokens, j);
 
                     itemContent.push({
                         type: tokens[j].type === 'bullet_list_open' ? 'bulletList' : 'orderedList',
@@ -373,7 +378,7 @@ const parseBulletList = (tokens, startIndex) => {
 
 /**
  * Parses an ordered list from markdown-it tokens
- * 
+ *
  * @param {Array} tokens - Array of markdown-it tokens
  * @param {number} startIndex - Starting index of the ordered list
  * @returns {Object} - Object containing list items and end index
@@ -395,11 +400,15 @@ const parseOrderedList = (tokens, startIndex) => {
                         content: parseInlineContent(paragraphContent),
                     });
                     j += 3; // Skip paragraph_content and paragraph_close
-                } else if (tokens[j].type === 'bullet_list_open' || tokens[j].type === 'ordered_list_open') {
+                } else if (
+                    tokens[j].type === 'bullet_list_open' ||
+                    tokens[j].type === 'ordered_list_open'
+                ) {
                     // Handle nested lists
-                    const nestedList = tokens[j].type === 'bullet_list_open' 
-                        ? parseBulletList(tokens, j)
-                        : parseOrderedList(tokens, j);
+                    const nestedList =
+                        tokens[j].type === 'bullet_list_open'
+                            ? parseBulletList(tokens, j)
+                            : parseOrderedList(tokens, j);
 
                     itemContent.push({
                         type: tokens[j].type === 'bullet_list_open' ? 'bulletList' : 'orderedList',
@@ -428,7 +437,7 @@ const parseOrderedList = (tokens, startIndex) => {
 
 /**
  * Parses a blockquote from markdown-it tokens
- * 
+ *
  * @param {Array} tokens - Array of markdown-it tokens
  * @param {number} startIndex - Starting index of the blockquote
  * @returns {Object} - Object containing blockquote content and end index
@@ -734,391 +743,4 @@ const convertJiraEmoji = (emojiNode) => {
         type: 'text',
         text: emojiNode.attrs.shortName,
     };
-};
-
-/**
- * Converts TinyMCE content format to Tiptap format
- *
- * @param {Object} tinymceContent - Content in TinyMCE format
- * @returns {Object} - Content in Tiptap format
- */
-export const tinymceToTiptap = (tinymceContent) => {
-    // If input is null or undefined, return empty document
-    if (!tinymceContent) {
-        return {
-            type: 'doc',
-            content: [],
-        };
-    }
-
-    // If input is a string, try to parse it as JSON
-    const content =
-        typeof tinymceContent === 'string' ? JSON.parse(tinymceContent) : tinymceContent;
-
-    // Create a new Tiptap document
-    const tiptapDoc = {
-        type: 'doc',
-        content: [],
-    };
-
-    // If the content has no content array, return empty document
-    if (!content.content || !Array.isArray(content.content)) {
-        return tiptapDoc;
-    }
-
-    // Process each node in the content array and filter out null values (like mediaSingle nodes)
-    tiptapDoc.content = content.content
-        .map((node) => convertNode(node))
-        .filter((node) => node !== null);
-
-    return tiptapDoc;
-};
-
-/**
- * Converts a TinyMCE node to a Tiptap node
- *
- * @param {Object} node - TinyMCE node
- * @returns {Object} - Tiptap node
- */
-const convertNode = (node) => {
-    switch (node.type) {
-        case 'paragraph':
-            return convertParagraph(node);
-        case 'bulletList':
-        case 'orderedList':
-        case 'taskList':
-            return convertList(node);
-        case 'listItem':
-        case 'taskItem':
-            return convertListItem(node);
-        case 'heading':
-            return convertHeading(node);
-        case 'blockquote':
-            return convertBlockquote(node);
-        case 'codeBlock':
-            return convertCodeBlock(node);
-        case 'image':
-            return convertImage(node);
-        case 'mediaSingle':
-            // Skip mediaSingle nodes as they are only valid in TinyMCE and can't be displayed in TipTap
-            return null;
-        default:
-            // For unknown node types, try to pass through if it has content
-            if (node.content && Array.isArray(node.content)) {
-                return {
-                    ...node,
-                    content: node.content
-                        .map((childNode) => convertNode(childNode))
-                        .filter((childNode) => childNode !== null),
-                };
-            }
-            // Otherwise return the node as is
-            return node;
-    }
-};
-
-/**
- * Converts a TinyMCE paragraph to a Tiptap paragraph
- *
- * @param {Object} paragraph - TinyMCE paragraph node
- * @returns {Object} - Tiptap paragraph node
- */
-const convertParagraph = (paragraph) => {
-    return {
-        type: 'paragraph',
-        content: paragraph.content ? paragraph.content.map((node) => convertInlineNode(node)) : [],
-    };
-};
-
-/**
- * Converts a TinyMCE list to a Tiptap list
- *
- * @param {Object} list - TinyMCE list node
- * @returns {Object} - Tiptap list node
- */
-const convertList = (list) => {
-    return {
-        type: list.type,
-        content: list.content
-            ? list.content.map((node) => convertNode(node)).filter((node) => node !== null)
-            : [],
-    };
-};
-
-/**
- * Converts a TinyMCE list item to a Tiptap list item
- *
- * @param {Object} listItem - TinyMCE list item node
- * @returns {Object} - Tiptap list item node
- */
-const convertListItem = (listItem) => {
-    return {
-        type: listItem.type,
-        content: listItem.content
-            ? listItem.content.map((node) => convertNode(node)).filter((node) => node !== null)
-            : [],
-    };
-};
-
-/**
- * Converts a TinyMCE heading to a Tiptap heading
- *
- * @param {Object} heading - TinyMCE heading node
- * @returns {Object} - Tiptap heading node
- */
-const convertHeading = (heading) => {
-    return {
-        type: 'heading',
-        attrs: heading.attrs || { level: 1 },
-        content: heading.content ? heading.content.map((node) => convertInlineNode(node)) : [],
-    };
-};
-
-/**
- * Converts a TinyMCE blockquote to a Tiptap blockquote
- *
- * @param {Object} blockquote - TinyMCE blockquote node
- * @returns {Object} - Tiptap blockquote node
- */
-const convertBlockquote = (blockquote) => {
-    return {
-        type: 'blockquote',
-        content: blockquote.content
-            ? blockquote.content.map((node) => convertNode(node)).filter((node) => node !== null)
-            : [],
-    };
-};
-
-/**
- * Converts a TinyMCE codeBlock to a Tiptap codeBlock
- *
- * @param {Object} codeBlock - TinyMCE codeBlock node
- * @returns {Object} - Tiptap codeBlock node
- */
-const convertCodeBlock = (codeBlock) => {
-    return {
-        type: 'codeBlock',
-        attrs: codeBlock.attrs || { language: null },
-        content: codeBlock.content ? codeBlock.content.map((node) => convertInlineNode(node)) : [],
-    };
-};
-
-/**
- * Converts a TinyMCE image to a Tiptap image
- *
- * @param {Object} image - TinyMCE image node
- * @returns {Object} - Tiptap image node
- */
-const convertImage = (image) => {
-    return {
-        type: 'image',
-        attrs: image.attrs || { src: '', alt: '' },
-    };
-};
-
-/**
- * Converts a TinyMCE inline node to a Tiptap inline node
- *
- * @param {Object} node - TinyMCE inline node
- * @returns {Object} - Tiptap inline node
- */
-const convertInlineNode = (node) => {
-    switch (node.type) {
-        case 'text':
-            return convertText(node);
-        case 'mention':
-            return convertMention(node);
-        case 'hardBreak':
-            return { type: 'hardBreak' };
-        default:
-            // For unknown inline node types, return as is
-            return node;
-    }
-};
-
-/**
- * Converts a TinyMCE text node to a Tiptap text node
- *
- * @param {Object} textNode - TinyMCE text node
- * @returns {Object} - Tiptap text node
- */
-const convertText = (textNode) => {
-    const tiptapTextNode = {
-        type: 'text',
-        text: textNode.text || '',
-    };
-
-    // Handle marks (bold, italic, etc.)
-    if (textNode.marks && Array.isArray(textNode.marks)) {
-        tiptapTextNode.marks = textNode.marks;
-    }
-
-    return tiptapTextNode;
-};
-
-/**
- * Converts a TinyMCE mention node to a Tiptap mention node
- *
- * @param {Object} mentionNode - TinyMCE mention node
- * @returns {Object} - Tiptap mention node
- */
-const convertMention = (mentionNode) => {
-    return {
-        type: 'mention',
-        attrs: {
-            id: mentionNode.attrs?.id || '',
-            label: mentionNode.attrs?.text || '',
-            // Map other attributes as needed
-            ...mentionNode.attrs,
-        },
-    };
-};
-
-/**
- * Converts plain text to Tiptap format, detecting structure based on text patterns
- *
- * @param {string} plainText - Plain text input
- * @returns {Object} - Content in Tiptap format
- */
-export const plainTextToTiptap = (plainText) => {
-    // If input is null or undefined, return empty document
-    if (!plainText) {
-        return {
-            type: 'doc',
-            content: [],
-        };
-    }
-
-    // Create a new Tiptap document
-    const tiptapDoc = {
-        type: 'doc',
-        content: [],
-    };
-
-    // Split the text into lines
-    const lines = plainText.split('\n');
-
-    // Process the lines
-    let i = 0;
-    let inList = false;
-    let listItems = [];
-    let currentSection = null;
-
-    while (i < lines.length) {
-        const line = lines[i];
-        const trimmedLine = line.trim();
-
-        // Handle empty lines
-        if (!trimmedLine) {
-            // If we were in a list, add the list to the document
-            if (inList) {
-                tiptapDoc.content.push({
-                    type: 'bulletList',
-                    content: listItems,
-                });
-                inList = false;
-                listItems = [];
-            }
-
-            // Add an empty paragraph for spacing
-            tiptapDoc.content.push({
-                type: 'paragraph',
-                content: [],
-            });
-
-            i++;
-            continue;
-        }
-
-        // Check if this is the first line (title)
-        if (i === 0) {
-            tiptapDoc.content.push({
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [{ type: 'text', text: trimmedLine }],
-            });
-
-            i++;
-            continue;
-        }
-
-        // Check for section headings
-        // A section heading is typically short (1-4 words) and followed by content
-        const wordCount = trimmedLine.split(/\s+/).length;
-        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
-        const isLastLine = i === lines.length - 1;
-
-        // Detect if this line is a section heading
-        const isSectionHeading =
-            wordCount <= 4 &&
-            !isLastLine &&
-            nextLine &&
-            !nextLine.startsWith('#') &&
-            !nextLine.startsWith('-') &&
-            !nextLine.startsWith('*');
-
-        if (isSectionHeading) {
-            // If we were in a list, add the list to the document
-            if (inList) {
-                tiptapDoc.content.push({
-                    type: 'bulletList',
-                    content: listItems,
-                });
-                inList = false;
-                listItems = [];
-            }
-
-            // Add the section heading
-            tiptapDoc.content.push({
-                type: 'heading',
-                attrs: { level: 2 },
-                content: [{ type: 'text', text: trimmedLine }],
-            });
-
-            currentSection = trimmedLine;
-            i++;
-            continue;
-        }
-
-        // Check if this line is part of a list
-        // Lines after a section heading or indented lines are treated as list items
-        const isIndented = line.startsWith(' ') || line.startsWith('\t');
-        const isPrevLineHeading =
-            currentSection !== null && i > 0 && lines[i - 1].trim() === currentSection;
-
-        if (isPrevLineHeading || isIndented || inList) {
-            inList = true;
-
-            listItems.push({
-                type: 'listItem',
-                content: [
-                    {
-                        type: 'paragraph',
-                        content: [{ type: 'text', text: trimmedLine }],
-                    },
-                ],
-            });
-
-            i++;
-            continue;
-        }
-
-        // Default: treat as paragraph
-        tiptapDoc.content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: trimmedLine }],
-        });
-
-        i++;
-    }
-
-    // If we ended while still in a list, add the list to the document
-    if (inList) {
-        tiptapDoc.content.push({
-            type: 'bulletList',
-            content: listItems,
-        });
-    }
-
-    return tiptapDoc;
 };
