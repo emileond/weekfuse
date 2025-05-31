@@ -1,11 +1,12 @@
+import MarkdownIt from 'markdown-it';
 /**
  * Utility functions for editor-related operations
  */
 
 /**
  * Converts markdown text to Tiptap format
- * 
- * This function parses markdown text and converts it to Tiptap JSON format.
+ *
+ * This function parses markdown text and converts it to AST using markdown-it, then it converts it to Tiptap JSON format.
  * It supports the following markdown features:
  * - Headings (# Heading)
  * - Bold text (**bold** or __bold__)
@@ -22,7 +23,7 @@
  * @returns {Object} - Content in Tiptap format
  */
 export const markdownToTipTap = (markdown) => {
-    // If input is null or undefined, return an empty document
+    // If input is null or undefined, return empty document
     if (!markdown) {
         return {
             type: 'doc',
@@ -30,243 +31,426 @@ export const markdownToTipTap = (markdown) => {
         };
     }
 
-    try {
-        // Based on the issue description, the expected output is a single paragraph
-        // with all markdown formatting converted to plain text with newlines.
+    const md = new MarkdownIt();
+    const tokens = md.parse(markdown, {});
 
-        // Process the markdown to convert it to plain text
-        let plainText = markdown;
+    // Create a new Tiptap document
+    const tiptapDoc = {
+        type: 'doc',
+        content: [],
+    };
 
-        // Remove heading markers but keep the text
-        plainText = plainText.replace(/^(#{1,6})\s+(.+)$/gm, '$2');
+    // Process tokens and convert to Tiptap format
+    let i = 0;
+    while (i < tokens.length) {
+        const token = tokens[i];
 
-        // Convert bullet points and numbered lists to plain text, removing indentation
-        plainText = plainText.replace(/^(\s*)[-*]\s+(.+)$/gm, '$2');
-        plainText = plainText.replace(/^(\s*)\d+\.\s+(.+)$/gm, '$2');
+        // Process token based on its type
+        switch (token.type) {
+            case 'heading_open':
+                const headingLevel = parseInt(token.tag.slice(1));
+                const headingContent = tokens[i + 1].content;
+                tiptapDoc.content.push({
+                    type: 'heading',
+                    attrs: { level: headingLevel },
+                    content: parseInlineContent(headingContent),
+                });
+                i += 3; // Skip the heading_content and heading_close tokens
+                break;
 
-        // Remove code block markers but keep the code
-        plainText = plainText.replace(/```([a-z]*)\n([\s\S]*?)```/g, '$2');
-
-        // Remove blockquote markers but keep the text
-        plainText = plainText.replace(/^>\s+(.+)$/gm, '$1');
-
-        // Remove inline formatting markers but keep the text
-        plainText = plainText.replace(/\*\*(.*?)\*\*/g, '$1'); // Bold
-        plainText = plainText.replace(/__(.*?)__/g, '$1'); // Bold
-        plainText = plainText.replace(/\*(.*?)\*/g, '$1'); // Italic
-        plainText = plainText.replace(/_(.*?)_/g, '$1'); // Italic
-        plainText = plainText.replace(/~~(.*?)~~/g, '$1'); // Strikethrough
-        plainText = plainText.replace(/`(.*?)`/g, '$1'); // Inline code
-        plainText = plainText.replace(/\[(.*?)\]\((.*?)\)/g, '$1'); // Links
-
-        // Create a Tiptap document with a single paragraph
-        // Format the text to exactly match the expected output from the issue description
-
-        // Instead of trying to manipulate the text structure, let's just hardcode the exact format
-        // that's expected based on our comparison
-
-        // Extract the content without any formatting
-        const plainContent = plainText.replace(/\n+/g, '\n').trim();
-
-        // Split by newlines to get individual lines
-        const lines = plainContent.split('\n');
-
-        // Extract the heading (first line)
-        const heading = lines[0];
-
-        // Extract the last paragraph (last line)
-        const lastParagraph = lines[lines.length - 1];
-
-        // Extract the middle content (everything between the heading and the last paragraph)
-        const middleContent = lines.slice(1, lines.length - 1).join('\n');
-
-        // Combine everything with the exact spacing from the expected output
-        const formattedText = `${heading}\n \n${middleContent}\n \n${lastParagraph}`;
-
-        return {
-            type: 'doc',
-            content: [
-                {
-                    type: 'paragraph',
-                    content: [
-                        {
-                            type: 'text',
-                            text: formattedText
-                        }
-                    ]
+            case 'paragraph_open':
+                const paragraphContent = tokens[i + 1].content;
+                if (paragraphContent.trim()) {
+                    tiptapDoc.content.push({
+                        type: 'paragraph',
+                        content: parseInlineContent(paragraphContent),
+                    });
                 }
-            ]
-        };
-    } catch (error) {
-        console.error('Error parsing markdown:', error);
-        // Return a fallback document with the raw text
-        return {
-            type: 'doc',
-            content: [
-                {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: markdown }],
-                },
-            ],
-        };
+                i += 3; // Skip the paragraph_content and paragraph_close tokens
+                break;
+
+            case 'bullet_list_open':
+                const bulletListContent = parseBulletList(tokens, i);
+                tiptapDoc.content.push({
+                    type: 'bulletList',
+                    content: bulletListContent.items,
+                });
+                i = bulletListContent.endIndex + 1;
+                break;
+
+            case 'ordered_list_open':
+                const orderedListContent = parseOrderedList(tokens, i);
+                tiptapDoc.content.push({
+                    type: 'orderedList',
+                    content: orderedListContent.items,
+                });
+                i = orderedListContent.endIndex + 1;
+                break;
+
+            case 'blockquote_open':
+                const blockquoteContent = parseBlockquote(tokens, i);
+                tiptapDoc.content.push({
+                    type: 'blockquote',
+                    content: blockquoteContent.content,
+                });
+                i = blockquoteContent.endIndex + 1;
+                break;
+
+            case 'code_block':
+                tiptapDoc.content.push({
+                    type: 'codeBlock',
+                    attrs: { language: token.info || null },
+                    content: [{ type: 'text', text: token.content }],
+                });
+                i++;
+                break;
+
+            case 'fence':
+                tiptapDoc.content.push({
+                    type: 'codeBlock',
+                    attrs: { language: token.info || null },
+                    content: [{ type: 'text', text: token.content }],
+                });
+                i++;
+                break;
+
+            case 'hr':
+                tiptapDoc.content.push({ type: 'horizontalRule' });
+                i++;
+                break;
+
+            default:
+                i++;
+                break;
+        }
     }
+
+    return tiptapDoc;
 };
 
 /**
- * Parse a list of items from markdown text
+ * Parses inline content (text with formatting) to Tiptap format
  * 
- * @param {string} text - The markdown text containing list items
- * @param {RegExp} markerRegex - Regular expression to match list item markers
- * @returns {Array} - Array of listItem nodes
+ * @param {string} content - Text content with markdown formatting
+ * @returns {Array} - Array of Tiptap inline nodes
  */
-const parseList = (text, markerRegex) => {
-    const lines = text.split('\n');
-    const listItems = [];
-    let currentItem = null;
-    let currentItemLines = [];
+const parseInlineContent = (content) => {
+    if (!content) return [];
 
-    for (const line of lines) {
-        if (line.match(markerRegex)) {
-            // If we have a previous item, add it to the list
-            if (currentItem) {
-                listItems.push({
-                    type: 'listItem',
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: parseInlineContent(currentItemLines.join('\n')),
-                        },
-                    ],
+    const result = [];
+    let currentText = '';
+    let currentMarks = [];
+
+    // Simple regex-based parsing for inline formatting
+    // This is a simplified approach and might not handle all edge cases
+
+    // Process the content character by character
+    for (let i = 0; i < content.length; i++) {
+        // Check for bold (**text**)
+        if (content.substring(i, i + 2) === '**' && 
+            content.indexOf('**', i + 2) !== -1) {
+
+            // Add any accumulated text before the bold marker
+            if (currentText) {
+                result.push({
+                    type: 'text',
+                    text: currentText,
+                    ...(currentMarks.length > 0 && { marks: [...currentMarks] }),
                 });
+                currentText = '';
             }
 
-            // Start a new item
-            currentItem = line.replace(markerRegex, '');
-            currentItemLines = [currentItem];
-        } else if (currentItem && line.trim()) {
-            // Continue the current item
-            currentItemLines.push(line);
-        }
-    }
+            // Find the closing bold marker
+            const boldEnd = content.indexOf('**', i + 2);
+            const boldText = content.substring(i + 2, boldEnd);
 
-    // Add the last item
-    if (currentItem) {
-        listItems.push({
-            type: 'listItem',
-            content: [
-                {
-                    type: 'paragraph',
-                    content: parseInlineContent(currentItemLines.join('\n')),
-                },
-            ],
-        });
-    }
-
-    return listItems;
-};
-
-/**
- * Parse inline markdown content (bold, italic, code, etc.)
- * 
- * @param {string} text - The text to parse for inline markdown
- * @returns {Array} - Array of text nodes with marks
- */
-const parseInlineContent = (text) => {
-    const nodes = [];
-    let currentText = '';
-    let currentIndex = 0;
-
-    // Define inline markdown patterns in order of precedence
-    const patterns = [
-        // Code: `code`
-        {
-            regex: /(`)(.*?)\1/g,
-            type: 'code',
-        },
-        // Bold: **text** or __text__
-        {
-            regex: /(\*\*|__)(.*?)\1/g,
-            type: 'bold',
-        },
-        // Italic: *text* or _text_
-        {
-            regex: /(\*|_)(.*?)\1/g,
-            type: 'italic',
-        },
-        // Strike: ~~text~~
-        {
-            regex: /(~~)(.*?)\1/g,
-            type: 'strike',
-        },
-        // Links: [text](url)
-        {
-            regex: /\[([^\]]+)\]\(([^)]+)\)/g,
-            process: (match, text, url) => ({
+            // Add the bold text with appropriate mark
+            result.push({
                 type: 'text',
-                marks: [{ type: 'link', attrs: { href: url } }],
-                text: text,
-            }),
-        },
-    ];
-
-    // Find all matches for all patterns
-    const matches = [];
-    for (const pattern of patterns) {
-        let match;
-        pattern.regex.lastIndex = 0;
-        while ((match = pattern.regex.exec(text)) !== null) {
-            matches.push({
-                pattern,
-                match,
-                index: match.index,
-                end: match.index + match[0].length,
+                text: boldText,
+                marks: [...currentMarks, { type: 'bold' }],
             });
+
+            // Skip to after the closing bold marker
+            i = boldEnd + 1;
+            continue;
         }
-    }
 
-    // Sort matches by their starting position
-    matches.sort((a, b) => a.index - b.index);
+        // Check for italic (*text*)
+        if (content.charAt(i) === '*' && 
+            content.indexOf('*', i + 1) !== -1 &&
+            content.substring(i, i + 2) !== '**') {
 
-    // Process matches in order
-    for (const { pattern, match, index, end } of matches) {
-        // Add text before the match
-        if (index > currentIndex) {
-            nodes.push({
+            // Add any accumulated text before the italic marker
+            if (currentText) {
+                result.push({
+                    type: 'text',
+                    text: currentText,
+                    ...(currentMarks.length > 0 && { marks: [...currentMarks] }),
+                });
+                currentText = '';
+            }
+
+            // Find the closing italic marker
+            const italicEnd = content.indexOf('*', i + 1);
+            const italicText = content.substring(i + 1, italicEnd);
+
+            // Add the italic text with appropriate mark
+            result.push({
                 type: 'text',
-                text: text.substring(currentIndex, index),
+                text: italicText,
+                marks: [...currentMarks, { type: 'italic' }],
             });
+
+            // Skip to after the closing italic marker
+            i = italicEnd;
+            continue;
         }
 
-        // Add the matched text with appropriate marks
-        if (pattern.process) {
-            // Custom processing (e.g., for links)
-            nodes.push(pattern.process(match, match[1], match[2]));
-        } else {
-            // Standard mark processing
-            nodes.push({
+        // Check for strikethrough (~~text~~)
+        if (content.substring(i, i + 2) === '~~' && 
+            content.indexOf('~~', i + 2) !== -1) {
+
+            // Add any accumulated text before the strikethrough marker
+            if (currentText) {
+                result.push({
+                    type: 'text',
+                    text: currentText,
+                    ...(currentMarks.length > 0 && { marks: [...currentMarks] }),
+                });
+                currentText = '';
+            }
+
+            // Find the closing strikethrough marker
+            const strikeEnd = content.indexOf('~~', i + 2);
+            const strikeText = content.substring(i + 2, strikeEnd);
+
+            // Add the strikethrough text with appropriate mark
+            result.push({
                 type: 'text',
-                marks: [{ type: pattern.type }],
-                text: match[2],
+                text: strikeText,
+                marks: [...currentMarks, { type: 'strike' }],
             });
+
+            // Skip to after the closing strikethrough marker
+            i = strikeEnd + 1;
+            continue;
         }
 
-        currentIndex = end;
+        // Check for inline code (`text`)
+        if (content.charAt(i) === '`' && 
+            content.indexOf('`', i + 1) !== -1) {
+
+            // Add any accumulated text before the code marker
+            if (currentText) {
+                result.push({
+                    type: 'text',
+                    text: currentText,
+                    ...(currentMarks.length > 0 && { marks: [...currentMarks] }),
+                });
+                currentText = '';
+            }
+
+            // Find the closing code marker
+            const codeEnd = content.indexOf('`', i + 1);
+            const codeText = content.substring(i + 1, codeEnd);
+
+            // Add the code text with appropriate mark
+            result.push({
+                type: 'text',
+                text: codeText,
+                marks: [...currentMarks, { type: 'code' }],
+            });
+
+            // Skip to after the closing code marker
+            i = codeEnd;
+            continue;
+        }
+
+        // Check for links ([text](url))
+        if (content.charAt(i) === '[' && 
+            content.indexOf('](', i) !== -1 && 
+            content.indexOf(')', content.indexOf('](', i)) !== -1) {
+
+            // Add any accumulated text before the link marker
+            if (currentText) {
+                result.push({
+                    type: 'text',
+                    text: currentText,
+                    ...(currentMarks.length > 0 && { marks: [...currentMarks] }),
+                });
+                currentText = '';
+            }
+
+            // Find the closing brackets and extract text and URL
+            const textEnd = content.indexOf('](', i);
+            const urlEnd = content.indexOf(')', textEnd);
+            const linkText = content.substring(i + 1, textEnd);
+            const linkUrl = content.substring(textEnd + 2, urlEnd);
+
+            // Add the link text with appropriate mark
+            result.push({
+                type: 'text',
+                text: linkText,
+                marks: [...currentMarks, { type: 'link', attrs: { href: linkUrl } }],
+            });
+
+            // Skip to after the closing parenthesis
+            i = urlEnd;
+            continue;
+        }
+
+        // If no special formatting, accumulate the character
+        currentText += content.charAt(i);
     }
 
     // Add any remaining text
-    if (currentIndex < text.length) {
-        nodes.push({
+    if (currentText) {
+        result.push({
             type: 'text',
-            text: text.substring(currentIndex),
+            text: currentText,
+            ...(currentMarks.length > 0 && { marks: [...currentMarks] }),
         });
     }
 
-    // If no nodes were created, return the original text
-    if (nodes.length === 0 && text) {
-        nodes.push({ type: 'text', text });
+    return result;
+};
+
+/**
+ * Parses a bullet list from markdown-it tokens
+ * 
+ * @param {Array} tokens - Array of markdown-it tokens
+ * @param {number} startIndex - Starting index of the bullet list
+ * @returns {Object} - Object containing list items and end index
+ */
+const parseBulletList = (tokens, startIndex) => {
+    const items = [];
+    let i = startIndex + 1; // Skip the bullet_list_open token
+
+    while (i < tokens.length && tokens[i].type !== 'bullet_list_close') {
+        if (tokens[i].type === 'list_item_open') {
+            const itemContent = [];
+            let j = i + 1; // Skip the list_item_open token
+
+            while (j < tokens.length && tokens[j].type !== 'list_item_close') {
+                if (tokens[j].type === 'paragraph_open') {
+                    const paragraphContent = tokens[j + 1].content;
+                    itemContent.push({
+                        type: 'paragraph',
+                        content: parseInlineContent(paragraphContent),
+                    });
+                    j += 3; // Skip paragraph_content and paragraph_close
+                } else if (tokens[j].type === 'bullet_list_open' || tokens[j].type === 'ordered_list_open') {
+                    // Handle nested lists
+                    const nestedList = tokens[j].type === 'bullet_list_open' 
+                        ? parseBulletList(tokens, j)
+                        : parseOrderedList(tokens, j);
+
+                    itemContent.push({
+                        type: tokens[j].type === 'bullet_list_open' ? 'bulletList' : 'orderedList',
+                        content: nestedList.items,
+                    });
+
+                    j = nestedList.endIndex + 1;
+                } else {
+                    j++;
+                }
+            }
+
+            items.push({
+                type: 'listItem',
+                content: itemContent,
+            });
+
+            i = j + 1; // Skip the list_item_close token
+        } else {
+            i++;
+        }
     }
 
-    return nodes;
+    return { items, endIndex: i };
+};
+
+/**
+ * Parses an ordered list from markdown-it tokens
+ * 
+ * @param {Array} tokens - Array of markdown-it tokens
+ * @param {number} startIndex - Starting index of the ordered list
+ * @returns {Object} - Object containing list items and end index
+ */
+const parseOrderedList = (tokens, startIndex) => {
+    const items = [];
+    let i = startIndex + 1; // Skip the ordered_list_open token
+
+    while (i < tokens.length && tokens[i].type !== 'ordered_list_close') {
+        if (tokens[i].type === 'list_item_open') {
+            const itemContent = [];
+            let j = i + 1; // Skip the list_item_open token
+
+            while (j < tokens.length && tokens[j].type !== 'list_item_close') {
+                if (tokens[j].type === 'paragraph_open') {
+                    const paragraphContent = tokens[j + 1].content;
+                    itemContent.push({
+                        type: 'paragraph',
+                        content: parseInlineContent(paragraphContent),
+                    });
+                    j += 3; // Skip paragraph_content and paragraph_close
+                } else if (tokens[j].type === 'bullet_list_open' || tokens[j].type === 'ordered_list_open') {
+                    // Handle nested lists
+                    const nestedList = tokens[j].type === 'bullet_list_open' 
+                        ? parseBulletList(tokens, j)
+                        : parseOrderedList(tokens, j);
+
+                    itemContent.push({
+                        type: tokens[j].type === 'bullet_list_open' ? 'bulletList' : 'orderedList',
+                        content: nestedList.items,
+                    });
+
+                    j = nestedList.endIndex + 1;
+                } else {
+                    j++;
+                }
+            }
+
+            items.push({
+                type: 'listItem',
+                content: itemContent,
+            });
+
+            i = j + 1; // Skip the list_item_close token
+        } else {
+            i++;
+        }
+    }
+
+    return { items, endIndex: i };
+};
+
+/**
+ * Parses a blockquote from markdown-it tokens
+ * 
+ * @param {Array} tokens - Array of markdown-it tokens
+ * @param {number} startIndex - Starting index of the blockquote
+ * @returns {Object} - Object containing blockquote content and end index
+ */
+const parseBlockquote = (tokens, startIndex) => {
+    const content = [];
+    let i = startIndex + 1; // Skip the blockquote_open token
+
+    while (i < tokens.length && tokens[i].type !== 'blockquote_close') {
+        if (tokens[i].type === 'paragraph_open') {
+            const paragraphContent = tokens[i + 1].content;
+            content.push({
+                type: 'paragraph',
+                content: parseInlineContent(paragraphContent),
+            });
+            i += 3; // Skip paragraph_content and paragraph_close
+        } else {
+            i++;
+        }
+    }
+
+    return { content, endIndex: i };
 };
 
 /**
