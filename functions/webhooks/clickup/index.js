@@ -67,7 +67,7 @@ export async function onRequestPost(context) {
                 .from('user_integrations')
                 .select('workspace_id, user_id, access_token')
                 .eq('type', 'clickup')
-                .eq('user_id', task.user_id)
+                .eq('user_id', task.creator)
                 .single();
 
             // Check if we have integration data
