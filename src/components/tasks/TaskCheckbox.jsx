@@ -34,10 +34,13 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
     const { mutateAsync: updateTask } = useUpdateTask(currentWorkspace);
     const [isJiraTransitionLoading, setIsJiraTransitionLoading] = useState(false);
     const [isClickUpStatusLoading, setIsClickUpStatusLoading] = useState(false);
-    const { data: jiraTransitions } = useJiraTransitions(
-        task?.integration_source === 'jira' ? task?.external_id : null,
-        currentWorkspace?.workspace_id,
-    );
+
+    const { data: jiraTransitions } = useJiraTransitions({
+        issueIdOrKey: task?.integration_source === 'jira' ? task?.external_id : null,
+        user_id: user?.id,
+        workspace_id: currentWorkspace?.workspace_id,
+    });
+
     const { mutateAsync: transitionJiraIssue } = useJiraTransitionIssue();
     const {
         isOpen: isSyncModalOpen,
@@ -143,8 +146,10 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
         setIsJiraTransitionLoading(true);
         try {
             await transitionJiraIssue({
+                task_id: task.id,
                 issueIdOrKey: task?.external_id,
                 transitionId,
+                user_id: user?.id,
                 workspace_id: currentWorkspace?.workspace_id,
             });
             toast.success('Jira status updated');

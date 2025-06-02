@@ -61,13 +61,13 @@ const TaskIntegrationLink = ({ source, external_data }) => {
     }
 };
 
-export const TaskIntegrationDetails = ({ source, external_data }) => {
+export const TaskIntegrationDetails = ({ task_id, source, external_data }) => {
     switch (source) {
         case 'github':
             return <GithubTaskDetails external_data={external_data} />;
 
         case 'jira':
-            return <JiraTaskDetails external_data={external_data} />;
+            return <JiraTaskDetails task_id={task_id} external_data={external_data} />;
 
         case 'trello':
             return <TrelloTaskDetails external_data={external_data} />;
@@ -77,7 +77,7 @@ export const TaskIntegrationDetails = ({ source, external_data }) => {
     }
 };
 
-const TaskIntegrationPanel = ({ source, external_id, external_data }) => {
+const TaskIntegrationPanel = ({ source, task_id, external_data }) => {
     return (
         <div className="flex flex-col gap-6 bg-content2 basis-1/3 p-6 border-l-1 border-default-200">
             <div className="flex gap-3 items-center">
@@ -87,7 +87,11 @@ const TaskIntegrationPanel = ({ source, external_id, external_data }) => {
                 <TaskIntegrationLink source={source} external_data={external_data} />
             </div>
             <Divider />
-            <TaskIntegrationDetails source={source} external_data={external_data} />
+            <TaskIntegrationDetails
+                task_id={task_id}
+                source={source}
+                external_data={external_data}
+            />
         </div>
     );
 };

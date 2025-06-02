@@ -103,6 +103,7 @@ export const githubSync = task({
                             external_id: issue.id,
                             external_data: issue,
                             host: issue.url,
+                            assignee: payload.user_id,
                         },
                         {
                             onConflict: ['integration_source', 'external_id, host'],

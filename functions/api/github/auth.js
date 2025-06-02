@@ -2,6 +2,7 @@ import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
 import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 import { App, Octokit } from 'octokit';
+import { markdownToTipTap } from '../../../src/utils/editorUtils.js';
 
 // Handle DELETE requests for disconnecting GitHub integration
 export async function onRequestDelete(context) {
@@ -136,26 +137,19 @@ export async function onRequestPost(context) {
 
         const issuesData = await octokit.paginate('GET /issues?state=open');
 
-        // Process and store issues (simplified for now)
+        // Process and store issues
         if (issuesData && Array.isArray(issuesData)) {
             const upsertPromises = issuesData.map((issue) =>
                 supabase.from('tasks').upsert(
                     {
                         name: issue.title,
-                        description: {
-                            type: 'doc',
-                            content: [
-                                {
-                                    type: 'paragraph',
-                                    content: [{ type: 'text', text: issue.body }],
-                                },
-                            ],
-                        },
+                        description: issue.body ? markdownToTipTap(issue.body) : null,
                         workspace_id,
                         integration_source: 'github',
                         external_id: issue.id,
                         external_data: issue,
                         host: issue.url,
+                        assignee: user_id,
                     },
                     {
                         onConflict: ['integration_source', 'external_id', 'host'],

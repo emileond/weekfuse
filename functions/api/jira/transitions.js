@@ -1,7 +1,7 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
-import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
+import { calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 
 // Handle GET requests to fetch transitions for a Jira issue
 export async function onRequestGet(context) {
@@ -21,11 +21,13 @@ export async function onRequestGet(context) {
         }
 
         const workspace_id = url.searchParams.get('workspace_id');
-        if (!workspace_id) {
+        const user_id = url.searchParams.get('user_id');
+
+        if (!workspace_id || !user_id) {
             return Response.json(
                 {
                     success: false,
-                    error: 'Missing workspace_id parameter',
+                    error: 'Missing parameters',
                 },
                 { status: 400 },
             );
@@ -41,6 +43,7 @@ export async function onRequestGet(context) {
             .eq('type', 'jira')
             .eq('status', 'active')
             .eq('workspace_id', workspace_id)
+            .eq('user_id', user_id)
             .single();
 
         if (integrationError || !integration) {
@@ -56,7 +59,8 @@ export async function onRequestGet(context) {
 
         // Check if token has expired
         const currentTime = dayjs().utc();
-        const tokenExpired = !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
+        const tokenExpired =
+            !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
 
         let accessToken = integration.access_token;
         let refreshToken = integration.refresh_token;
@@ -106,9 +110,10 @@ export async function onRequestGet(context) {
                     refresh_token: refreshToken,
                     expires_at: expiresAt,
                 })
-                .eq('workspace_id', workspace_id)
                 .eq('type', 'jira')
-                .eq('status', 'active');
+                .eq('status', 'active')
+                .eq('user_id', user_id)
+                .eq('workspace_id', workspace_id);
         }
 
         // Get the resources for the Jira instance
@@ -168,9 +173,10 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
     try {
         // Get the request body
-        const { issueIdOrKey, transitionId, workspace_id } = await context.request.json();
+        const { task_id, issueIdOrKey, transitionId, user_id, workspace_id } =
+            await context.request.json();
 
-        if (!issueIdOrKey || !transitionId || !workspace_id) {
+        if (!task_id || !issueIdOrKey || !transitionId || !user_id || !workspace_id) {
             return Response.json(
                 {
                     success: false,
@@ -186,9 +192,10 @@ export async function onRequestPost(context) {
         // Get the workspace integration to get the access_token
         const { data: integration, error: integrationError } = await supabase
             .from('user_integrations')
-            .select('access_token, refresh_token, expires_at')
+            .select('access_token, refresh_token, expires_at, external_data')
             .eq('type', 'jira')
             .eq('status', 'active')
+            .eq('user_id', user_id)
             .eq('workspace_id', workspace_id)
             .single();
 
@@ -205,7 +212,8 @@ export async function onRequestPost(context) {
 
         // Check if token has expired
         const currentTime = dayjs().utc();
-        const tokenExpired = !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
+        const tokenExpired =
+            !integration.expires_at || currentTime.isAfter(dayjs(integration.expires_at));
 
         let accessToken = integration.access_token;
         let refreshToken = integration.refresh_token;
@@ -253,9 +261,10 @@ export async function onRequestPost(context) {
                     refresh_token: refreshToken,
                     expires_at: expiresAt,
                 })
-                .eq('workspace_id', workspace_id)
                 .eq('type', 'jira')
-                .eq('status', 'active');
+                .eq('status', 'active')
+                .eq('user_id', user_id)
+                .eq('workspace_id', workspace_id);
         }
 
         // Get the resources for the Jira instance
@@ -302,8 +311,7 @@ export async function onRequestPost(context) {
         const { data: task, error: selectError } = await supabase
             .from('tasks')
             .select('external_data')
-            .eq('external_id', issueIdOrKey)
-            .eq('integration_source', 'jira')
+            .eq('id', task_id)
             .single();
 
         if (!selectError && task) {
@@ -331,7 +339,7 @@ export async function onRequestPost(context) {
             await supabase
                 .from('tasks')
                 .update({ external_data: updatedExternalData })
-                .eq('external_id', issueIdOrKey)
+                .eq('id', task_id)
                 .eq('integration_source', 'jira');
         }
 

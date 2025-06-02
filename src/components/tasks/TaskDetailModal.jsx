@@ -246,6 +246,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                     </form>
                     {task?.integration_source && (
                         <TaskIntegrationPanel
+                            task_id={task.id}
                             source={task.integration_source}
                             external_id={task?.external_id}
                             external_data={task?.external_data}

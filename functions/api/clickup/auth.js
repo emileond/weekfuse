@@ -168,6 +168,7 @@ export async function onRequestPost(context) {
                         external_id: task.id,
                         external_data: task,
                         host: task.url,
+                        assignee: user_id,
                     },
                     {
                         onConflict: ['integration_source', 'external_id', 'host'],

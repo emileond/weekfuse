@@ -78,6 +78,7 @@ export const trelloSync = task({
                             external_id: card.id,
                             external_data: card,
                             host: card.url,
+                            assignee: payload.user_id,
                         },
                         {
                             onConflict: ['integration_source', 'external_id, host'],

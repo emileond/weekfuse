@@ -1,13 +1,4 @@
-import {
-    Modal,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalFooter,
-    Button,
-    Input,
-    Divider,
-} from '@heroui/react';
+import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } from '@heroui/react';
 import { useForm } from 'react-hook-form';
 import { useCreateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
@@ -19,8 +10,10 @@ import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
+import { useUser } from '../../hooks/react-query/user/useUser.js';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defaultMilestone }) => {
+    const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
     const [selectedDate, setSelectedDate] = useState(defaultDate); // State to track selected date
@@ -52,6 +45,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                     milestone_id: selectedMilestone?.value || null,
                     tags: selectedTags.length > 0 ? selectedTags : null,
                     priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
+                    assignee: user?.id,
                     status: 'pending',
                 },
             });

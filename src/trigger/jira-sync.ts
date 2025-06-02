@@ -147,6 +147,7 @@ export const jiraSync = task({
                                 external_id: issue.id,
                                 external_data: issue,
                                 host: resourceUrl,
+                                assignee: payload.user_id,
                             },
                             {
                                 onConflict: ['integration_source', 'external_id', 'host'],
@@ -189,12 +190,15 @@ export const jiraSync = task({
                 try {
                     // Fetch webhooks
                     const webhooksResponse = await ky
-                        .get(`https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`, {
-                            headers: {
-                                Authorization: `Bearer ${access_token}`,
-                                Accept: 'application/json',
+                        .get(
+                            `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${access_token}`,
+                                    Accept: 'application/json',
+                                },
                             },
-                        })
+                        )
                         .json();
 
                     if (webhooksResponse.values && webhooksResponse.values.length > 0) {
@@ -208,7 +212,9 @@ export const jiraSync = task({
                                 const daysUntilExpiration = expirationDate.diff(now, 'day');
 
                                 if (daysUntilExpiration <= 7) {
-                                    logger.log(`Webhook ${webhook.id} will expire in ${daysUntilExpiration} days. Refreshing...`);
+                                    logger.log(
+                                        `Webhook ${webhook.id} will expire in ${daysUntilExpiration} days. Refreshing...`,
+                                    );
                                     webhooksToRefresh.push(webhook.id);
                                 }
                             }
@@ -217,18 +223,23 @@ export const jiraSync = task({
                         // Refresh webhooks that are close to expiring
                         if (webhooksToRefresh.length > 0) {
                             const refreshResponse = await ky
-                                .put(`https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook/refresh`, {
-                                    json: {
-                                        webhookIds: webhooksToRefresh
+                                .put(
+                                    `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/3/webhook/refresh`,
+                                    {
+                                        json: {
+                                            webhookIds: webhooksToRefresh,
+                                        },
+                                        headers: {
+                                            Authorization: `Bearer ${access_token}`,
+                                            'Content-Type': 'application/json',
+                                        },
                                     },
-                                    headers: {
-                                        Authorization: `Bearer ${access_token}`,
-                                        'Content-Type': 'application/json',
-                                    },
-                                })
+                                )
                                 .json();
 
-                            logger.log(`Successfully refreshed ${webhooksToRefresh.length} webhooks for resource ${resource.id}`);
+                            logger.log(
+                                `Successfully refreshed ${webhooksToRefresh.length} webhooks for resource ${resource.id}`,
+                            );
                         } else {
                             logger.log(`No webhooks need refreshing for resource ${resource.id}`);
                         }
@@ -236,7 +247,9 @@ export const jiraSync = task({
                         logger.log(`No webhooks found for resource ${resource.id}`);
                     }
                 } catch (webhookError) {
-                    logger.error(`Error checking/refreshing webhooks for resource ${resource.id}: ${webhookError.message}`);
+                    logger.error(
+                        `Error checking/refreshing webhooks for resource ${resource.id}: ${webhookError.message}`,
+                    );
                     // Continue with other resources even if webhook refresh fails for one
                 }
             }

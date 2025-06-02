@@ -66,11 +66,11 @@ export async function onRequestPost(context) {
                 name: issue.fields.summary,
                 description: JSON.stringify(convertedDesc) || null,
                 workspace_id,
-                user_id,
                 integration_source: 'jira',
                 external_id: issue.id,
                 external_data: issue,
                 host: host,
+                assignee: user_id,
             });
 
             if (insertError) {
@@ -88,7 +88,7 @@ export async function onRequestPost(context) {
         if (webhookEvent === 'jira:issue_updated') {
             // Convert description to Tiptap format if available
             const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
-            
+
             // Extract host from issue.self URL
             let host = null;
             if (issue.self) {

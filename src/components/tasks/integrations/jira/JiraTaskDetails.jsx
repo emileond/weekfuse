@@ -18,14 +18,17 @@ import {
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useUser } from '../../../../hooks/react-query/user/useUser.js';
 
-const JiraTaskDetails = ({ external_data }) => {
+const JiraTaskDetails = ({ task_id, external_data }) => {
+    const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const queryClient = useQueryClient();
-    const { data: transitions } = useJiraTransitions(
-        external_data?.id,
-        currentWorkspace?.workspace_id,
-    );
+    const { data: transitions } = useJiraTransitions({
+        issueIdOrKey: external_data?.id,
+        user_id: user?.id,
+        workspace_id: currentWorkspace?.workspace_id,
+    });
     const { mutateAsync: transitionIssue } = useJiraTransitionIssue();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -33,8 +36,10 @@ const JiraTaskDetails = ({ external_data }) => {
         setIsLoading(true);
         try {
             await transitionIssue({
+                task_id,
                 issueIdOrKey: external_data?.id,
                 transitionId,
+                user_id: user?.id,
                 workspace_id: currentWorkspace?.workspace_id,
             });
             toast.success('Jira status updated');

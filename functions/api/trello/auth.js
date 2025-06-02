@@ -212,6 +212,7 @@ export async function onRequestPost(context) {
                         external_id: card.id,
                         external_data: card,
                         host: card.url,
+                        assignee: user_id,
                     },
                     {
                         onConflict: ['integration_source', 'external_id', 'host'],
