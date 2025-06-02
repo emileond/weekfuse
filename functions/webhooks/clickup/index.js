@@ -50,7 +50,7 @@ export async function onRequestPost(context) {
             // Get the current external_data for the task
             const { data: task, error: selectError } = await supabase
                 .from('tasks')
-                .select('user_id')
+                .select('creator')
                 .eq('external_id', task_id)
                 .eq('integration_source', 'clickup')
                 .single();

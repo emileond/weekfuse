@@ -45,8 +45,9 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                     milestone_id: selectedMilestone?.value || null,
                     tags: selectedTags.length > 0 ? selectedTags : null,
                     priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
-                    assignee: user?.id,
                     status: 'pending',
+                    assignee: user?.id,
+                    creator: user?.id,
                 },
             });
             toast.success('Task created successfully');

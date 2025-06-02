@@ -71,6 +71,7 @@ export async function onRequestPost(context) {
                 external_data: issue,
                 host: host,
                 assignee: user_id,
+                creator: user_id,
             });
 
             if (insertError) {

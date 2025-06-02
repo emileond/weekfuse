@@ -172,6 +172,7 @@ export async function onRequestPost(context) {
                             external_data: issue,
                             host: resourceUrl,
                             assignee: user_id,
+                            creator: user_id,
                         },
                         {
                             onConflict: ['integration_source', 'external_id', 'host'],

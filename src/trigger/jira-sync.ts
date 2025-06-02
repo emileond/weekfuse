@@ -148,6 +148,7 @@ export const jiraSync = task({
                                 external_data: issue,
                                 host: resourceUrl,
                                 assignee: payload.user_id,
+                                creator: payload.user_id,
                             },
                             {
                                 onConflict: ['integration_source', 'external_id', 'host'],

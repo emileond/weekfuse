@@ -92,6 +92,7 @@ export const clickupSync = task({
                             external_data: task,
                             host: task.url,
                             assignee: payload.user_id,
+                            creator: payload.user_id,
                         },
                         {
                             onConflict: ['integration_source', 'external_id, host'],
