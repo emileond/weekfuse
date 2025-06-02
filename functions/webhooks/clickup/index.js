@@ -50,7 +50,7 @@ export async function onRequestPost(context) {
             // Get the current external_data for the task
             const { data: task, error: selectError } = await supabase
                 .from('tasks')
-                .select('creator')
+                .select('id, creator')
                 .eq('external_id', task_id)
                 .eq('integration_source', 'clickup')
                 .single();
@@ -99,18 +99,17 @@ export async function onRequestPost(context) {
                     : null;
 
                 // Update the task in supabase
-                const { error: updateError } = await supabase.from('tasks').upsert(
-                    {
+                const { error: updateError } = await supabase
+                    .from('tasks')
+                    .update({
                         name: taskData.name,
                         description: JSON.stringify(convertedDesc) || null,
                         external_id: taskData.id,
                         external_data: taskData,
                         host: taskData.url,
-                    },
-                    {
-                        onConflict: ['integration_source', 'external_id', 'host'],
-                    },
-                );
+                    })
+                    .eq('integration_source', 'clickup')
+                    .eq('id', task.id);
 
                 if (updateError) {
                     console.error(`Update error for task ${task_id}:`, updateError);
