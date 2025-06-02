@@ -153,7 +153,6 @@ export async function onRequestPost(context) {
         // Process and store tasks
         if (allTasks.length > 0) {
             const upsertPromises = allTasks.map((task) => {
-                console.log(task);
                 // Convert description to Tiptap format if available
                 const convertedDesc = task?.markdown_description
                     ? markdownToTipTap(task.description)
