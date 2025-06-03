@@ -1,17 +1,13 @@
 import { Button, useDisclosure, Pagination, Spinner, Input, Divider } from '@heroui/react';
-import { RiAddLine, RiArchiveStackLine, RiSearchLine, RiFilterLine } from 'react-icons/ri';
+import { RiAddLine, RiArchiveStackLine, RiSearchLine } from 'react-icons/ri';
 import { useBacklogTasks, useFuzzySearchTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import DraggableList from './DraggableList.jsx';
 import NewTaskModal from './NewTaskModal.jsx';
+import TasksFilters from './TasksFilters.jsx';
 import { useEffect, useState, useCallback, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import debounce from '../../utils/debounceUtils.js';
-import ProjectSelect from '../form/ProjectSelect.jsx';
-import MilestoneSelect from '../form/MilestoneSelect.jsx';
-import TagSelect from '../form/TagSelect.jsx';
-import IntegrationSourceSelect from '../form/IntegrationSourceSelect.jsx';
-import PrioritySelect from '../form/PrioritySelect.jsx';
 
 // Memoized panel content component to prevent unnecessary re-renders
 // eslint-disable-next-line react/display-name
@@ -21,15 +17,16 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
     const { register, watch } = useForm();
     const searchTerm = watch('searchTerm', '');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
-    const [resetKey, setResetKey] = useState(0); // Add a key to force re-render of filter components
+    const [showFilters, setShowFilters] = useState(true);
 
-    // Filter state variables
-    const [selectedProject, setSelectedProject] = useState(null);
-    const [selectedMilestone, setSelectedMilestone] = useState(null);
-    const [selectedTags, setSelectedTags] = useState([]);
-    const [selectedIntegrationSource, setSelectedIntegrationSource] = useState(null);
-    const [selectedPriority, setSelectedPriority] = useState(null);
+    // Filter state
+    const [filters, setFilters] = useState({
+        project_id: null,
+        milestone_id: null,
+        tags: null,
+        integration_source: null,
+        priority: null,
+    });
 
     // Create a debounced function to update search term
     const debouncedSetSearchTerm = useCallback(
@@ -47,22 +44,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
-    }, [
-        selectedProject,
-        selectedMilestone,
-        selectedTags,
-        selectedIntegrationSource,
-        selectedPriority,
-    ]);
-
-    // Create filters object for the useBacklogTasks hook
-    const filters = {
-        project_id: selectedProject,
-        milestone_id: selectedMilestone,
-        tags: selectedTags.length > 0 ? selectedTags : null,
-        integration_source: selectedIntegrationSource,
-        priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
-    };
+    }, [filters]);
 
     // Use the hook with pagination parameters and filters for backlog tasks
     const { data: tasksData, refetch } = useBacklogTasks(currentWorkspace, page, pageSize, filters);
@@ -113,7 +95,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                         Add task
                     </Button>
                 </div>
-                <div className="flex items-center gap-1 mb-3">
+                <div className="flex flex-col gap-1 mb-3">
                     <Input
                         size="sm"
                         color="primary"
@@ -123,86 +105,29 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                         {...register('searchTerm')}
                         autoComplete="off"
                     />
-                    <div>
-                        <Button
-                            size="sm"
-                            color={showFilters ? 'primary' : 'default'}
-                            variant={showFilters ? 'flat' : 'light'}
-                            startContent={<RiFilterLine fontSize=".85rem" />}
-                            onPress={() => setShowFilters(!showFilters)}
-                        >
-                            Filters
-                        </Button>
-                    </div>
+
+                    <TasksFilters
+                        showFilters={showFilters}
+                        onShowFiltersChange={setShowFilters}
+                        onFiltersChange={setFilters}
+                        initialFilters={filters}
+                    />
                 </div>
-                {showFilters && (
-                    <div className="mb-4">
-                        <div className="flex flex-wrap gap-2 mb-2">
-                            <ProjectSelect
-                                key={`project-select-${resetKey}`}
-                                onChange={(value) => setSelectedProject(value?.value || null)}
-                            />
-                            {selectedProject && (
-                                <MilestoneSelect
-                                    key={`milestone-select-${selectedProject}-${resetKey}`}
-                                    projectId={selectedProject}
-                                    onChange={(value) => setSelectedMilestone(value?.value || null)}
-                                />
-                            )}
-                            <TagSelect
-                                key={`tag-select-${resetKey}`}
-                                onChange={setSelectedTags}
-                                multiple={true}
-                            />
-                            <IntegrationSourceSelect
-                                key={`integration-source-select-${resetKey}`}
-                                onChange={setSelectedIntegrationSource}
-                            />
-                            <PrioritySelect
-                                key={`priority-select-${resetKey}`}
-                                onChange={setSelectedPriority}
-                            />
-                        </div>
-                        {(selectedProject ||
-                            selectedMilestone ||
-                            selectedTags.length > 0 ||
-                            selectedIntegrationSource ||
-                            selectedPriority) && (
-                            <Button
-                                size="sm"
-                                color="danger"
-                                variant="light"
-                                className="mt-2"
-                                onPress={() => {
-                                    setSelectedProject(null);
-                                    setSelectedMilestone(null);
-                                    setSelectedTags([]);
-                                    setSelectedIntegrationSource(null);
-                                    setSelectedPriority(null);
-                                    setResetKey((prevKey) => prevKey + 1); // Increment reset key to force re-render
-                                }}
-                            >
-                                Clear filters
-                            </Button>
-                        )}
-                        <Divider className="my-4" />
-                    </div>
-                )}
 
                 {isSearchActive && isSearching ? (
                     <div className="flex grow items-center justify-center">
                         <Spinner size="lg" />
                     </div>
                 ) : tasks.length > 0 ? (
-                    <DraggableList 
-                        id="backlog" 
-                        items={tasks} 
-                        group="tasks" 
-                        smallCards 
+                    <DraggableList
+                        id="backlog"
+                        items={tasks}
+                        group="tasks"
+                        smallCards
                         onDragEnd={(e, startCol) => {
                             // This component doesn't need to handle drag and drop business logic
                             // as it's only a source for dragging, not a target for dropping
-                        }} 
+                        }}
                     />
                 ) : (
                     <div className="flex grow items-center justify-center">

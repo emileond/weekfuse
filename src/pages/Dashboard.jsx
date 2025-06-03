@@ -4,6 +4,7 @@ import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTasks, useUpdateMultipleTasks } from '../hooks/react-query/tasks/useTasks.js';
+import TasksFilters from '../components/tasks/TasksFilters.jsx';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import Paywall from '../components/marketing/Paywall';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
@@ -36,10 +37,19 @@ function DashboardPage() {
     const [insufficientCredits, setInsufficientCredits] = useState(false);
     const [isRescheduling, setIsRescheduling] = useState(false);
     const [isTaskAlertDismissed, setIsTaskAlertDismissed] = useState(false);
+    const [showFilters, setShowFilters] = useState(true);
+    const [filters, setFilters] = useState({
+        project_id: null,
+        milestone_id: null,
+        tags: null,
+        integration_source: null,
+        priority: null,
+    });
     const queryClient = useQueryClient();
     const { data: todayTasks, refetch: refetchToday } = useTasks(currentWorkspace, {
         startDate: dayjs().startOf('day').toISOString(),
         endDate: dayjs().endOf('day').toISOString(),
+        ...filters,
     });
     const { data: overdueTasks, refetch: refetchOverdue } = useTasks(currentWorkspace, {
         statusList: ['pending'],
@@ -216,6 +226,12 @@ function DashboardPage() {
                 onClick={onOpenChange}
             >
                 <TaskViewToggle onChange={handleViewChange} />
+                <TasksFilters
+                    showFilters={showFilters}
+                    onShowFiltersChange={setShowFilters}
+                    onFiltersChange={setFilters}
+                    initialFilters={filters}
+                />
                 <div className="flex flex-col gap-3">
                     <div ref={parent} className="flex flex-col gap-2">
                         {hasTooManyTasks && !isTaskAlertDismissed && (
@@ -226,7 +242,7 @@ function DashboardPage() {
                             />
                         )}
                         {todayTasks && todayTasks.length > 0 && (
-                            <div className="py-3">
+                            <div className="py-3 mt-3">
                                 <Progress
                                     label={`${completedTasksCount}/${todayTasks.length} completed`}
                                     aria-label="Today's progress"

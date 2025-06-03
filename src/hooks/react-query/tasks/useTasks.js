@@ -11,6 +11,9 @@ const fetchTasks = async ({
     endDate,
     project_id,
     milestone_id,
+    tags,
+    integration_source,
+    priority,
 }) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
 
@@ -37,6 +40,19 @@ const fetchTasks = async ({
             query = query.eq('milestone_id', milestone_id); // Filter by milestone
         }
 
+        if (tags && tags.length > 0) {
+            // For tags, we need to check if the task's tags array contains any of the selected tags
+            query = query.contains('tags', tags);
+        }
+
+        if (integration_source) {
+            query = query.eq('integration_source', integration_source);
+        }
+
+        if (priority) {
+            query = query.eq('priority', priority);
+        }
+
         query = query.order('order');
     }
 
@@ -61,6 +77,9 @@ export const useTasks = (currentWorkspace, filters = {}) => {
                 endDate: filters.endDate,
                 project_id: filters.project_id,
                 milestone_id: filters.milestone_id,
+                tags: filters.tags,
+                integration_source: filters.integration_source,
+                priority: filters.priority,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!currentWorkspace, // Only fetch if workspace is provided

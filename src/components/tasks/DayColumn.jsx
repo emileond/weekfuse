@@ -34,9 +34,7 @@ const DayColumn = ({ day }) => {
         const itemIndex = e?.draggedNode?.data.index;
         const itemId = e?.draggedNode?.data?.value?.id;
         const itemDate = e?.draggedNode?.data?.value?.date
-            ? dayjs(e?.draggedNode?.data?.value?.date)
-                  ?.tz(dayjs.tz.guess(), true)
-                  ?.toISOString()
+            ? dayjs(e?.draggedNode?.data?.value?.date)?.tz(dayjs.tz.guess(), true)?.toISOString()
             : null;
 
         const columnItems = e.values; // The items in the target column
@@ -45,10 +43,7 @@ const DayColumn = ({ day }) => {
         // If the target list is valid (a date column)
         let updatedDate = null;
         if (dayjs(newDate).isValid()) {
-            updatedDate = dayjs(newDate)
-                .startOf('day')
-                .tz(dayjs.tz.guess(), true)
-                .toISOString();
+            updatedDate = dayjs(newDate).startOf('day').tz(dayjs.tz.guess(), true).toISOString();
         }
 
         // if item date and target date are the same, return
@@ -82,8 +77,8 @@ const DayColumn = ({ day }) => {
         try {
             await updateMultipleTasks({
                 tasks: tasksToUpdate,
-                startCol,
-                endCol
+                startCol: startCol || 'backlog', // Default to 'backlog' if startCol is not provided
+                endCol,
             });
         } catch (error) {
             console.error('Error updating tasks:', error);
@@ -122,7 +117,15 @@ const DayColumn = ({ day }) => {
                 >
                     Add task
                 </Button>
-                {tasks && <DraggableList id={dateStr} items={tasks} group="tasks" smallCards onDragEnd={handleDragEnd} />}
+                {tasks && (
+                    <DraggableList
+                        id={dateStr}
+                        items={tasks}
+                        group="tasks"
+                        smallCards
+                        onDragEnd={handleDragEnd}
+                    />
+                )}
             </div>
         </>
     );
