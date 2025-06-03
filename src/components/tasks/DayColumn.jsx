@@ -73,11 +73,12 @@ const DayColumn = ({ day }) => {
                 },
             ];
         }
+
         // Call the bulk update function
         try {
             await updateMultipleTasks({
                 tasks: tasksToUpdate,
-                startCol: startCol || 'backlog', // Default to 'backlog' if startCol is not provided
+                startCol: startCol || 'backlog',
                 endCol,
             });
         } catch (error) {

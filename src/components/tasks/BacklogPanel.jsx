@@ -1,6 +1,10 @@
 import { Button, useDisclosure, Pagination, Spinner, Input, Divider } from '@heroui/react';
 import { RiAddLine, RiArchiveStackLine, RiSearchLine } from 'react-icons/ri';
-import { useBacklogTasks, useFuzzySearchTasks } from '../../hooks/react-query/tasks/useTasks.js';
+import {
+    useBacklogTasks,
+    useFuzzySearchTasks,
+    useUpdateMultipleTasks,
+} from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 import DraggableList from './DraggableList.jsx';
 import NewTaskModal from './NewTaskModal.jsx';
@@ -8,6 +12,7 @@ import TasksFilters from './TasksFilters.jsx';
 import { useEffect, useState, useCallback, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import debounce from '../../utils/debounceUtils.js';
+import dayjs from 'dayjs';
 
 // Memoized panel content component to prevent unnecessary re-renders
 // eslint-disable-next-line react/display-name
@@ -57,12 +62,72 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
         'pending',
     );
 
+    const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
+
     // Determine which tasks to display based on debounced search term
     const isSearchActive = debouncedSearchTerm && debouncedSearchTerm.trim() !== '';
     const tasks = isSearchActive ? searchData?.data || [] : tasksData?.data || [];
 
     const [totalTasks, setTotalTasks] = useState(tasksData?.count);
     const totalPages = Math.ceil(totalTasks / pageSize);
+
+    const handleDragEnd = async (e, startCol) => {
+        const endCol = e.parent.el.id; // YYYY-MM-DD string
+
+        const itemIndex = e?.draggedNode?.data.index;
+        const itemId = e?.draggedNode?.data?.value?.id;
+        const itemDate = e?.draggedNode?.data?.value?.date
+            ? dayjs(e?.draggedNode?.data?.value?.date)?.tz(dayjs.tz.guess(), true)?.toISOString()
+            : null;
+
+        const columnItems = e.values; // The items in the target column
+        const newDate = e.parent.el.id; // The target list (backlog or a date)
+
+        // If the target list is valid (a date column)
+        let updatedDate = null;
+        if (dayjs(newDate).isValid()) {
+            updatedDate = dayjs(newDate).startOf('day').tz(dayjs.tz.guess(), true).toISOString();
+        }
+
+        // if item date and target date are the same, return
+        if (itemDate === updatedDate) return;
+
+        let tasksToUpdate = null;
+
+        // Prepare the tasks to be updated
+        if (updatedDate) {
+            // only update all items in the column if is a day col
+            tasksToUpdate = columnItems.map((item, index) => ({
+                taskId: item.id,
+                updates: {
+                    date: updatedDate,
+                    order: index,
+                },
+            }));
+        } else {
+            // otherwise is going to the backlog, so only update the dragged item
+            tasksToUpdate = [
+                {
+                    taskId: itemId,
+                    updates: {
+                        date: null,
+                        order: itemIndex,
+                    },
+                },
+            ];
+        }
+        
+        // Call the bulk update function
+        try {
+            await updateMultipleTasks({
+                tasks: tasksToUpdate,
+                startCol: startCol || 'backlog',
+                endCol,
+            });
+        } catch (error) {
+            console.error('Error updating tasks:', error);
+        }
+    };
 
     useEffect(() => {
         if (tasksData?.count && !isSearchActive) {
@@ -124,10 +189,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                         items={tasks}
                         group="tasks"
                         smallCards
-                        onDragEnd={(e, startCol) => {
-                            // This component doesn't need to handle drag and drop business logic
-                            // as it's only a source for dragging, not a target for dropping
-                        }}
+                        onDragEnd={handleDragEnd}
                     />
                 ) : (
                     <div className="flex grow items-center justify-center">
