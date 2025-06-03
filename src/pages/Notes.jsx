@@ -16,7 +16,7 @@ const Notes = () => {
     const handleOnCancel = () => {
         setIsOpen(false);
     };
-    
+
     const handleOnNewNote = () => {
         setIsOpen(false);
     };
@@ -25,7 +25,7 @@ const Notes = () => {
         <AppLayout>
             <PageLayout
                 title="Notes"
-                maxW="2xl"
+                maxW="3xl"
                 onClick={() => setIsOpen(true)}
                 primaryAction="New note"
             >

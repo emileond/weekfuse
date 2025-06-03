@@ -26,7 +26,7 @@ function UpcomingPage() {
     return (
         <AppLayout>
             <PageLayout
-                maxW="screen-2xl"
+                maxW="full"
                 title="Upcoming"
                 primaryAction={`${lastPlanResponse ? 'Rollback' : 'Auto Plan'}`}
                 icon={

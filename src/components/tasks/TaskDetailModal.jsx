@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
@@ -27,7 +27,8 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [selectedTags, setSelectedTags] = useState([]);
     const [selectedPriority, setSelectedPriority] = useState(null);
 
-    const isExternal = !!task?.integration_source;
+    // Memoize this value to avoid recalculation on every render
+    const isExternal = useMemo(() => !!task?.integration_source, [task?.integration_source]);
 
     const {
         register,
@@ -42,43 +43,55 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         },
     });
 
-    // Reset form when modal opens/closes
+    // Reset form when modal opens/closes - optimized to reduce unnecessary state updates
     useEffect(() => {
         if (isOpen && task) {
-            // Reset form with task values when modal opens
+            // Use a single batch update for all form fields
+            const taskDate = task.date ? new Date(task.date) : null;
+
+            // Prepare tags data
+            let tagsData = [];
+            if (task.tags && Array.isArray(task.tags)) {
+                tagsData = task.tags;
+            } else if (task.tags) {
+                tagsData = [task.tags];
+            }
+
+            // Prepare priority data
+            const priorityData = (task.priority !== null && task.priority !== undefined) 
+                ? { value: task.priority }
+                : null;
+
+            // Reset all form fields at once
             reset({
                 name: task.name || '',
-                date: task.date ? new Date(task.date) : null,
+                date: taskDate,
             });
+
+            // Batch state updates for better performance
             setDescription(task.description || '');
-            setSelectedDate(task.date ? new Date(task.date) : null);
-
-            // Update isCompleted state based on task status
+            setSelectedDate(taskDate);
             setIsCompleted(task.status === 'completed');
-
-            // Set initial project if task has one
             setSelectedProject(task.project_id ? { value: task.project_id } : null);
-
-            // Set initial milestone if task has one
             setSelectedMilestone(task.milestone_id ? { value: task.milestone_id } : null);
-
-            // Set initial tags if task has them
-            if (task.tags && Array.isArray(task.tags)) {
-                setSelectedTags(task.tags);
-            } else if (task.tags) {
-                setSelectedTags([task.tags]);
-            } else {
-                setSelectedTags([]);
-            }
-
-            // Set initial priority if task has one
-            if (task.priority !== null && task.priority !== undefined) {
-                setSelectedPriority({ value: task.priority });
-            } else {
-                setSelectedPriority(null);
-            }
+            setSelectedTags(tagsData);
+            setSelectedPriority(priorityData);
         }
     }, [isOpen, task, reset]);
+
+    // Helper function to compare tags arrays - moved outside onSubmit and memoized
+    const areTagsEqual = useCallback((tags1, tags2) => {
+        if (!tags1 && !tags2) return true;
+        if (!tags1 || !tags2) return false;
+        if (!Array.isArray(tags1) || !Array.isArray(tags2)) return false;
+        if (tags1.length !== tags2.length) return false;
+
+        // Sort both arrays to ensure consistent comparison
+        const sortedTags1 = [...tags1].sort();
+        const sortedTags2 = [...tags2].sort();
+
+        return sortedTags1.every((tag, index) => tag === sortedTags2[index]);
+    }, []);
 
     const onSubmit = async (data) => {
         try {
@@ -94,20 +107,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             };
 
             // Check if the data has actually changed
-            // Helper function to compare tags arrays
-            const areTagsEqual = (tags1, tags2) => {
-                if (!tags1 && !tags2) return true;
-                if (!tags1 || !tags2) return false;
-                if (!Array.isArray(tags1) || !Array.isArray(tags2)) return false;
-                if (tags1.length !== tags2.length) return false;
-
-                // Sort both arrays to ensure consistent comparison
-                const sortedTags1 = [...tags1].sort();
-                const sortedTags2 = [...tags2].sort();
-
-                return sortedTags1.every((tag, index) => tag === sortedTags2[index]);
-            };
-
             const hasChanged =
                 updates.name !== (task.name || '') ||
                 updates.description !== (task.description || '') ||

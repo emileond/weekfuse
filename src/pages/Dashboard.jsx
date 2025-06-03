@@ -21,11 +21,15 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import EmptyState from '../components/EmptyState.jsx';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useQueryClient } from '@tanstack/react-query';
+import TaskViewToggle from '../components/nav/TaskViewToggle.jsx';
+import KanbanView from '../components/tasks/KanbanView.jsx';
+import TableView from '../components/tasks/TableView.jsx';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 function DashboardPage() {
+    const [pageView, setPageView] = useState();
     const [parent] = useAutoAnimate();
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpenChange } = useDisclosure();
@@ -115,6 +119,56 @@ function DashboardPage() {
         }
     };
 
+    const handleViewChange = (newView) => {
+        setPageView(newView);
+    };
+
+    const renderTasksView = () => {
+        if (!todayTasks || completedPercentage === 100) {
+            return null; // Or render a message like "No tasks" / "All tasks completed"
+        }
+
+        switch (pageView) {
+            case 'list':
+                return (
+                    <DraggableList
+                        id={listDate}
+                        items={todayTasks}
+                        group="today-tasks"
+                        onDragEnd={async (e, startCol) => {
+                            // Handle drag and drop logic for today's tasks
+                            const endCol = e.parent.el.id;
+                            const itemIndex = e?.draggedNode?.data.index;
+                            const itemId = e?.draggedNode?.data?.value?.id;
+
+                            // Update task order
+                            try {
+                                await updateMultipleTasks({
+                                    tasks: e.values.map((item, index) => ({
+                                        taskId: item.id,
+                                        updates: {
+                                            order: index,
+                                        },
+                                    })),
+                                    startCol,
+                                    endCol,
+                                });
+                            } catch (error) {
+                                console.error('Error updating tasks:', error);
+                            }
+                        }}
+                    />
+                );
+            case 'kanban':
+                return <KanbanView items={todayTasks} />;
+            case 'table':
+                return <TableView items={todayTasks} />;
+            default:
+                // Fallback for an unrecognized pageView or a default view
+                return <p>Select a valid view mode.</p>;
+        }
+    };
+
     useEffect(() => {
         // Check if there are tasks for today and all of them are completed
         if (todayTasks && todayTasks.length > 0) {
@@ -155,12 +209,13 @@ function DashboardPage() {
             />
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={new Date()} />
             <PageLayout
-                maxW="3xl"
+                maxW={pageView === 'list' ? '3xl' : '6xl'}
                 title="Today"
                 primaryAction="New task"
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
             >
+                <TaskViewToggle onChange={handleViewChange} />
                 <div className="flex flex-col gap-3">
                     <div ref={parent} className="flex flex-col gap-2">
                         {hasTooManyTasks && !isTaskAlertDismissed && (
@@ -223,9 +278,7 @@ function DashboardPage() {
                                 onClick={onOpenChange}
                             />
                         )}
-                        {todayTasks && completedPercentage !== 100 && (
-                            <DraggableList id={listDate} items={todayTasks} group="today-tasks" />
-                        )}
+                        {todayTasks && completedPercentage !== 100 && renderTasksView()}
                         {completedPercentage === 100 && (
                             <div>
                                 <Accordion>

@@ -4,11 +4,18 @@ import DraggableList from './DraggableList.jsx';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import NewTaskModal from './NewTaskModal.jsx';
-import { useTasks } from '../../hooks/react-query/tasks/useTasks.js';
+import { useTasks, useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
+import timezone from 'dayjs/plugin/timezone'; // For handling time zones
+import utc from 'dayjs/plugin/utc';
+
+// Extend dayjs with plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const DayColumn = ({ day }) => {
     const [currentWorkspace] = useCurrentWorkspace();
+    const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
 
     const startDate = dayjs(day)?.startOf('day').toISOString();
     const endDate = dayjs(day)?.endOf('day').toISOString();
@@ -20,6 +27,68 @@ const DayColumn = ({ day }) => {
 
     const [newTaskDate, setNewTaskDate] = useState(null);
     const { isOpen, onOpenChange } = useDisclosure();
+
+    const handleDragEnd = async (e, startCol) => {
+        const endCol = e.parent.el.id; // YYYY-MM-DD string
+
+        const itemIndex = e?.draggedNode?.data.index;
+        const itemId = e?.draggedNode?.data?.value?.id;
+        const itemDate = e?.draggedNode?.data?.value?.date
+            ? dayjs(e?.draggedNode?.data?.value?.date)
+                  ?.tz(dayjs.tz.guess(), true)
+                  ?.toISOString()
+            : null;
+
+        const columnItems = e.values; // The items in the target column
+        const newDate = e.parent.el.id; // The target list (backlog or a date)
+
+        // If the target list is valid (a date column)
+        let updatedDate = null;
+        if (dayjs(newDate).isValid()) {
+            updatedDate = dayjs(newDate)
+                .startOf('day')
+                .tz(dayjs.tz.guess(), true)
+                .toISOString();
+        }
+
+        // if item date and target date are the same, return
+        if (itemDate === updatedDate) return;
+
+        let tasksToUpdate = null;
+
+        // Prepare the tasks to be updated
+        if (updatedDate) {
+            // only update all items in the column if is a day col
+            tasksToUpdate = columnItems.map((item, index) => ({
+                taskId: item.id,
+                updates: {
+                    date: updatedDate,
+                    order: index,
+                },
+            }));
+        } else {
+            // otherwise is going to the backlog, so only update the dragged item
+            tasksToUpdate = [
+                {
+                    taskId: itemId,
+                    updates: {
+                        date: null,
+                        order: itemIndex,
+                    },
+                },
+            ];
+        }
+        // Call the bulk update function
+        try {
+            await updateMultipleTasks({
+                tasks: tasksToUpdate,
+                startCol,
+                endCol
+            });
+        } catch (error) {
+            console.error('Error updating tasks:', error);
+        }
+    };
 
     const handleNewTask = (dateStr) => {
         setNewTaskDate(dayjs(dateStr));
@@ -53,7 +122,7 @@ const DayColumn = ({ day }) => {
                 >
                     Add task
                 </Button>
-                {tasks && <DraggableList id={dateStr} items={tasks} group="tasks" smallCards />}
+                {tasks && <DraggableList id={dateStr} items={tasks} group="tasks" smallCards onDragEnd={handleDragEnd} />}
             </div>
         </>
     );

@@ -106,8 +106,8 @@ function ReflectPage() {
         <AppLayout>
             <PageLayout
                 title="Reflect"
-                maxW="4xl"
-                primaryAction="Start new session"
+                maxW="3xl"
+                primaryAction="New session"
                 icon={<RiAddFill fontSize="1.2rem" />}
                 description="Understand your progress and identify opportunities for improvement with AI-powered retrospectives."
                 onClick={onOpen}

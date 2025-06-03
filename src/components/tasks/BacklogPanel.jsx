@@ -194,7 +194,16 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                         <Spinner size="lg" />
                     </div>
                 ) : tasks.length > 0 ? (
-                    <DraggableList id="backlog" items={tasks} group="tasks" smallCards />
+                    <DraggableList 
+                        id="backlog" 
+                        items={tasks} 
+                        group="tasks" 
+                        smallCards 
+                        onDragEnd={(e, startCol) => {
+                            // This component doesn't need to handle drag and drop business logic
+                            // as it's only a source for dragging, not a target for dropping
+                        }} 
+                    />
                 ) : (
                     <div className="flex grow items-center justify-center">
                         {isSearchActive ? (
