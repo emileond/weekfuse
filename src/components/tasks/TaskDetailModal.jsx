@@ -1,4 +1,13 @@
-import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } from '@heroui/react';
+import {
+    Modal,
+    ModalContent,
+    ModalBody,
+    ModalFooter,
+    Button,
+    Input,
+    Divider,
+    Textarea,
+} from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
@@ -26,6 +35,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [selectedMilestone, setSelectedMilestone] = useState(null);
     const [selectedTags, setSelectedTags] = useState([]);
     const [selectedPriority, setSelectedPriority] = useState(null);
+    const [isNameEditing, setIsNameEditing] = useState(false);
 
     // Memoize this value to avoid recalculation on every render
     const isExternal = useMemo(() => !!task?.integration_source, [task?.integration_source]);
@@ -34,6 +44,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         register,
         handleSubmit,
         reset,
+        watch,
         formState: { errors },
     } = useForm({
         defaultValues: {
@@ -58,9 +69,10 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             }
 
             // Prepare priority data
-            const priorityData = (task.priority !== null && task.priority !== undefined) 
-                ? { value: task.priority }
-                : null;
+            const priorityData =
+                task.priority !== null && task.priority !== undefined
+                    ? { value: task.priority }
+                    : null;
 
             // Reset all form fields at once
             reset({
@@ -76,6 +88,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             setSelectedMilestone(task.milestone_id ? { value: task.milestone_id } : null);
             setSelectedTags(tagsData);
             setSelectedPriority(priorityData);
+            setIsNameEditing(false);
         }
     }, [isOpen, task, reset]);
 
@@ -139,7 +152,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         <Modal
             isOpen={isOpen}
             onOpenChange={onOpenChange}
-            size={isExternal ? '5xl' : '3xl'}
+            size={isExternal ? '5xl' : '4xl'}
             className="max-h-[85vh]"
         >
             <ModalContent>
@@ -153,22 +166,31 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         isCompleted={isCompleted}
                                         onChange={(val) => setIsCompleted(val)}
                                     />
-
-                                    <Input
-                                        size="lg"
-                                        variant={isExternal ? 'bordered' : 'underlined'}
-                                        {...register('name', { required: true })}
-                                        label="Task"
-                                        color="primary"
-                                        isInvalid={!!errors.name}
-                                        errorMessage="Task name is required"
-                                        isReadOnly={isExternal}
-                                        classNames={{
-                                            inputWrapper: 'shadow-none border-0',
-                                            input: 'text-xl font-medium',
-                                            label: 'text-default-600 font-normal',
-                                        }}
-                                    />
+                                    {isNameEditing && !isExternal ? (
+                                        <Input
+                                            size="lg"
+                                            variant="underlined"
+                                            {...register('name', { required: true })}
+                                            label="Task"
+                                            color="primary"
+                                            isInvalid={!!errors.name}
+                                            errorMessage="Task name is required"
+                                            autoFocus
+                                            onBlur={() => setIsNameEditing(false)}
+                                            classNames={{
+                                                inputWrapper: 'shadow-none border-0',
+                                                input: 'text-xl font-medium',
+                                                label: 'text-default-600 font-normal',
+                                            }}
+                                        />
+                                    ) : (
+                                        <div
+                                            className="flex flex-col w-full p-1 cursor-text hover:bg-content2"
+                                            onClick={() => !isExternal && setIsNameEditing(true)}
+                                        >
+                                            <h4 className="text-xl font-medium">{watch('name')}</h4>
+                                        </div>
+                                    )}
                                 </div>
                                 <SimpleEditor
                                     label="Description"
