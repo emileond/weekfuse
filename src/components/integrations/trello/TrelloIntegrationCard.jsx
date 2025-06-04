@@ -19,6 +19,8 @@ import {
     RadioGroup,
     Radio,
 } from '@heroui/react';
+import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
+import { useQueryClient } from '@tanstack/react-query';
 
 const TrelloIntegrationCard = () => {
     const { data: user } = useUser();
@@ -27,6 +29,8 @@ const TrelloIntegrationCard = () => {
     const updateIntegrationConfig = useUpdateIntegrationConfig(user.id, 'trello');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
+    const [currentWorkspace] = useCurrentWorkspace();
+    const queryClient = useQueryClient();
 
     // Configuration modal state
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -58,6 +62,15 @@ const TrelloIntegrationCard = () => {
                 onSuccess: () => {
                     setStatus('inactive');
                     toast.success('Trello Integration disconnected');
+                    // Invalidate all task-related queries for the workspace
+                    queryClient.invalidateQueries({
+                        queryKey: ['tasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
+                    queryClient.invalidateQueries({
+                        queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
                 },
                 onError: (error) => {
                     console.error('Error disconnecting Trello:', error);

@@ -18,6 +18,8 @@ import {
     useDisclosure,
     Switch,
 } from '@heroui/react';
+import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
+import { useQueryClient } from '@tanstack/react-query';
 
 const JiraIntegrationCard = () => {
     const { data: user } = useUser();
@@ -26,6 +28,8 @@ const JiraIntegrationCard = () => {
     const updateIntegrationConfig = useUpdateIntegrationConfig(user.id, 'jira');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
+    const [currentWorkspace] = useCurrentWorkspace();
+    const queryClient = useQueryClient();
 
     // Configuration modal state
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -57,6 +61,15 @@ const JiraIntegrationCard = () => {
                 onSuccess: () => {
                     setStatus('inactive');
                     toast.success('Jira Integration disconnected');
+                    // Invalidate all task-related queries for the workspace
+                    queryClient.invalidateQueries({
+                        queryKey: ['tasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
+                    queryClient.invalidateQueries({
+                        queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
                 },
                 onError: (error) => {
                     console.error('Error disconnecting Jira:', error);

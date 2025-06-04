@@ -18,6 +18,8 @@ import {
     useDisclosure,
     Switch,
 } from '@heroui/react';
+import { useQueryClient } from '@tanstack/react-query';
+import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 
 const ClickupIntegrationCard = () => {
     const { data: user } = useUser();
@@ -26,6 +28,8 @@ const ClickupIntegrationCard = () => {
     const updateIntegrationConfig = useUpdateIntegrationConfig(user.id, 'clickup');
     const [status, setStatus] = useState('inactive');
     const [loading, setLoading] = useState(false);
+    const [currentWorkspace] = useCurrentWorkspace();
+    const queryClient = useQueryClient();
 
     // Configuration modal state
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -56,6 +60,15 @@ const ClickupIntegrationCard = () => {
                 onSuccess: () => {
                     setStatus('inactive');
                     toast.success('Clickup Integration disconnected');
+                    // Invalidate all task-related queries for the workspace
+                    queryClient.invalidateQueries({
+                        queryKey: ['tasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
+                    queryClient.invalidateQueries({
+                        queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
                 },
                 onError: (error) => {
                     console.error('Error disconnecting Clickup:', error);
