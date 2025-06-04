@@ -247,13 +247,17 @@ export async function onRequestDelete(context) {
         }
 
         // Delete the backlog tasks from the database
-        await supabase
+        const { error: deleteTasksError } = await supabase
             .from('tasks')
             .delete()
             .eq('integration_source', 'clickup')
             .eq('creator', user_id)
             .eq('status', 'pending')
             .eq('date', null);
+
+        if (deleteTasksError) {
+            console.error('Error deleting ClickUp tasks:', deleteTasksError);
+        }
 
         return Response.json({ success: true });
     } catch (error) {
