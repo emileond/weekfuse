@@ -10,6 +10,7 @@ const IntegrationSourceSelect = ({
     onChange,
     placement = 'bottom',
     className = '',
+    triggerClassName = '',
     disabled = false,
 }) => {
     const [selectedSource, setSelectedSource] = useState(defaultValue);
@@ -41,6 +42,7 @@ const IntegrationSourceSelect = ({
             }}
             placement={placement}
             className={className}
+            triggerClassName={triggerClassName}
             disabled={disabled}
             icon={<RiApps2Line fontSize="1rem" />}
             onCreate={null} // No creation allowed for integration sources

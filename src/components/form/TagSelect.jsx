@@ -12,6 +12,7 @@ const TagSelect = ({
     onChange,
     placement = 'bottom',
     className = '',
+    triggerClassName = '',
     disabled = false,
 }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -87,6 +88,7 @@ const TagSelect = ({
             onCreate={handleCreateTag}
             placement={placement}
             className={className}
+            triggerClassName={triggerClassName}
             disabled={disabled}
             icon={<RiPriceTag3Line fontSize="1rem" />}
             multiple

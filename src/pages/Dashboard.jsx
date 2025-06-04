@@ -1,7 +1,12 @@
-import { useDisclosure, Alert, Progress } from '@heroui/react';
+import { useDisclosure, Alert, Progress, Button } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
-import { RiAddLine, RiCalendarScheduleLine } from 'react-icons/ri';
+import {
+    RiAddLine,
+    RiCalendarScheduleLine,
+    RiCollapseVerticalLine,
+    RiExpandVerticalSLine,
+} from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTasks, useUpdateMultipleTasks } from '../hooks/react-query/tasks/useTasks.js';
 import TasksFilters from '../components/tasks/TasksFilters.jsx';
@@ -64,6 +69,7 @@ function DashboardPage() {
 
     const hasOVerdueTasks = overdueTasks?.length > 0;
     const hasTooManyTasks = todayTasks?.length > 5;
+    const [hideTasks, setHideTasks] = useState(false);
 
     // Calculate completed tasks count and percentage
     const completedTasksCount = useMemo(() => {
@@ -134,10 +140,6 @@ function DashboardPage() {
     };
 
     const renderTasksView = () => {
-        if (!todayTasks || completedPercentage === 100) {
-            return null; // Or render a message like "No tasks" / "All tasks completed"
-        }
-
         switch (pageView) {
             case 'list':
                 return (
@@ -206,6 +208,13 @@ function DashboardPage() {
         setIsTaskAlertDismissed(isDismissed);
     }, [today]);
 
+    useEffect(() => {
+        if (completedPercentage === 100) {
+            setIsTaskAlertDismissed(true);
+            setHideTasks(true);
+        }
+    }, [completedPercentage]);
+
     return (
         <AppLayout>
             <Paywall
@@ -242,7 +251,7 @@ function DashboardPage() {
                             />
                         )}
                         {todayTasks && todayTasks.length > 0 && (
-                            <div className="py-3 mt-3">
+                            <div className="py-3 flex gap-3">
                                 <Progress
                                     label={`${completedTasksCount}/${todayTasks.length} completed`}
                                     aria-label="Today's progress"
@@ -251,6 +260,25 @@ function DashboardPage() {
                                     maxValue={todayTasks.length}
                                     value={completedTasksCount}
                                 />
+                                {completedPercentage === 100 && (
+                                    <div>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="font-medium text-default-500"
+                                            onPress={() => setHideTasks(!hideTasks)}
+                                            endContent={
+                                                hideTasks ? (
+                                                    <RiExpandVerticalSLine fontSize="1rem" />
+                                                ) : (
+                                                    <RiCollapseVerticalLine fontSize="1rem" />
+                                                )
+                                            }
+                                        >
+                                            {hideTasks ? 'Show' : 'Hide'} tasks
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {hasOVerdueTasks && (
@@ -294,28 +322,11 @@ function DashboardPage() {
                                 onClick={onOpenChange}
                             />
                         )}
-                        {todayTasks && completedPercentage !== 100 && renderTasksView()}
-                        {completedPercentage === 100 && (
+
+                        {!hideTasks ? (
+                            todayTasks && renderTasksView()
+                        ) : (
                             <div>
-                                <Accordion>
-                                    <AccordionItem
-                                        key="completed-tasks"
-                                        textValue="Completed tasks"
-                                        title={
-                                            <div className="w-full flex items-center gap-3 justify-between">
-                                                <span className="text-sm font-medium">
-                                                    Completed tasks
-                                                </span>
-                                            </div>
-                                        }
-                                    >
-                                        <DraggableList
-                                            id={listDate}
-                                            items={todayTasks}
-                                            group="today-tasks"
-                                        />
-                                    </AccordionItem>
-                                </Accordion>
                                 <div className="flex flex-col items-center gap-3 px-12">
                                     <div className="h-64">
                                         <DotLottieReact src="/lottie/done.lottie" autoplay />

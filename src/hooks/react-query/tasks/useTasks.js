@@ -49,7 +49,7 @@ const fetchTasks = async ({
             query = query.eq('integration_source', integration_source);
         }
 
-        if (priority) {
+        if (typeof priority === 'number') {
             query = query.eq('priority', priority);
         }
 

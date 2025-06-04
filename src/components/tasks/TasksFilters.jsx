@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Button, Divider } from '@heroui/react';
+import { Button } from '@heroui/react';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import IntegrationSourceSelect from '../form/IntegrationSourceSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
+import { RiFilterOffLine } from 'react-icons/ri';
 
 function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {} }) {
     // Filter state variables
@@ -67,11 +68,15 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
 
     return (
         <div>
-            <div className="flex flex-wrap gap-2 py-1">
+            <div className="flex flex-wrap items-center gap-2 py-1">
                 <ProjectSelect
                     key={`project-select-${resetKey}`}
                     onChange={(value) => setSelectedProject(value?.value || null)}
                     defaultValue={selectedProject ? { value: selectedProject } : null}
+                    triggerClassName={
+                        selectedProject &&
+                        'text-default-800 bg-default-100 border-1 border-default-300'
+                    }
                 />
                 {selectedProject && (
                     <MilestoneSelect
@@ -79,6 +84,10 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
                         projectId={selectedProject}
                         onChange={(value) => setSelectedMilestone(value?.value || null)}
                         defaultValue={selectedMilestone ? { value: selectedMilestone } : null}
+                        triggerClassName={
+                            selectedMilestone &&
+                            'text-default-800 bg-default-100 border-1 border-default-300'
+                        }
                     />
                 )}
                 <TagSelect
@@ -88,6 +97,10 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
                     defaultValue={
                         selectedTags.length > 0 ? selectedTags.map((tag) => ({ value: tag })) : []
                     }
+                    triggerClassName={
+                        selectedTags.length > 0 &&
+                        'text-default-800 bg-default-100 border-1 border-default-300'
+                    }
                 />
                 <IntegrationSourceSelect
                     key={`integration-source-select-${resetKey}`}
@@ -95,24 +108,33 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
                     defaultValue={
                         selectedIntegrationSource ? { value: selectedIntegrationSource } : null
                     }
+                    triggerClassName={
+                        selectedIntegrationSource &&
+                        'text-default-800 bg-default-100 border-1 border-default-300'
+                    }
                 />
                 <PrioritySelect
                     key={`priority-select-${resetKey}`}
                     onChange={setSelectedPriority}
                     defaultValue={selectedPriority}
+                    triggerClassName={
+                        selectedPriority &&
+                        'text-default-800 bg-default-100 border-1 border-default-300'
+                    }
                 />
+                {hasActiveFilters && (
+                    <Button
+                        size="sm"
+                        color="primary"
+                        variant="light"
+                        onPress={clearFilters}
+                        startContent={<RiFilterOffLine fontSize="1rem" />}
+                        className="font-medium"
+                    >
+                        Clear filters
+                    </Button>
+                )}
             </div>
-            {hasActiveFilters && (
-                <Button
-                    size="sm"
-                    color="danger"
-                    variant="light"
-                    className="mt-2"
-                    onPress={clearFilters}
-                >
-                    Clear filters
-                </Button>
-            )}
         </div>
     );
 }

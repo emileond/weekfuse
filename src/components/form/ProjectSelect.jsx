@@ -12,6 +12,7 @@ const ProjectSelect = ({
     onChange,
     placement = 'bottom',
     className = '',
+    triggerClassName = '',
     disabled = false,
     multiSelect = false,
 }) => {
@@ -54,7 +55,7 @@ const ProjectSelect = ({
         if (onChange) {
             if (multiSelect) {
                 if (selectedProjects.length > 0) {
-                    onChange(selectedProjects.map(project => project.value));
+                    onChange(selectedProjects.map((project) => project.value));
                 }
             } else if (selectedProject) {
                 onChange(selectedProject);
@@ -77,15 +78,18 @@ const ProjectSelect = ({
             label={label}
             placeholder={placeholder}
             options={projectOptions}
-            defaultValue={multiSelect 
-                ? projectOptions // Default to all projects in multi-select mode
-                : projectOptions?.find((opt) => opt.value === defaultValue)
+            defaultValue={
+                multiSelect
+                    ? projectOptions // Default to all projects in multi-select mode
+                    : projectOptions?.find((opt) => opt.value === defaultValue)
             }
             onChange={(value) => {
                 if (multiSelect) {
                     // For multi-select, value is an array of project IDs
-                    const selectedOptions = Array.isArray(value) 
-                        ? value.map(id => projectOptions.find(opt => opt.value === id)).filter(Boolean)
+                    const selectedOptions = Array.isArray(value)
+                        ? value
+                              .map((id) => projectOptions.find((opt) => opt.value === id))
+                              .filter(Boolean)
                         : [];
                     setSelectedProjects(selectedOptions);
                 } else {
@@ -97,10 +101,11 @@ const ProjectSelect = ({
             onCreate={!multiSelect ? handleCreateProject : undefined} // Disable creation in multi-select mode
             placement={placement}
             className={className}
+            triggerClassName={triggerClassName}
             disabled={disabled}
             icon={<RiListCheck3 fontSize="1rem" />}
             multiple={multiSelect}
-            allSelectedLabel={multiSelect ? "All projects" : null}
+            allSelectedLabel={multiSelect ? 'All projects' : null}
         />
     );
 };

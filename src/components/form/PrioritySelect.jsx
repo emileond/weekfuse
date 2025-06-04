@@ -1,49 +1,42 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownMenu,
-    DropdownItem,
-    Button
-} from '@heroui/react';
-import {
-    RiFlag2Line,
-    RiArrowUpDoubleLine,
-    RiArrowDownWideLine,
-    RiEqualLine,
-} from 'react-icons/ri';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from '@heroui/react';
+import { RiFlag2Line, RiArrowUpDoubleLine, RiArrowDownWideLine, RiEqualLine } from 'react-icons/ri';
 
 export default function PrioritySelect({
-                                           label = 'Priority',
-                                           defaultValue,
-                                           onChange,
-                                       }) {
+    label = 'Priority',
+    defaultValue,
+    onChange,
+    triggerClassName = '',
+}) {
     // store the selected key (a string)…
     const [selectedKey, setSelectedKey] = useState(
-        defaultValue != null ? defaultValue.toString() : null
+        defaultValue != null ? defaultValue.toString() : null,
     );
 
     // our menu options, with string keys
-    const options = useMemo(() => [
-        {
-            label: 'High',
-            key: '2',
-            icon: <RiArrowUpDoubleLine fontSize="1rem" className="text-danger" />,
-        },
-        {
-            label: 'Medium',
-            key: '1',
-            icon: <RiEqualLine fontSize="1rem" className="text-orange-500" />,
-        },
-        {
-            label: 'Low',
-            key: '0',
-            icon: <RiArrowDownWideLine fontSize="1rem" className="text-blue-500" />,
-        },
-    ], []);
+    const options = useMemo(
+        () => [
+            {
+                label: 'High',
+                key: '2',
+                icon: <RiArrowUpDoubleLine fontSize="1rem" className="text-danger" />,
+            },
+            {
+                label: 'Medium',
+                key: '1',
+                icon: <RiEqualLine fontSize="1rem" className="text-orange-500" />,
+            },
+            {
+                label: 'Low',
+                key: '0',
+                icon: <RiArrowDownWideLine fontSize="1rem" className="text-blue-500" />,
+            },
+        ],
+        [],
+    );
 
     // derive the selected option object for display & callback
-    const selectedOption = options.find(o => o.key === selectedKey);
+    const selectedOption = options.find((o) => o.key === selectedKey);
 
     // notify parent when selection changes
     useEffect(() => {
@@ -71,7 +64,7 @@ export default function PrioritySelect({
                 <Button
                     size="sm"
                     variant="light"
-                    className="text-default-600"
+                    className={`text-default-600 ${triggerClassName}`}
                     startContent={selectedOption?.icon || <RiFlag2Line fontSize="1rem" />}
                 >
                     {selectedOption?.label || label}
@@ -80,14 +73,11 @@ export default function PrioritySelect({
             <DropdownMenu
                 aria-label="Priority select"
                 selectionMode="single"
-                selectedKeys={ selectedKey ? new Set([selectedKey]) : new Set() }
-                onSelectionChange={ handleSelectionChange }
+                selectedKeys={selectedKey ? new Set([selectedKey]) : new Set()}
+                onSelectionChange={handleSelectionChange}
             >
-                {options.map(opt => (
-                    <DropdownItem
-                        key={opt.key}
-                        startContent={opt.icon}
-                    >
+                {options.map((opt) => (
+                    <DropdownItem key={opt.key} startContent={opt.icon}>
                         {opt.label}
                     </DropdownItem>
                 ))}

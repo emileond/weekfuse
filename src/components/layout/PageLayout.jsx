@@ -1,7 +1,6 @@
 import { Button } from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
 import { RiArrowLeftLine } from 'react-icons/ri';
-import UpcomingTasks from '../tasks/UpcomingTasks.jsx';
 
 function PageLayout({
     children,
@@ -27,7 +26,7 @@ function PageLayout({
         <div
             className={`min-h-screen h-full bg-background px-6 py-6 grow flex justify-center overflow-y-auto relative`}
         >
-            <div className={`w-full max-w-${maxW} flex flex-col gap-6`}>
+            <div className={`w-full max-w-${maxW} flex flex-col gap-3`}>
                 <div>
                     <div className="w-full flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">

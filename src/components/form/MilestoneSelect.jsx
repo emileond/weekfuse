@@ -15,6 +15,7 @@ const MilestoneSelect = ({
     onChange,
     placement = 'bottom',
     className = '',
+    triggerClassName = '',
     disabled = false,
     projectId = null,
 }) => {
@@ -85,6 +86,7 @@ const MilestoneSelect = ({
             onCreate={projectId ? handleCreateMilestone : null}
             placement={placement}
             className={className}
+            triggerClassName={triggerClassName}
             disabled={disabled || !projectId}
             icon={<RiFlag2Line fontSize="1rem" />}
         />

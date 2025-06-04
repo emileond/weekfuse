@@ -234,9 +234,9 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                     onPress={() => setIsBacklogCollapsed(!isBacklogCollapsed)}
                     startContent={
                         isBacklogCollapsed ? (
-                            <RiExpandLeftLine fontSize="1rem" />
+                            <RiExpandLeftLine fontSize="1.1rem" />
                         ) : (
-                            <RiContractRightLine fontSize="1rem" />
+                            <RiContractRightLine fontSize="1.1rem" />
                         )
                     }
                     className="text-default-600 hover:text-default-700"

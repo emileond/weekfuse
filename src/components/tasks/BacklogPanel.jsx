@@ -13,6 +13,7 @@ import { useEffect, useState, useCallback, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import debounce from '../../utils/debounceUtils.js';
 import dayjs from 'dayjs';
+import EmptyState from '../EmptyState.jsx';
 
 // Memoized panel content component to prevent unnecessary re-renders
 // eslint-disable-next-line react/display-name
@@ -52,7 +53,11 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
     }, [filters]);
 
     // Use the hook with pagination parameters and filters for backlog tasks
-    const { data: tasksData, refetch } = useBacklogTasks(currentWorkspace, page, pageSize, filters);
+    const {
+        data: tasksData,
+        refetch,
+        isLoading,
+    } = useBacklogTasks(currentWorkspace, page, pageSize, filters);
 
     // Use the hook for fuzzy search with debounced search term
     const { data: searchData, isLoading: isSearching } = useFuzzySearchTasks(
@@ -116,7 +121,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                 },
             ];
         }
-        
+
         // Call the bulk update function
         try {
             await updateMultipleTasks({
@@ -145,20 +150,21 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
         <>
             <NewTaskModal isOpen={isOpen} onOpenChange={onOpenChange} defaultDate={null} />
             <div className="bg-content2 border-1 border-default rounded-xl p-4 flex flex-col h-full">
-                <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700 pb-1">
-                    <RiArchiveStackLine fontSize="1.2rem" /> Backlog
-                </h3>
-                <div>
-                    <Button
-                        size="sm"
-                        color="primary"
-                        variant="light"
-                        startContent={<RiAddLine />}
-                        className="mb-2"
-                        onPress={() => onOpenChange(true)}
-                    >
-                        Add task
-                    </Button>
+                <div className="flex items-center gap-2 w-full py-2">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-default-700 pb-1">
+                        <RiArchiveStackLine fontSize="1.2rem" /> Backlog
+                    </h3>
+                    <div>
+                        <Button
+                            size="sm"
+                            color="primary"
+                            variant="light"
+                            startContent={<RiAddLine />}
+                            onPress={() => onOpenChange(true)}
+                        >
+                            Add task
+                        </Button>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-1 mb-3">
                     <Input
@@ -179,7 +185,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                     />
                 </div>
 
-                {isSearchActive && isSearching ? (
+                {isSearchActive || isLoading ? (
                     <div className="flex grow items-center justify-center">
                         <Spinner size="lg" />
                     </div>
@@ -192,13 +198,10 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                         onDragEnd={handleDragEnd}
                     />
                 ) : (
-                    <div className="flex grow items-center justify-center">
-                        {isSearchActive ? (
-                            <p className="text-default-500">No tasks found matching your search</p>
-                        ) : (
-                            <Spinner size="lg" />
-                        )}
-                    </div>
+                    <EmptyState
+                        title="No tasks found."
+                        description="We couldn't find any tasks matching this criteria. Try adjusting your filters"
+                    />
                 )}
 
                 {!isSearchActive && !!totalPages && (

@@ -20,6 +20,7 @@ const CreatableSelect = ({
     onCreate,
     placement = 'bottom',
     className = '',
+    triggerClassName = '',
     disabled = false,
     icon,
     multiple = false,
@@ -43,7 +44,9 @@ const CreatableSelect = ({
     });
 
     // Ensure all options are valid before rendering
-    const validOptions = filteredOptions.filter((option) => option && option.value !== undefined && option.value !== null && option.label);
+    const validOptions = filteredOptions.filter(
+        (option) => option && option.value !== undefined && option.value !== null && option.label,
+    );
 
     const handleSelect = (option) => {
         if (multiple) {
@@ -111,7 +114,11 @@ const CreatableSelect = ({
                 return label;
             } else if (selectedOptions.length === 1) {
                 return selectedOptions[0].label;
-            } else if (allSelectedLabel && options.length > 0 && selectedOptions.length === options.length) {
+            } else if (
+                allSelectedLabel &&
+                options.length > 0 &&
+                selectedOptions.length === options.length
+            ) {
                 return allSelectedLabel;
             } else {
                 return `${selectedOptions.length} ${label}s`;
@@ -140,7 +147,7 @@ const CreatableSelect = ({
                     <Button
                         size="sm"
                         variant="light"
-                        className="text-default-600"
+                        className={`text-default-600 ${triggerClassName}`}
                         startContent={icon}
                         disabled={disabled}
                         onPress={() => setIsOpen(true)}
@@ -195,7 +202,9 @@ const CreatableSelect = ({
                                                 );
                                             } else {
                                                 // For single selection, check if option is already selected
-                                                const isAlreadySelected = selectedOption && selectedOption.value === option.value;
+                                                const isAlreadySelected =
+                                                    selectedOption &&
+                                                    selectedOption.value === option.value;
                                                 // Pass null if deselecting, otherwise pass the option value
                                                 onChange(isAlreadySelected ? null : option.value);
                                             }
