@@ -406,16 +406,25 @@ export const useDeleteTask = (currentWorkspace) => {
     });
 };
 
-// Function to fuzzy search tasks
-const fuzzySearchTasks = async ({ searchText, resultLimit = 20, statusFilter }) => {
+// Function to fuzzy search tasks with flexible filters
+const fuzzySearchTasksWithFilters = async ({
+    searchText,
+    resultLimit = 20,
+    filters = {}, // Accept a filters object for more flexibility
+}) => {
+    // Ensure searchText is valid if it's required for the core search functionality
     if (!searchText || searchText.trim() === '') {
-        return { data: [] };
+        if (Object.keys(filters).length === 0) {
+            // Only return empty if no other filters
+            return { data: [] };
+        }
     }
 
-    const { data, error } = await supabaseClient.rpc('fuzzy_search_tasks', {
+    const { data, error } = await supabaseClient.rpc('fuzzy_search_tasks_with_filters', {
         search_text: searchText,
         result_limit: resultLimit,
-        status_filter: statusFilter,
+        // Spread the filters object to pass all the dynamic parameters
+        ...filters,
     });
 
     if (error) {
@@ -426,22 +435,40 @@ const fuzzySearchTasks = async ({ searchText, resultLimit = 20, statusFilter }) 
     return { data };
 };
 
-// Hook to fuzzy search tasks
+// Hook to fuzzy search tasks with flexible filters
 export const useFuzzySearchTasks = (
     currentWorkspace,
     searchText,
     resultLimit = 20,
-    statusFilter,
+    // Combine all optional filters into a single object
+    filters = {},
 ) => {
+    const queryKey = [
+        'fuzzySearchTasks',
+        currentWorkspace?.workspace_id,
+        searchText,
+        resultLimit,
+        JSON.stringify(filters), // Include filters in queryKey
+    ];
+
+    // Determine if the query should be enabled.
+    // If searchText is mandatory for *any* search, include it.
+    // Otherwise, if filters alone can trigger a search, adjust accordingly.
+    const isQueryEnabled =
+        !!currentWorkspace?.workspace_id &&
+        ((!!searchText && searchText.trim() !== '') || Object.keys(filters).length > 0);
+
     return useQuery({
-        queryKey: ['fuzzySearchTasks', currentWorkspace?.workspace_id, searchText, resultLimit],
+        queryKey: queryKey,
         queryFn: () =>
-            fuzzySearchTasks({
+            fuzzySearchTasksWithFilters({
                 searchText,
                 resultLimit,
-                statusFilter,
+                filters, // Pass the entire filters object
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
-        enabled: !!currentWorkspace?.workspace_id && !!searchText && searchText.trim() !== '', // Only fetch if workspace_id and searchText are provided
+        enabled: isQueryEnabled,
+        // Keep previous data when query key changes for smoother UX, if desired
+        // keepPreviousData: true,
     });
 };

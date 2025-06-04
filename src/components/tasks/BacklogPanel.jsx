@@ -1,4 +1,4 @@
-import { Button, useDisclosure, Pagination, Spinner, Input, Divider } from '@heroui/react';
+import { Button, useDisclosure, Pagination, Spinner, Input } from '@heroui/react';
 import { RiAddLine, RiArchiveStackLine, RiSearchLine } from 'react-icons/ri';
 import {
     useBacklogTasks,
@@ -64,7 +64,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
         currentWorkspace,
         debouncedSearchTerm,
         pageSize,
-        'pending',
+        { status_filter: 'pending', date_filter_type: 'is_null' },
     );
 
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
@@ -185,7 +185,7 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                     />
                 </div>
 
-                {isSearchActive || isLoading ? (
+                {(isSearchActive && isSearching) || (!isSearchActive && isLoading) ? (
                     <div className="flex grow items-center justify-center">
                         <Spinner size="lg" />
                     </div>
