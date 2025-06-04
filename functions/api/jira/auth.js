@@ -18,7 +18,7 @@ export async function onRequestDelete(context) {
 
         const { data, error } = await supabase
             .from('user_integrations')
-            .select('access_token, user_id')
+            .select('access_token, user_id, workspace_id')
             .eq('type', 'jira')
             .eq('id', id)
             .single();
@@ -31,7 +31,7 @@ export async function onRequestDelete(context) {
             );
         }
 
-        const { user_id } = data;
+        const { user_id, workspace_id } = data;
 
         // Delete the token from the database
         const { error: deleteError } = await supabase
@@ -53,9 +53,10 @@ export async function onRequestDelete(context) {
             .from('tasks')
             .delete()
             .eq('integration_source', 'jira')
-            .eq('creator', user_id)
             .eq('status', 'pending')
-            .eq('date', null);
+            .eq('creator', user_id)
+            .eq('workspace_id', workspace_id)
+            .is('date', null);
 
         return Response.json({ success: true });
     } catch (error) {
