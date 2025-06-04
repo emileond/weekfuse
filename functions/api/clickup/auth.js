@@ -213,6 +213,24 @@ export async function onRequestDelete(context) {
         // Initialize Supabase client
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
+        // Get user_id before deleting the integration
+        const { data, error } = await supabase
+            .from('user_integrations')
+            .select('user_id')
+            .eq('type', 'clickup')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching ClickUp integration from database:', error);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
+        }
+
+        const { user_id } = data;
+
         // Delete the token from the database
         const { error: deleteError } = await supabase
             .from('user_integrations')
@@ -227,6 +245,15 @@ export async function onRequestDelete(context) {
                 { status: 500 },
             );
         }
+
+        // Delete the backlog tasks from the database
+        await supabase
+            .from('tasks')
+            .delete()
+            .eq('integration_source', 'clickup')
+            .eq('creator', user_id)
+            .eq('status', 'pending')
+            .eq('date', null);
 
         return Response.json({ success: true });
     } catch (error) {

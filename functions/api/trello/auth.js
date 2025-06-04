@@ -18,7 +18,7 @@ export async function onRequestDelete(context) {
 
         const { data, error } = await supabase
             .from('user_integrations')
-            .select('access_token')
+            .select('access_token, user_id')
             .eq('type', 'trello')
             .eq('id', id)
             .single();
@@ -31,7 +31,7 @@ export async function onRequestDelete(context) {
             );
         }
 
-        const { access_token } = data;
+        const { access_token, user_id } = data;
 
         try {
             // Revoke the token with Trello's API
@@ -64,6 +64,15 @@ export async function onRequestDelete(context) {
                 { status: 500 },
             );
         }
+
+        // Delete the backlog tasks from the database
+        await supabase
+            .from('tasks')
+            .delete()
+            .eq('integration_source', 'trello')
+            .eq('creator', user_id)
+            .eq('status', 'pending')
+            .eq('date', null);
 
         return Response.json({ success: true });
     } catch (error) {

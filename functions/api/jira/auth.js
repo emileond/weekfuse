@@ -3,6 +3,73 @@ import { createClient } from '@supabase/supabase-js';
 import { toUTC, calculateExpiresAt } from '../../../src/utils/dateUtils.js';
 import { convertJiraAdfToTiptap } from '../../../src/utils/editorUtils.js';
 
+// Handle DELETE requests for disconnecting Jira integration
+export async function onRequestDelete(context) {
+    try {
+        const body = await context.request.json();
+        const { id } = body;
+
+        if (!id) {
+            return Response.json({ success: false, error: 'Missing id' }, { status: 400 });
+        }
+
+        // Initialize Supabase client
+        const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
+
+        const { data, error } = await supabase
+            .from('user_integrations')
+            .select('access_token, user_id')
+            .eq('type', 'jira')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching Jira integration from database:', error);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
+        }
+
+        const { user_id } = data;
+
+        // Delete the token from the database
+        const { error: deleteError } = await supabase
+            .from('user_integrations')
+            .delete()
+            .eq('type', 'jira')
+            .eq('id', id);
+
+        if (deleteError) {
+            console.error('Error deleting Jira integration from database:', deleteError);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
+        }
+
+        // Delete the backlog tasks from the database
+        await supabase
+            .from('tasks')
+            .delete()
+            .eq('integration_source', 'jira')
+            .eq('creator', user_id)
+            .eq('status', 'pending')
+            .eq('date', null);
+
+        return Response.json({ success: true });
+    } catch (error) {
+        console.error('Error disconnecting Jira integration:', error);
+        return Response.json(
+            {
+                success: false,
+                error: 'Internal server error',
+            },
+            { status: 500 },
+        );
+    }
+}
+
 // Webhook events to listen for
 const WEBHOOK_EVENTS = ['jira:issue_created', 'jira:issue_updated'];
 

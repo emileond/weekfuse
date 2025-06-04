@@ -34,6 +34,24 @@ export async function onRequestDelete(context) {
             return Response.error();
         }
 
+        // Get user_id before deleting the integration
+        const { data, error } = await supabase
+            .from('user_integrations')
+            .select('user_id')
+            .eq('type', 'github')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching GitHub integration from database:', error);
+            return Response.json(
+                { success: false, error: 'Failed to delete integration data' },
+                { status: 500 },
+            );
+        }
+
+        const { user_id } = data;
+
         // Delete the token from the database
         const { error: deleteError } = await supabase
             .from('user_integrations')
@@ -42,12 +60,21 @@ export async function onRequestDelete(context) {
             .eq('id', id);
 
         if (deleteError) {
-            console.error('Error deleting Trello integration from database:', deleteError);
+            console.error('Error deleting GitHub integration from database:', deleteError);
             return Response.json(
                 { success: false, error: 'Failed to delete integration data' },
                 { status: 500 },
             );
         }
+
+        // Delete the backlog tasks from the database
+        await supabase
+            .from('tasks')
+            .delete()
+            .eq('integration_source', 'github')
+            .eq('creator', user_id)
+            .eq('status', 'pending')
+            .eq('date', null);
 
         return Response.json({ success: true });
     } catch (error) {
