@@ -132,6 +132,8 @@ function ProjectTasksPage() {
                 {(projectId || milestoneId) && (
                     <TasksFilters
                         showStatusFilter
+                        showProjectFilter={!(!projectId || !milestoneId)}
+                        showMilestoneFilter={!milestoneId}
                         onFiltersChange={setFilters}
                         initialFilters={{
                             project_id: projectId,

@@ -13,6 +13,8 @@ function TasksFilters({
     onShowFiltersChange,
     initialFilters = {},
     showStatusFilter = false,
+    showProjectFilter = true,
+    showMilestoneFilter = true,
 }) {
     // Filter state variables
     const [selectedProject, setSelectedProject] = useState(initialFilters.project_id || null);
@@ -80,16 +82,18 @@ function TasksFilters({
     return (
         <div>
             <div className="flex flex-wrap items-center gap-2 py-1">
-                <ProjectSelect
-                    key={`project-select-${resetKey}`}
-                    onChange={(value) => setSelectedProject(value?.value || null)}
-                    defaultValue={selectedProject ? { value: selectedProject } : null}
-                    triggerClassName={
-                        selectedProject &&
-                        'text-default-800 bg-default-100 border-1 border-default-300'
-                    }
-                />
-                {selectedProject && (
+                {showProjectFilter && (
+                    <ProjectSelect
+                        key={`project-select-${resetKey}`}
+                        onChange={(value) => setSelectedProject(value?.value || null)}
+                        defaultValue={selectedProject ? { value: selectedProject } : null}
+                        triggerClassName={
+                            selectedProject &&
+                            'text-default-800 bg-default-100 border-1 border-default-300'
+                        }
+                    />
+                )}
+                {selectedProject && showMilestoneFilter && (
                     <MilestoneSelect
                         key={`milestone-select-${selectedProject}-${resetKey}`}
                         projectId={selectedProject}
