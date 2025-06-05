@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'taskViewPreference';
 
-const TaskViewToggle = ({ onChange }) => {
+const TaskViewToggle = ({ hideList, hideKanban, hideTable, onChange }) => {
     // Initialize state from localStorage or default to 'list'
     const [view, setView] = useState(() => {
         const savedView = localStorage.getItem(STORAGE_KEY);
@@ -34,6 +34,7 @@ const TaskViewToggle = ({ onChange }) => {
             <ButtonGroup>
                 <Tooltip content="List view">
                     <Button
+                        isDisabled={hideList}
                         variant={view === 'list' ? 'flat' : 'light'}
                         color={view === 'list' ? 'primary' : 'default'}
                         isIconOnly
@@ -45,8 +46,10 @@ const TaskViewToggle = ({ onChange }) => {
                         />
                     </Button>
                 </Tooltip>
+
                 <Tooltip content="Kanban view">
                     <Button
+                        isDisabled={hideKanban}
                         variant={view === 'kanban' ? 'flat' : 'light'}
                         color={view === 'kanban' ? 'primary' : 'default'}
                         isIconOnly
@@ -58,8 +61,10 @@ const TaskViewToggle = ({ onChange }) => {
                         />
                     </Button>
                 </Tooltip>
+
                 <Tooltip content="Table view">
                     <Button
+                        isDisabled={hideTable}
                         variant={view === 'table' ? 'flat' : 'light'}
                         color={view === 'table' ? 'primary' : 'default'}
                         isIconOnly

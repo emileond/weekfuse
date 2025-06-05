@@ -145,13 +145,11 @@ function DashboardPage() {
                 return (
                     <DraggableList
                         id={listDate}
-                        items={todayTasks}
+                        items={todayTasks || []}
                         group="today-tasks"
                         onDragEnd={async (e, startCol) => {
                             // Handle drag and drop logic for today's tasks
                             const endCol = e.parent.el.id;
-                            const itemIndex = e?.draggedNode?.data.index;
-                            const itemId = e?.draggedNode?.data?.value?.id;
 
                             // Update task order
                             try {

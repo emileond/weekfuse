@@ -82,7 +82,7 @@ export const useTasks = (currentWorkspace, filters = {}) => {
                 priority: filters.priority,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
-        enabled: !!currentWorkspace, // Only fetch if workspace is provided
+        enabled: !!currentWorkspace?.workspace_id && Object.keys(filters)?.length > 0,
     });
 };
 

@@ -132,8 +132,10 @@ const DataGrid = ({ data = [], columns = [], options = {}, onRowClick, pageSize 
 
             {/* Pagination UI */}
             {pageCount > 1 && (
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center pb-6">
                     <Pagination
+                        size="sm"
+                        variant="light"
                         showControls
                         total={pageCount}
                         initialPage={pageIndex + 1}

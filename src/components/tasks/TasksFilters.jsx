@@ -5,9 +5,15 @@ import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import IntegrationSourceSelect from '../form/IntegrationSourceSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
+import StatusSelect from '../form/StatusSelect.jsx';
 import { RiFilterOffLine } from 'react-icons/ri';
 
-function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {} }) {
+function TasksFilters({
+    onFiltersChange,
+    onShowFiltersChange,
+    initialFilters = {},
+    showStatusFilter = false,
+}) {
     // Filter state variables
     const [selectedProject, setSelectedProject] = useState(initialFilters.project_id || null);
     const [selectedMilestone, setSelectedMilestone] = useState(initialFilters.milestone_id || null);
@@ -18,6 +24,7 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
     const [selectedPriority, setSelectedPriority] = useState(
         initialFilters.priority ? { key: initialFilters.priority.toString() } : null,
     );
+    const [selectedStatuses, setSelectedStatuses] = useState(initialFilters.statuses || null);
     const [resetKey, setResetKey] = useState(0); // Add a key to force re-render of filter components
 
     // Set initial filters visibility (always visible now)
@@ -36,6 +43,7 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
                 tags: selectedTags.length > 0 ? selectedTags : null,
                 integration_source: selectedIntegrationSource,
                 priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
+                statusList: selectedStatuses,
             };
             onFiltersChange(filters);
         }
@@ -45,6 +53,7 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
         selectedTags,
         selectedIntegrationSource,
         selectedPriority,
+        selectedStatuses,
         onFiltersChange,
     ]);
 
@@ -55,6 +64,7 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
         setSelectedTags([]);
         setSelectedIntegrationSource(null);
         setSelectedPriority(null);
+        setSelectedStatuses(null);
         setResetKey((prevKey) => prevKey + 1); // Increment reset key to force re-render
     };
 
@@ -64,7 +74,8 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
         selectedMilestone ||
         selectedTags.length > 0 ||
         selectedIntegrationSource ||
-        selectedPriority;
+        selectedPriority ||
+        selectedStatuses;
 
     return (
         <div>
@@ -113,6 +124,17 @@ function TasksFilters({ onFiltersChange, onShowFiltersChange, initialFilters = {
                         'text-default-800 bg-default-100 border-1 border-default-300'
                     }
                 />
+                {showStatusFilter && (
+                    <StatusSelect
+                        key={`status-select-${resetKey}`}
+                        onChange={setSelectedStatuses}
+                        defaultValue={selectedStatuses || []}
+                        triggerClassName={
+                            selectedStatuses &&
+                            'text-default-800 bg-default-100 border-1 border-default-300'
+                        }
+                    />
+                )}
                 <PrioritySelect
                     key={`priority-select-${resetKey}`}
                     onChange={setSelectedPriority}

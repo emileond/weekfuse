@@ -205,7 +205,7 @@ const TableView = ({ items }) => {
     );
 
     return (
-        <div className="p-4 border-1 border-content3 rounded-xl bg-content1">
+        <div className="border-1 border-content3 rounded-xl bg-content1">
             {selectedTask && (
                 <TaskDetailModal
                     isOpen={isDetailModalOpen}

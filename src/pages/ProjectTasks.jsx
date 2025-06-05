@@ -1,10 +1,10 @@
 import { useParams } from 'react-router-dom';
-import { useDisclosure, Tabs, Tab, Progress, Chip, Badge } from '@heroui/react';
+import { useDisclosure, Progress, Chip, Spinner, Button } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
-import { useTasks } from '../hooks/react-query/tasks/useTasks.js';
+import { useTasks, useUpdateMultipleTasks } from '../hooks/react-query/tasks/useTasks.js';
 import { useProjects, useTaskCountByProject } from '../hooks/react-query/projects/useProjects.js';
 import {
     useMilestones,
@@ -12,7 +12,11 @@ import {
 } from '../hooks/react-query/milestones/useMilestones.js';
 import { useState, useEffect, useMemo } from 'react';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
-import TaskCard from '../components/tasks/TaskCard.jsx';
+import TasksFilters from '../components/tasks/TasksFilters.jsx';
+import TaskViewToggle from '../components/nav/TaskViewToggle.jsx';
+import KanbanView from '../components/tasks/KanbanView.jsx';
+import TableView from '../components/tasks/TableView.jsx';
+import DraggableList from '../components/tasks/DraggableList.jsx';
 
 function ProjectTasksPage() {
     const { projectId, milestoneId } = useParams();
@@ -20,14 +24,17 @@ function ProjectTasksPage() {
     const { isOpen, onOpenChange } = useDisclosure();
     const [pageTitle, setPageTitle] = useState('Tasks');
     const [pageDescription, setPageDescription] = useState('');
-    const [activeTab, setActiveTab] = useState('open');
+    const [pageView, setPageView] = useState();
+    const [filters, setFilters] = useState({});
 
     // Fetch tasks for the specified project or milestone based on selected tab
-    const { data: tasks } = useTasks(currentWorkspace, {
-        project_id: projectId,
-        milestone_id: milestoneId,
-        statusList: activeTab === 'open' ? ['pending'] : ['completed'],
-    });
+    const { data: tasks, isPending } = useTasks(currentWorkspace, filters);
+
+    const handleViewChange = (newView) => {
+        setPageView(newView);
+    };
+
+    const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
 
     // Fetch project details if projectId is provided
     const { data: projects } = useProjects(currentWorkspace);
@@ -55,6 +62,44 @@ function ProjectTasksPage() {
         return taskCount.total > 0 ? Math.round((taskCount.completed / taskCount.total) * 100) : 0;
     }, [taskCount]);
 
+    // Render different views based on the selected view mode
+    const renderTasksView = () => {
+        switch (pageView) {
+            case 'list':
+                return (
+                    <DraggableList
+                        id={projectId || milestoneId}
+                        items={tasks || []}
+                        group="project-tasks"
+                        onDragEnd={async (e, startCol) => {
+                            // Handle drag and drop logic for tasks
+                            const endCol = e.parent.el.id;
+
+                            // Update task order
+                            try {
+                                await updateMultipleTasks({
+                                    tasks: e.values.map((item, index) => ({
+                                        taskId: item.id,
+                                        updates: {
+                                            order: index,
+                                        },
+                                    })),
+                                    startCol,
+                                    endCol,
+                                });
+                            } catch (error) {
+                                console.error('Error updating tasks:', error);
+                            }
+                        }}
+                    />
+                );
+            case 'kanban':
+                return <KanbanView items={tasks} />;
+            case 'table':
+                return <TableView items={tasks} />;
+        }
+    };
+
     // Set page title and description based on the project or milestone
     useEffect(() => {
         if (project) {
@@ -75,13 +120,26 @@ function ProjectTasksPage() {
                 defaultMilestone={milestoneId}
             />
             <PageLayout
-                maxW="3xl"
+                backBtn
+                maxW={pageView === 'list' ? '3xl' : '6xl'}
                 title={pageTitle}
                 description={pageDescription}
                 primaryAction="New task"
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
             >
+                <TaskViewToggle hideList onChange={handleViewChange} />
+                {(projectId || milestoneId) && (
+                    <TasksFilters
+                        showStatusFilter
+                        onFiltersChange={setFilters}
+                        initialFilters={{
+                            project_id: projectId,
+                            milestone_id: milestoneId,
+                        }}
+                    />
+                )}
+
                 <div className="flex flex-col mt-3">
                     {milestone && (
                         <div className="mb-4">
@@ -107,50 +165,13 @@ function ProjectTasksPage() {
                             </div>
                         </div>
                     )}
-                    <Tabs selectedKey={activeTab} onSelectionChange={setActiveTab}>
-                        <Tab
-                            key="open"
-                            title={
-                                <>
-                                    Open <Chip size="sm">{taskCount.pending || 0}</Chip>
-                                </>
-                            }
-                        >
-                            {tasks && tasks.length > 0 ? (
-                                <div className="flex flex-col gap-2 mt-2">
-                                    {tasks.map((task) => (
-                                        <TaskCard key={task.id} task={task} />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-10">
-                                    <p className="text-default-500">
-                                        No open tasks found. Create your first task!
-                                    </p>
-                                </div>
-                            )}
-                        </Tab>
-                        <Tab
-                            key="closed"
-                            title={
-                                <>
-                                    Closed <Chip size="sm">{taskCount.completed || 0}</Chip>
-                                </>
-                            }
-                        >
-                            {tasks && tasks.length > 0 ? (
-                                <div className="flex flex-col gap-3 mt-3">
-                                    {tasks.map((task) => (
-                                        <TaskCard key={task.id} task={task} />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-10">
-                                    <p className="text-default-500">No closed tasks found.</p>
-                                </div>
-                            )}
-                        </Tab>
-                    </Tabs>
+                    {isPending ? (
+                        <div className="w-full flex items-center justify-center basis-[50vh] grow">
+                            <Spinner size="lg" />
+                        </div>
+                    ) : (
+                        renderTasksView()
+                    )}
                 </div>
             </PageLayout>
         </AppLayout>

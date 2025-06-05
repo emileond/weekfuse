@@ -207,7 +207,8 @@ const BacklogPanelContent = memo(({ currentWorkspace, isOpen, onOpenChange }) =>
                 {!isSearchActive && !!totalPages && (
                     <div className="flex w-full justify-center mt-4">
                         <Pagination
-                            variant="faded"
+                            size="sm"
+                            variant="light"
                             showControls
                             page={page}
                             total={totalPages}
