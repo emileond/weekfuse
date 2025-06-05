@@ -23,16 +23,16 @@ const fetchTransitions = async ({ issueIdOrKey, user_id, workspace_id }) => {
     return response.transitions;
 };
 
-export const useJiraTransitions = ({ issueId, user_id, workspace_id }) => {
+export const useJiraTransitions = ({ issueIdOrKey, user_id, workspace_id }) => {
     return useQuery({
-        queryKey: ['jira', 'transitions', issueId],
+        queryKey: ['jira', 'transitions', issueIdOrKey],
         queryFn: () =>
             fetchTransitions({
-                issueIdOrKey: issueId,
+                issueIdOrKey,
                 user_id,
                 workspace_id,
             }),
-        enabled: !!issueId && !!workspace_id && !!user_id,
+        enabled: !!issueIdOrKey && !!workspace_id && !!user_id,
         refetchOnMount: true,
     });
 };
