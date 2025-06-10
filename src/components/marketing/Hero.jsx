@@ -11,11 +11,11 @@ export default function Hero() {
                     Get 1,000 credits for free
                 </Chip>
                 <h1 className="text-4xl font-bold tracking-tighter mx-auto md:text-6xl text-pretty">
-                    Reach Every Inbox
+                    Achieve Your Goals, Find Your Flow.
                 </h1>
                 <p className="max-w-2xl text-lg mx-auto text-default-600 text-balance">
-                    Ensure your emails connect with real people. Our powerful verification tool
-                    boosts deliverability and protects your sender reputation.
+                    Weekfuse centralizes your tasks, intelligently plans your week, and guides your
+                    reflection so you can achieve more without the overwhelm
                 </p>
                 <Button as={Link} to="/signup" color="primary" variant="shadow">
                     Verify my list

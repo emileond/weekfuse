@@ -81,6 +81,11 @@ const NoteCard = ({ note, currentWorkspace }) => {
             },
             {
                 onSuccess: () => {
+                    // Update the note object to reflect changes immediately
+                    note.title = editedNote.title;
+                    note.content = editedNote.content;
+                    note.updated_at = toUTC();
+
                     toast.success('Note updated successfully!');
                     setIsEditable(false);
                 },
