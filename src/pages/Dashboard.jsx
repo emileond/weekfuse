@@ -30,6 +30,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import TaskViewToggle from '../components/nav/TaskViewToggle.jsx';
 import KanbanView from '../components/tasks/KanbanView.jsx';
 import TableView from '../components/tasks/TableView.jsx';
+import { PomodoroWidget } from '../components/widgets/pomodoro/PomodoroWidget.jsx';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -231,6 +232,7 @@ function DashboardPage() {
                 primaryAction="New task"
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
+                customElements={<PomodoroWidget />}
             >
                 <TaskViewToggle onChange={handleViewChange} />
                 <TasksFilters
