@@ -14,34 +14,37 @@ const fetchTasks = async ({
     tags,
     integration_source,
     priority,
+    includeInProgress, // <-- Add this new parameter
 }) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
 
     if (id) {
         query = query.eq('id', id).single(); // Fetch single item
     } else {
-        if (statusList) {
-            query = query.in('status', statusList); // Filter by status
+        if (includeInProgress && startDate && endDate) {
+            // Use an OR query to get tasks scheduled for today OR tasks that are in progress
+            query = query.or(
+                `and(date.gte.${startDate},date.lte.${endDate}),status.eq.in progress`,
+            );
+        } else {
+            if (statusList) {
+                query = query.in('status', statusList);
+            }
+            if (startDate && endDate) {
+                query = query.gte('date', startDate).lte('date', endDate);
+            } else if (!startDate && endDate) {
+                query = query.lte('date', endDate);
+            }
         }
-
-        if (startDate && endDate) {
-            query = query.gte('date', startDate).lte('date', endDate); // Filter by date range
-        }
-
-        if (!startDate && endDate) {
-            query = query.lte('date', endDate); // Filter by date range
-        }
-
         if (project_id) {
-            query = query.eq('project_id', project_id); // Filter by project
+            query = query.eq('project_id', project_id);
         }
 
         if (milestone_id) {
-            query = query.eq('milestone_id', milestone_id); // Filter by milestone
+            query = query.eq('milestone_id', milestone_id);
         }
 
         if (tags && tags.length > 0) {
-            // For tags, we need to check if the task's tags array contains any of the selected tags
             query = query.contains('tags', tags);
         }
 
@@ -59,6 +62,7 @@ const fetchTasks = async ({
     const { data, error } = await query;
 
     if (error) {
+        console.error('Supabase error:', error); // Log the actual error
         throw new Error('Failed to fetch tasks');
     }
 
@@ -72,14 +76,7 @@ export const useTasks = (currentWorkspace, filters = {}) => {
         queryFn: () =>
             fetchTasks({
                 workspace_id: currentWorkspace?.workspace_id,
-                statusList: filters.statusList,
-                startDate: filters.startDate,
-                endDate: filters.endDate,
-                project_id: filters.project_id,
-                milestone_id: filters.milestone_id,
-                tags: filters.tags,
-                integration_source: filters.integration_source,
-                priority: filters.priority,
+                ...filters,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!currentWorkspace?.workspace_id && Object.keys(filters)?.length > 0,

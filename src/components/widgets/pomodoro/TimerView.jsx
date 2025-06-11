@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, CircularProgress } from '@heroui/react';
-import { RiPlayLine, RiPauseLine, RiRefreshLine, RiSkipForwardLine } from 'react-icons/ri';
+import { Button, CircularProgress, Divider } from '@heroui/react';
+import { RiPlayLine, RiPauseLine, RiStopLine, RiSkipForwardLine } from 'react-icons/ri';
 
 export function TimerView({
     time,
@@ -50,6 +50,17 @@ export function TimerView({
                 </div>
             </div>
 
+            <div className="flex w-full justify-center gap-2 mb-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <div
+                        key={i}
+                        className={`h-2 w-2 rounded-full ${
+                            i <= ((cycle - 1) % 4) + 1 ? 'bg-primary' : 'bg-default-200'
+                        }`}
+                    />
+                ))}
+            </div>
+
             {!(isRunning || isPaused) ? (
                 // Show "Start" button only when timer is completely stopped
                 <Button
@@ -62,8 +73,8 @@ export function TimerView({
                     Start
                 </Button>
             ) : (
-                // Show Pause/Resume, Reset, Skip buttons when timer is running or paused
-                <div className="mb-6 flex gap-2">
+                // Show Pause/Resume, Reset (Stop), Skip buttons when timer is running or paused
+                <div className="flex gap-2">
                     <Button
                         size="sm"
                         variant="light"
@@ -82,34 +93,24 @@ export function TimerView({
                         size="sm"
                         variant="light"
                         color="default"
-                        onPress={resetTimer}
-                        startContent={<RiRefreshLine className="text-lg" />}
-                    >
-                        Reset
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="light"
-                        color="default"
                         onPress={skipTimer}
                         startContent={<RiSkipForwardLine className="text-lg" />}
                     >
                         Skip
                     </Button>
+                    <Button
+                        size="sm"
+                        variant="light"
+                        color="default"
+                        onPress={resetTimer}
+                        startContent={<RiStopLine className="text-lg" />}
+                    >
+                        End
+                    </Button>
                 </div>
             )}
 
-            <div className="flex w-full justify-center gap-2 mb-4">
-                {[1, 2, 3, 4].map((i) => (
-                    <div
-                        key={i}
-                        className={`h-2 w-2 rounded-full ${
-                            i <= ((cycle - 1) % 4) + 1 ? 'bg-primary' : 'bg-default-200'
-                        }`}
-                    />
-                ))}
-            </div>
-
+            <Divider className="my-3" />
             {/* "How does it work?" button and explanation */}
             <div className="w-full text-center">
                 <Button

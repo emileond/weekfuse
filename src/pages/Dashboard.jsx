@@ -54,9 +54,10 @@ function DashboardPage() {
     });
     const queryClient = useQueryClient();
     const { data: todayTasks, refetch: refetchToday } = useTasks(currentWorkspace, {
+        ...filters,
         startDate: dayjs().startOf('day').toISOString(),
         endDate: dayjs().endOf('day').toISOString(),
-        ...filters,
+        includeInProgress: true,
     });
     const { data: overdueTasks, refetch: refetchOverdue } = useTasks(currentWorkspace, {
         statusList: ['pending'],
