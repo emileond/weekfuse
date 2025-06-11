@@ -8,32 +8,49 @@ import {
     DropdownSection,
     Image,
     User,
+    Spinner,
 } from '@heroui/react';
 import { RiArrowDownSLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../../../../hooks/useCurrentWorkspace.js';
+import { useJiraIssue } from '../../../../hooks/react-query/integrations/jira/useJiraIssue.js';
 import {
     useJiraTransitions,
     useJiraTransitionIssue,
 } from '../../../../hooks/react-query/integrations/jira/useJiraTransitions.js';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { useUser } from '../../../../hooks/react-query/user/useUser.js';
 
 const JiraTaskDetails = ({ task_id, external_data }) => {
     const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const queryClient = useQueryClient();
+
+    // --- React Query Hooks ---
+    const { data: jiraIssue, isLoading: isStatusLoading } = useJiraIssue({
+        issueIdOrKey: external_data?.id,
+        user_id: user?.id,
+        workspace_id: currentWorkspace?.workspace_id,
+    });
+
     const { data: transitions } = useJiraTransitions({
         issueIdOrKey: external_data?.id,
         user_id: user?.id,
         workspace_id: currentWorkspace?.workspace_id,
     });
-    const { mutateAsync: transitionIssue } = useJiraTransitionIssue();
-    const [isLoading, setIsLoading] = useState(false);
 
+    const { mutateAsync: transitionIssue, isLoading: isTransitioning } = useJiraTransitionIssue();
+
+    // --- Live Data with Fallback Pattern ---
+    // Use live data from jiraIssue if available, otherwise fallback to saved external_data
+    const currentStatus = jiraIssue?.fields?.status || external_data?.fields?.status;
+    const currentPriority = jiraIssue?.fields?.priority || external_data?.fields?.priority;
+    const currentLabels = jiraIssue?.fields?.labels || external_data?.fields?.labels;
+    const currentAssignee = jiraIssue?.fields?.assignee || external_data?.fields?.assignee;
+    const currentReporter = jiraIssue?.fields?.reporter || external_data?.fields?.reporter;
+
+    // --- Simplified Event Handler ---
     const handleTransition = async (transitionId) => {
-        setIsLoading(true);
         try {
             await transitionIssue({
                 task_id,
@@ -43,28 +60,24 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                 workspace_id: currentWorkspace?.workspace_id,
             });
             toast.success('Jira status updated');
-            await queryClient.cancelQueries({
-                queryKey: ['tasks'],
-            });
 
+            // Invalidate the specific issue query to refetch its status and other details instantly
             await queryClient.invalidateQueries({
-                queryKey: ['tasks'],
-                refetchType: 'all',
-            });
-            await queryClient.invalidateQueries({
-                queryKey: ['backlogTasks'],
-                refetchType: 'all',
+                queryKey: ['jira', 'issue', external_data?.id],
             });
         } catch (error) {
-            toast.error(error.message || 'Failed to update jira status');
-        } finally {
-            setIsLoading(false);
+            toast.error(error.message || 'Failed to update Jira status');
         }
     };
 
+    if (isStatusLoading && !external_data) {
+        return <Spinner label="Loading Jira details..." />;
+    }
+
     return (
         <>
-            {external_data?.fields?.status && (
+            {/* --- Status Section --- */}
+            {currentStatus && (
                 <div className="flex flex-col gap-1">
                     <label className="text-sm">Status</label>
                     <div>
@@ -75,12 +88,12 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                                     variant="flat"
                                     className="font-medium"
                                     endContent={<RiArrowDownSLine fontSize="1rem" />}
-                                    isLoading={isLoading}
+                                    isLoading={isStatusLoading || isTransitioning}
                                 >
-                                    {external_data?.fields?.status?.name}
+                                    {currentStatus.name}
                                 </Button>
                             </DropdownTrigger>
-                            <DropdownMenu>
+                            <DropdownMenu aria-label="Jira Status Transitions">
                                 <DropdownSection title="Move to:">
                                     {transitions?.map((item) => (
                                         <DropdownItem
@@ -96,25 +109,27 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                     </div>
                 </div>
             )}
-            {external_data?.fields?.priority && (
+
+            {/* --- Priority Section --- */}
+            {currentPriority && (
                 <div className="flex flex-col gap-1">
                     <label className="text-sm">Priority</label>
                     <Chip
                         color="default"
                         variant="light"
-                        startContent={
-                            <Image width={18} src={external_data?.fields?.priority?.iconUrl} />
-                        }
+                        startContent={<Image width={18} src={currentPriority.iconUrl} />}
                     >
-                        {external_data?.fields?.priority?.name}
+                        {currentPriority.name}
                     </Chip>
                 </div>
             )}
-            {!!external_data?.fields?.labels?.length && (
+
+            {/* --- Labels Section --- */}
+            {!!currentLabels?.length && (
                 <div className="flex flex-col gap-1">
                     <label className="text-sm">Labels</label>
                     <div className="flex flex-wrap gap-1">
-                        {external_data?.fields?.labels?.map((label) => (
+                        {currentLabels.map((label) => (
                             <Chip key={label} size="sm">
                                 {label}
                             </Chip>
@@ -122,14 +137,16 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                     </div>
                 </div>
             )}
-            {!!external_data?.fields?.assignee && (
+
+            {/* --- Assignee Section --- */}
+            {currentAssignee && (
                 <div className="flex flex-col gap-1">
                     <label className="text-sm">Assignee</label>
                     <div className="flex flex-wrap gap-1">
                         <User
-                            name={external_data?.fields?.assignee?.displayName}
+                            name={currentAssignee.displayName}
                             avatarProps={{
-                                src: external_data?.fields?.assignee?.avatarUrls?.['24x24'],
+                                src: currentAssignee.avatarUrls?.['24x24'],
                                 size: 'sm',
                                 className: 'w-6 h-6 text-tiny',
                             }}
@@ -137,14 +154,16 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                     </div>
                 </div>
             )}
-            {!!external_data?.fields?.reporter && (
+
+            {/* --- Reporter Section --- */}
+            {currentReporter && (
                 <div className="flex flex-col gap-1">
                     <label className="text-sm">Reporter</label>
                     <div className="flex flex-wrap gap-1">
                         <User
-                            name={external_data?.fields?.reporter?.displayName}
+                            name={currentReporter.displayName}
                             avatarProps={{
-                                src: external_data?.fields?.reporter?.avatarUrls?.['24x24'],
+                                src: currentReporter.avatarUrls?.['24x24'],
                                 size: 'sm',
                                 className: 'w-6 h-6 text-tiny',
                             }}

@@ -116,8 +116,6 @@ export async function onRequestPost(context) {
                 .eq('host', host)
                 .select();
 
-            console.log(updateData);
-
             if (updateError) {
                 console.error(`Update error for issue ${issue.id}:`, updateError);
                 return Response.json(
