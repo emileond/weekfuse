@@ -151,7 +151,7 @@ export const jiraSync = task({
                                 creator: payload.user_id,
                             },
                             {
-                                onConflict: ['integration_source', 'external_id', 'host'],
+                                onConflict: 'integration_source, external_id, host, workspace_id',
                             },
                         );
                     });

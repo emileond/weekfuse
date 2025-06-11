@@ -243,7 +243,7 @@ export async function onRequestPost(context) {
                             creator: user_id,
                         },
                         {
-                            onConflict: ['integration_source', 'external_id', 'host'],
+                            onConflict: 'integration_source, external_id, host, workspace_id',
                         },
                     );
                 });
