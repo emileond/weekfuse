@@ -5,7 +5,7 @@ import GithubTaskDetails from './github/GithubTaskDetails.jsx';
 import TrelloTaskDetails from './trello/TrelloTaskDetails.jsx';
 import ClickupTaskDetails from './clickup/ClickupTaskDetails.jsx';
 
-const TaskIntegrationLink = ({ source, external_data }) => {
+const TaskIntegrationLink = ({ source, external_data, host }) => {
     switch (source) {
         case 'github':
             return (
@@ -18,7 +18,14 @@ const TaskIntegrationLink = ({ source, external_data }) => {
                     #{external_data?.number}
                 </Link>
             );
-        case 'jira':
+        case 'jira': {
+            const issueKey = external_data?.key;
+            let webUrl = '#';
+
+            if (issueKey && host) {
+                const baseUrl = new URL(host);
+                webUrl = `${baseUrl}/browse/${issueKey}`;
+            }
             return (
                 <div className="flex gap-1 items-center">
                     <Image src={external_data?.fields?.issuetype?.iconUrl} />
@@ -26,12 +33,13 @@ const TaskIntegrationLink = ({ source, external_data }) => {
                         className="font-medium text-blue-700 text-sm"
                         isExternal
                         showAnchorIcon
-                        href={external_data?.self}
+                        href={webUrl}
                     >
-                        {external_data?.key}
+                        {issueKey}
                     </Link>
                 </div>
             );
+        }
         case 'trello':
             return (
                 <div className="flex gap-1 items-center">
@@ -77,14 +85,14 @@ export const TaskIntegrationDetails = ({ task_id, source, external_data }) => {
     }
 };
 
-const TaskIntegrationPanel = ({ source, task_id, external_data }) => {
+const TaskIntegrationPanel = ({ source, task_id, external_data, host }) => {
     return (
         <div className="flex flex-col gap-6 bg-content2 basis-1/3 p-6 border-l-1 border-default-200">
             <div className="flex gap-3 items-center">
                 <h4 className="font-semibold flex gap-1">
                     <IntegrationSourceIcon type={source} /> {source}
                 </h4>
-                <TaskIntegrationLink source={source} external_data={external_data} />
+                <TaskIntegrationLink source={source} external_data={external_data} host={host} />
             </div>
             <Divider />
             <TaskIntegrationDetails

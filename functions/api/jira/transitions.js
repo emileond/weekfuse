@@ -79,13 +79,10 @@ export async function onRequestGet(context) {
                         grant_type: 'refresh_token',
                     },
                     headers: {
-                        Authorization: `Bearer ${integration.access_token}`,
                         Accept: 'application/json',
                     },
                 })
                 .json();
-
-            console.log(newToken);
 
             if (!newToken) {
                 return Response.json(
@@ -173,10 +170,32 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
     try {
         // Get the request body
-        const { task_id, issueIdOrKey, transitionId, user_id, workspace_id } =
+        const { task_id, issueIdOrKey, transitionId, user_id, workspace_id, destinationCategory } =
             await context.request.json();
 
-        if (!task_id || !issueIdOrKey || !transitionId || !user_id || !workspace_id) {
+        console.log(
+            'task:',
+            task_id,
+            'issuId:',
+            issueIdOrKey,
+            'transition:',
+            transitionId,
+            'user:',
+            user_id,
+            'works:',
+            workspace_id,
+            'destinationCategory:',
+            destinationCategory,
+        );
+
+        if (
+            !task_id ||
+            !issueIdOrKey ||
+            !transitionId ||
+            !user_id ||
+            !workspace_id ||
+            !destinationCategory
+        ) {
             return Response.json(
                 {
                     success: false,
@@ -232,7 +251,6 @@ export async function onRequestPost(context) {
                         grant_type: 'refresh_token',
                     },
                     headers: {
-                        Authorization: `Bearer ${integration.access_token}`,
                         Accept: 'application/json',
                     },
                 })
@@ -290,15 +308,27 @@ export async function onRequestPost(context) {
         // Use the first resource (Jira instance)
         const resource = resources[0];
 
+        const jiraPayload = {
+            transition: {
+                id: transitionId,
+            },
+        };
+
+        // Conditionally add the 'fields' object only if the destination is a 'Done' category
+        // if (destinationCategory && destinationCategory.toLowerCase() === 'done') {
+        //     jiraPayload.fields = {
+        //         resolution: {
+        //             name: 'Done',
+        //         },
+        //     };
+        //     console.log('Moving to DONE, adding resolution field.');
+        // }
+
         // Transition the issue
         await ky.post(
             `https://api.atlassian.com/ex/jira/${resource.id}/rest/api/2/issue/${issueIdOrKey}/transitions`,
             {
-                json: {
-                    transition: {
-                        id: transitionId,
-                    },
-                },
+                json: jiraPayload, // <-- Use our dynamic payload here
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
@@ -347,14 +377,40 @@ export async function onRequestPost(context) {
             success: true,
             message: `Jira issue transitioned successfully`,
         });
+        // At the bottom of your onRequestPost function
     } catch (error) {
+        let errorMessage = 'An unexpected error occurred while contacting Jira.';
+        let statusCode = 500; // Default to internal server error
+
+        // Check if this is an HTTPError from ky with a response object
+        if (error.response) {
+            // It's better to respond with a 400/422 if it's a user error, not 500
+            statusCode = 400;
+            try {
+                const errorBody = await error.response.json();
+                console.error('Jira API Error Body:', errorBody);
+
+                // Extract the specific error messages from Jira's response
+                if (errorBody.errorMessages && errorBody.errorMessages.length > 0) {
+                    errorMessage = errorBody.errorMessages.join('. ');
+                } else if (errorBody.errors) {
+                    errorMessage = Object.values(errorBody.errors).join('. ');
+                }
+            } catch (e) {
+                errorMessage = 'Failed to transition issue and could not parse error response.';
+            }
+        } else {
+            // This is a network error or some other unexpected issue
+            console.error('Non-Jira Error in onRequestPost:', error);
+        }
+
+        // Return a response with the specific error message from Jira
         return Response.json(
             {
                 success: false,
-                error: 'Internal server error',
-                details: error.message,
+                error: errorMessage,
             },
-            { status: 500 },
+            { status: statusCode },
         );
     }
 }

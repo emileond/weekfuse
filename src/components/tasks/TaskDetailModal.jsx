@@ -271,6 +271,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                             source={task.integration_source}
                             external_id={task?.external_id}
                             external_data={task?.external_data}
+                            host={task?.host}
                         />
                     )}
                 </div>

@@ -37,7 +37,14 @@ export const useJiraTransitions = ({ issueIdOrKey, user_id, workspace_id }) => {
     });
 };
 
-const transitionIssue = async ({ task_id, issueIdOrKey, transitionId, user_id, workspace_id }) => {
+const transitionIssue = async ({
+    task_id,
+    issueIdOrKey,
+    transitionId,
+    user_id,
+    workspace_id,
+    destinationCategory,
+}) => {
     if (!task_id || !issueIdOrKey || !transitionId || !workspace_id) {
         throw new Error('Missing required parameters: issueIdOrKey, transitionId, or workspace_id');
     }
@@ -50,12 +57,14 @@ const transitionIssue = async ({ task_id, issueIdOrKey, transitionId, user_id, w
                 transitionId,
                 user_id,
                 workspace_id,
+                destinationCategory,
             },
+            throwHttpErrors: false,
         })
         .json();
 
     if (!response.success) {
-        throw new Error(response.error || 'Failed to transition Jira issue');
+        throw new Error(response.error || 'An unknown error occurred during the transition.');
     }
 
     return response;

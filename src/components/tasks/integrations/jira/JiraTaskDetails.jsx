@@ -50,7 +50,7 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
     const currentReporter = jiraIssue?.fields?.reporter || external_data?.fields?.reporter;
 
     // --- Simplified Event Handler ---
-    const handleTransition = async (transitionId) => {
+    const handleTransition = async (transitionId, destinationCategory) => {
         try {
             await transitionIssue({
                 task_id,
@@ -58,6 +58,7 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                 transitionId,
                 user_id: user?.id,
                 workspace_id: currentWorkspace?.workspace_id,
+                destinationCategory,
             });
             toast.success('Jira status updated');
 
@@ -98,7 +99,12 @@ const JiraTaskDetails = ({ task_id, external_data }) => {
                                     {transitions?.map((item) => (
                                         <DropdownItem
                                             key={item.id}
-                                            onPress={() => handleTransition(item.id)}
+                                            onPress={() =>
+                                                handleTransition(
+                                                    item.id,
+                                                    item.to.statusCategory.name,
+                                                )
+                                            }
                                         >
                                             {item.name}
                                         </DropdownItem>
