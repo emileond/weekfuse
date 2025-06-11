@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react';
+import { Popover, PopoverTrigger, PopoverContent, Button, Tooltip } from '@heroui/react';
 import { RiCupFill, RiFocusFill, RiTimerLine } from 'react-icons/ri';
 import { PomodoroTimer } from './PomodoroTimer';
 
@@ -39,19 +39,15 @@ export function PomodoroWidget() {
 
     // Initialize audio element once
     useEffect(() => {
-        // You'll need to replace 'path/to/your/sound.mp3' with the actual path to your sound file.
-        // A short, clear sound like a bell or chime is usually good for a timer.
-        audioRef.current = new Audio('/sounds/alarm.mp3'); // Example path
-        audioRef.current.preload = 'auto'; // Preload the audio
+        audioRef.current = new Audio('/sounds/alarm.mp3');
+        audioRef.current.preload = 'auto';
     }, []);
 
     // Function to play the sound
     const playSound = useCallback(() => {
         if (audioRef.current) {
             audioRef.current.play().catch((error) => {
-                // Catch potential errors, e.g., if the user hasn't interacted with the page yet
                 console.warn('Audio playback failed:', error);
-                // You might want to show a message to the user to interact with the page
             });
         }
     }, []);
@@ -315,26 +311,30 @@ export function PomodoroWidget() {
 
     return (
         <Popover isOpen={isOpen} onOpenChange={setIsOpen} placement="bottom">
-            <PopoverTrigger>
-                <Button
-                    variant="flat"
-                    isIconOnly={!isRunning && !isPaused} // Show icon only if not running and not paused
-                    startContent={<RiTimerLine className="text-xl" />}
-                >
-                    {(isRunning || isPaused) && formatTimeShort(time)}{' '}
-                    {/* Show time if running or paused */}
-                    {isRunning && (
-                        <>
-                            {mode === 'focus' && (
-                                <RiFocusFill className="text-md text-success animate-pulse" />
+            <Tooltip content="Pomodoro timer">
+                <div>
+                    <PopoverTrigger>
+                        <Button
+                            variant="flat"
+                            isIconOnly={!isRunning && !isPaused} // Show icon only if not running and not paused
+                            startContent={<RiTimerLine className="text-xl" />}
+                        >
+                            {(isRunning || isPaused) && formatTimeShort(time)}{' '}
+                            {/* Show time if running or paused */}
+                            {isRunning && (
+                                <>
+                                    {mode === 'focus' && (
+                                        <RiFocusFill className="text-md text-success animate-pulse" />
+                                    )}
+                                    {(mode === 'shortBreak' || mode === 'longBreak') && (
+                                        <RiCupFill className="text-lg text-primary-400 " />
+                                    )}
+                                </>
                             )}
-                            {(mode === 'shortBreak' || mode === 'longBreak') && (
-                                <RiCupFill className="text-lg text-primary-400 " />
-                            )}
-                        </>
-                    )}
-                </Button>
-            </PopoverTrigger>
+                        </Button>
+                    </PopoverTrigger>
+                </div>
+            </Tooltip>
 
             <PopoverContent className="w-80 p-3">
                 <PomodoroTimer onClose={() => setIsOpen(false)} {...pomodoroState} />

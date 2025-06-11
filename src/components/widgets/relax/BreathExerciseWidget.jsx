@@ -1,7 +1,14 @@
 import { useState, useCallback } from 'react';
-import { Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react';
-import { RiLeafLine } from 'react-icons/ri'; // Using a leaf icon for relaxation
-import { BreathExerciseModal } from './BreathExerciseModal'; // Import the modal component
+import {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Button,
+    ButtonGroup,
+    Tooltip,
+} from '@heroui/react';
+import { RiFlowerLine } from 'react-icons/ri';
+import { BreathExerciseModal } from './BreathExerciseModal';
 
 export function BreathExerciseWidget() {
     // State to control the visibility of the popover
@@ -25,50 +32,60 @@ export function BreathExerciseWidget() {
     return (
         <>
             {/* Popover for selecting exercise length */}
-            <Popover isOpen={isPopoverOpen} onOpenChange={setIsPopoverOpen} placement="bottom-end">
-                <PopoverTrigger>
-                    {/* Button to open the popover, similar to PomodoroWidget */}
-                    <Button
-                        variant="flat"
-                        isIconOnly
-                        startContent={<RiLeafLine className="text-xl" />} // Leaf icon for breath exercise
-                        aria-label="Start Breath Exercise"
-                    />
-                </PopoverTrigger>
+            <Popover isOpen={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <Tooltip content="Need a break?">
+                    <div>
+                        <PopoverTrigger>
+                            <Button
+                                variant="flat"
+                                isIconOnly
+                                startContent={<RiFlowerLine className="text-xl" />} // Leaf icon for breath exercise
+                                aria-label="Start Breath Exercise"
+                            />
+                        </PopoverTrigger>
+                    </div>
+                </Tooltip>
 
                 <PopoverContent className="w-64 p-3">
                     <div className="flex flex-col gap-2">
-                        <h5 className="text-lg font-semibold text-center mb-2">Select Length</h5>
+                        <h4 className="text-default-600 font-medium text-center">Take a break</h4>
+                        <p className="text-sm text-default-500 text-center text-pretty mb-3">
+                            Relax and take a deep breath.
+                            <br />
+                            When you&#39;re ready, choose a duration and click start.
+                        </p>
                         {/* Buttons to select exercise length */}
-                        <Button
-                            variant={selectedLength === 'short' ? 'solid' : 'light'}
-                            color="primary"
-                            onPress={() => setSelectedLength('short')}
-                        >
-                            Short (30s)
-                        </Button>
-                        <Button
-                            variant={selectedLength === 'medium' ? 'solid' : 'light'}
-                            color="primary"
-                            onPress={() => setSelectedLength('medium')}
-                        >
-                            Medium (1 min)
-                        </Button>
-                        <Button
-                            variant={selectedLength === 'long' ? 'solid' : 'light'}
-                            color="primary"
-                            onPress={() => setSelectedLength('long')}
-                        >
-                            Long (3 min)
-                        </Button>
+                        <ButtonGroup>
+                            <Button
+                                size="sm"
+                                variant={selectedLength === 'short' ? 'solid' : 'bordered'}
+                                onPress={() => setSelectedLength('short')}
+                            >
+                                30s
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant={selectedLength === 'medium' ? 'solid' : 'bordered'}
+                                onPress={() => setSelectedLength('medium')}
+                            >
+                                1 min
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant={selectedLength === 'long' ? 'solid' : 'bordered'}
+                                onPress={() => setSelectedLength('long')}
+                            >
+                                3 min
+                            </Button>
+                        </ButtonGroup>
                         {/* Button to start the exercise */}
                         <Button
                             variant="shadow"
-                            color="success" // Green color for a calming effect
+                            color="primary"
                             onPress={handleStartExercise}
                             className="mt-4"
                         >
-                            Start Exercise
+                            Start
                         </Button>
                     </div>
                 </PopoverContent>

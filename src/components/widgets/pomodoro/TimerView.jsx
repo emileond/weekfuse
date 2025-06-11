@@ -66,8 +66,7 @@ export function TimerView({
                 <div className="mb-6 flex gap-2">
                     <Button
                         size="sm"
-                        variant="flat"
-                        color="primary"
+                        variant="light"
                         onPress={toggleTimer}
                         startContent={
                             isRunning ? (

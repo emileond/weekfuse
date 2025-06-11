@@ -234,7 +234,7 @@ function DashboardPage() {
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
                 customElements={
-                    <div className="flex flex-col gap-3">
+                    <div className="flex gap-3">
                         <BreathExerciseWidget />
                         <PomodoroWidget />
                     </div>
