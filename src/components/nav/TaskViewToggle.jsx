@@ -30,7 +30,7 @@ const TaskViewToggle = ({ hideList, hideKanban, hideTable, onChange }) => {
     }, []);
 
     return (
-        <div className="flex items-center gap-3 p-1 absolute mx-auto mb-3 bottom-0 left-0 right-0 w-32 rounded-2xl bg-background shadow z-10">
+        <div className="flex items-center gap-3 p-1 mx-auto fixed bottom-4 md:left-[240px] md:right-0 left-0 right-0 w-32 rounded-2xl bg-background shadow z-10">
             <ButtonGroup>
                 <Tooltip content="List view">
                     <Button

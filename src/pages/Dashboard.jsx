@@ -248,7 +248,7 @@ function DashboardPage() {
                     onFiltersChange={setFilters}
                     initialFilters={filters}
                 />
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 mb-9">
                     <div ref={parent} className="flex flex-col gap-2">
                         {hasTooManyTasks && !isTaskAlertDismissed && (
                             <Alert
