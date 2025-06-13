@@ -24,7 +24,7 @@ const fetchTasks = async ({
         if (includeInProgress && startDate && endDate) {
             // Use an OR query to get tasks scheduled for today OR tasks that are in progress
             query = query.or(
-                `and(date.gte.${startDate},date.lte.${endDate}),status.eq.in progress`,
+                `and(date.gte.${startDate},date.lte.${endDate}),and(status.eq.in progress,date.not.is.null)`,
             );
         } else {
             if (statusList) {
@@ -274,11 +274,25 @@ export const useCreateTask = (currentWorkspace) => {
 
 // Function to update a task
 const updateTask = async ({ taskId, updates }) => {
-    const { error } = await supabaseClient.from('tasks').update(updates).eq('id', taskId);
+    // Create a mutable copy of the updates to avoid side effects.
+    const finalUpdates = { ...updates };
+
+    // If the date is being set to null (i.e., moving to the backlog)...
+    if ('date' in finalUpdates && finalUpdates.date == null) {
+        // ...and the status isn't already 'completed', then default it to 'pending'.
+        // This prevents overwriting a valid "completed" status while ensuring
+        // other statuses like "in progress" are correctly handled.
+        if (finalUpdates.status !== 'completed') {
+            finalUpdates.status = 'pending';
+        }
+    }
+
+    // Use the potentially modified 'finalUpdates' object.
+    const { error } = await supabaseClient.from('tasks').update(finalUpdates).eq('id', taskId);
 
     if (error) {
-        console.error(error);
-        throw new Error('Failed to update task');
+        console.error('Supabase error:', error);
+        throw error;
     }
 };
 
