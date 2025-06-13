@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 
 /**
  * Normalizes the product name from Lemon Squeezy to the plan name in your database.
