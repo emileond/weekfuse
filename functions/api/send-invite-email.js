@@ -45,8 +45,7 @@ export async function onRequestPost(context) {
     }
 
     try {
-        const addSubscriberUrl = `${context.env.LISTMONK_URL}/api/subscribers`;;
-
+        const addSubscriberUrl = `${context.env.LISTMONK_URL}/api/subscribers`;
         try {
             await ky.post(addSubscriberUrl, {
                 headers: {
@@ -74,7 +73,9 @@ export async function onRequestPost(context) {
             }
         }
 
-        const sendEmailUrl = `${context.env.LISTMONK_URL}/api/tx`;;
+        const sendEmailUrl = `${context.env.LISTMONK_URL}/api/tx`;
+
+        const invitation_link = `${context.env.VITE_PUBLIC_URL}/accept-invite?token=${invitationId}`;
 
         const response = await ky.post(sendEmailUrl, {
             headers: {
@@ -87,7 +88,7 @@ export async function onRequestPost(context) {
                 template_id: 4,
                 data: {
                     inviter_name: invited_by,
-                    invitation_link: context.env.VITE_PUBLIC_URL,
+                    invitation_link: invitation_link,
                 },
                 content_type: 'html',
             },

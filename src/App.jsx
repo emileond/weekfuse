@@ -34,6 +34,7 @@ import NotesPage from './pages/Notes.jsx';
 import OauthCallback from './pages/integrations/OauthCallback.jsx';
 import ReflectPage from './pages/reflect/Reflect.jsx';
 import ReflectSessionPage from './pages/reflect/ReflectSession.jsx';
+import AcceptInvitePage from './pages/team/AcceptInvite.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -59,6 +60,10 @@ function App() {
         {
             path: '/signup',
             element: <AuthPage authMode="signup" />,
+        },
+        {
+            path: '/accept-invite',
+            element: <AcceptInvitePage />,
         },
         {
             path: '/dashboard',
