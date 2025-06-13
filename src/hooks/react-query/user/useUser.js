@@ -34,12 +34,20 @@ const logoutUser = async () => {
     await supabaseClient.auth.signOut();
 };
 
-const registerUser = async ({ email, password }) => {
+const registerUser = async ({ email, password, inviteToken }) => {
+    // base URL
+    let redirectURL = `${import.meta.env.VITE_PUBLIC_URL}/auth`; // Redirect to AuthPage to handle logic
+
+    // If an invitation token exists, append it to the URL
+    if (inviteToken) {
+        redirectURL += `?token=${inviteToken}`;
+    }
+
     const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
-            emailRedirectTo: `${import.meta.env.VITE_PUBLIC_URL}/login`,
+            emailRedirectTo: redirectURL,
         },
     });
 

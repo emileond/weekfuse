@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '../hooks/react-query/user/useUser';
 import { useWorkspaces } from '../hooks/react-query/teams/useWorkspaces';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import AuthForm from '../components/auth/AuthForm';
 import toast from 'react-hot-toast';
 
 // Import the Supabase client and the query client hook
-import { supabaseClient } from '../lib/supabase'; // Adjust this path if needed
+import { supabaseClient } from '../lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 
 function AuthPage({ authMode = 'login' }) {
@@ -19,6 +19,7 @@ function AuthPage({ authMode = 'login' }) {
 
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
 
     // Add a state to prevent multiple workspace creation calls
     const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
@@ -31,11 +32,18 @@ function AuthPage({ authMode = 'login' }) {
 
         const handleOnboarding = async () => {
             // --- NEW LOGIC: CHECK FOR PENDING INVITE FIRST ---
-            const pendingToken = localStorage.getItem('pendingInvitationToken');
+            const urlToken = searchParams.get('token');
+            const localToken = localStorage.getItem('pendingInvitationToken');
+            const pendingToken = urlToken || localToken;
             if (pendingToken) {
                 console.log('Found a pending invitation token. Accepting...');
                 localStorage.removeItem('pendingInvitationToken'); // Use it once
 
+                if (urlToken) {
+                    // Remove token from URL to prevent re-use on refresh
+                    navigate('/auth', { replace: true });
+                }
+                
                 try {
                     const { error } = await supabaseClient.rpc('accept_workspace_invitation', {
                         invitation_id: pendingToken,

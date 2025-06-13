@@ -48,7 +48,10 @@ function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
                 return;
             }
             try {
-                await registerUser({ email, password });
+                const inviteToken = localStorage.getItem('pendingInvitationToken');
+
+                await registerUser({ email, password, inviteToken });
+                
                 setView('signup-success');
             } catch (error) {
                 setError(error.message);
