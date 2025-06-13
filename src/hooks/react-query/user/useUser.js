@@ -38,6 +38,9 @@ const registerUser = async ({ email, password }) => {
     const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
+        options: {
+            emailRedirectTo: `${import.meta.env.VITE_PUBLIC_URL}/login`,
+        },
     });
 
     if (error) {
