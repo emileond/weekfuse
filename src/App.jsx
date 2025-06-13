@@ -35,6 +35,7 @@ import OauthCallback from './pages/integrations/OauthCallback.jsx';
 import ReflectPage from './pages/reflect/Reflect.jsx';
 import ReflectSessionPage from './pages/reflect/ReflectSession.jsx';
 import AcceptInvitePage from './pages/team/AcceptInvite.jsx';
+import PaywallPage from './pages/marketing/Paywall.jsx';
 
 function App() {
     const { isLoading } = useUser();
@@ -102,6 +103,14 @@ function App() {
             element: (
                 <ProtectedRoute>
                     <OnboardingPage />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: '/paywall',
+            element: (
+                <ProtectedRoute>
+                    <PaywallPage />
                 </ProtectedRoute>
             ),
         },

@@ -4,7 +4,14 @@ import PricingPlans from './PricingPlans';
 import VolumePricingCard from './VolumePricingCard';
 import { Link } from 'react-router-dom';
 
-function Paywall({ isOpen, onOpenChange, feature, volumePricing = true, hideTitle }) {
+function Paywall({
+    isOpen,
+    onOpenChange,
+    feature,
+    volumePricing = true,
+    hideTitle,
+    title = 'Upgrade to use this feature',
+}) {
     return (
         <Modal
             isOpen={isOpen}
@@ -18,8 +25,7 @@ function Paywall({ isOpen, onOpenChange, feature, volumePricing = true, hideTitl
                     {!hideTitle && (
                         <div className="w-full text-center">
                             <span className="text-sm inline-flex gap-1 items-center text-default-600 mb-3">
-                                <RiVipCrownFill className="text-md text-warning-500" /> Upgrade to
-                                use this feature
+                                <RiVipCrownFill className="text-md text-warning-500" /> {title}
                             </span>
                             <h2 className="text-2xl font-bold">
                                 Get the most out of {import.meta.env.VITE_APP_NAME} with {feature}

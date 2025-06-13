@@ -5,96 +5,67 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import AuthForm from '../components/auth/AuthForm';
 import toast from 'react-hot-toast';
-
-// Import the Supabase client and the query client hook
 import { supabaseClient } from '../lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 
 function AuthPage({ authMode = 'login' }) {
     const { data: user } = useUser();
     const [currentWorkspace, setCurrentWorkspace] = useCurrentWorkspace();
-
-    // Pass the isPending flag to know the query state
     const { data: workspaces, isPending: isLoadingWorkspaces } = useWorkspaces(user);
-
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
-
-    // Add a state to prevent multiple workspace creation calls
-    const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        // Wait until we have the user and the workspace query has finished
-        if (!user || isLoadingWorkspaces || isCreatingWorkspace) {
+        if (!user || isLoadingWorkspaces || isProcessing) {
             return;
         }
 
-        const handleOnboarding = async () => {
-            // --- NEW LOGIC: CHECK FOR PENDING INVITE FIRST ---
-            const urlToken = searchParams.get('token');
-            const localToken = localStorage.getItem('pendingInvitationToken');
-            const pendingToken = urlToken || localToken;
-            if (pendingToken) {
-                console.log('Found a pending invitation token. Accepting...');
-                localStorage.removeItem('pendingInvitationToken'); // Use it once
+        const handlePostLogin = async () => {
+            setIsProcessing(true);
 
-                if (urlToken) {
-                    // Remove token from URL to prevent re-use on refresh
-                    navigate('/auth', { replace: true });
-                }
-                
+            // --- Step 1: Handle any pending invitation from the URL ---
+            const pendingToken =
+                searchParams.get('token') || localStorage.getItem('pendingInvitationToken');
+            if (pendingToken) {
+                localStorage.removeItem('pendingInvitationToken');
+                if (searchParams.get('token')) navigate('/auth', { replace: true });
+
                 try {
-                    const { error } = await supabaseClient.rpc('accept_workspace_invitation', {
+                    await supabaseClient.rpc('accept_workspace_invitation', {
                         invitation_id: pendingToken,
                     });
-                    if (error) throw error;
-
                     toast.success('Invitation accepted!');
                     await queryClient.invalidateQueries({ queryKey: ['workspaces', user.id] });
-                    // The effect will re-run with the new workspace data and handle navigation
-                    return; // Exit here to let the component re-render with new data
+                    // Let the effect re-run with the new data
+                    setIsProcessing(false);
+                    return;
                 } catch (error) {
                     toast.error(`Failed to accept invitation: ${error.message}`);
-                    // Continue to normal onboarding even on error
                 }
             }
 
-            // SCENARIO 1: User has one or more workspaces (they were invited or already exist)
+            // --- Step 2: If there are workspaces, set the current one and navigate ---
             if (workspaces && workspaces.length > 0) {
-                if (currentWorkspace) {
-                    navigate(currentWorkspace.onboarded ? '/dashboard' : '/onboarding');
-                } else {
-                    const ownedWorkspace =
-                        workspaces.find((ws) => ws.role === 'owner') || workspaces[0];
-                    if (ownedWorkspace) {
-                        setCurrentWorkspace(ownedWorkspace);
-                    }
-                }
+                navigate('/dashboard');
+                return;
             }
-            // SCENARIO 2: User is logged in but has NO workspaces (new organic signup)
-            else if (workspaces && workspaces.length === 0) {
-                setIsCreatingWorkspace(true); // Lock to prevent re-runs
-                console.log('User has no workspaces. Creating one now...');
 
-                // Call the database function you created
-                const { error } = await supabaseClient.rpc('create_new_workspace_and_start_trial');
-
-                if (error) {
-                    console.error('Failed to create workspace:', error);
-                    // Optionally show an error to the user
-                    setIsCreatingWorkspace(false); // Unlock on error
-                } else {
-                    console.log('Workspace created. Refetching workspaces...');
-                    // Invalidate the query to force a refetch. This will cause the effect
-                    // to run again, but this time with a workspace.
+            // --- Step 3: If no workspaces, create one for the new user ---
+            if (workspaces && workspaces.length === 0) {
+                try {
+                    await supabaseClient.rpc('create_new_workspace_and_start_trial');
                     await queryClient.invalidateQueries({ queryKey: ['workspaces', user.id] });
-                    setIsCreatingWorkspace(false); // Unlock after invalidation
+                } catch (error) {
+                    console.error('Failed to create workspace:', error);
                 }
             }
+
+            setIsProcessing(false);
         };
 
-        handleOnboarding();
+        handlePostLogin();
     }, [
         user,
         workspaces,
@@ -103,7 +74,8 @@ function AuthPage({ authMode = 'login' }) {
         navigate,
         setCurrentWorkspace,
         queryClient,
-        isCreatingWorkspace,
+        searchParams,
+        isProcessing,
     ]);
 
     return (
