@@ -25,8 +25,9 @@ export async function onRequestPost(context) {
             },
         );
     }
-    const { invite_email: email, status, invited_by } = record;
+    const { id: invitationId, invite_email: email, status, invited_by } = record;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!email || !emailRegex.test(email)) {
         return Response.json(
             { error: 'Invalid email format' },
@@ -35,6 +36,7 @@ export async function onRequestPost(context) {
             },
         );
     }
+
     if (status !== 'pending') {
         return Response.json(
             { error: 'Invite not pending' },
