@@ -184,7 +184,7 @@ function SettingsPage() {
                                                     {' '}
                                                     /{' '}
                                                     {Intl.NumberFormat().format(
-                                                        getTotalCredits(currentWorkspace?.ltd_plan),
+                                                        getTotalCredits(currentWorkspace?.plan),
                                                     )}
                                                 </span>
                                             )}
@@ -198,7 +198,7 @@ function SettingsPage() {
                                     minValue={0}
                                     maxValue={
                                         currentWorkspace?.is_ltd
-                                            ? getTotalCredits(currentWorkspace?.ltd_plan)
+                                            ? getTotalCredits(currentWorkspace?.plan)
                                             : 25000
                                     }
                                     value={credits?.available_credits}
@@ -211,7 +211,7 @@ function SettingsPage() {
                                 <Alert
                                     color="primary"
                                     variant="faded"
-                                    title={`You have access to the LTD ${currentWorkspace?.ltd_plan}`}
+                                    title={`You have access to the LTD ${currentWorkspace?.plan}`}
                                     description={`Your credits will renew on ${Intl.DateTimeFormat(
                                         navigator.language,
                                         {
