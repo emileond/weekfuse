@@ -38,7 +38,7 @@ function AuthPage({ authMode = 'login' }) {
 
                 try {
                     const { error } = await supabaseClient.rpc('accept_workspace_invitation', {
-                        invitation_id: parseInt(pendingToken),
+                        invitation_id: pendingToken,
                     });
                     if (error) throw error;
 
