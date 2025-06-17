@@ -1,3 +1,4 @@
+// milestone select component:
 import { useState, useEffect } from 'react';
 import CreatableSelect from './CreatableSelect';
 import {
@@ -22,9 +23,9 @@ const MilestoneSelect = ({
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: milestones, isLoading } = useMilestones(currentWorkspace, projectId);
     const { mutateAsync: createMilestone } = useCreateMilestone(currentWorkspace, projectId);
-    const [selectedMilestone, setSelectedMilestone] = useState();
 
-    // Convert milestones to options format for CreatableSelect
+    // ✅ NO MORE INTERNAL STATE OR USEEFFECT FOR SELECTION
+
     const milestoneOptions = milestones
         ? milestones.map((milestone) => ({
               label: milestone.name,
@@ -32,14 +33,9 @@ const MilestoneSelect = ({
           }))
         : [];
 
-    // Handle milestone creation
     const handleCreateMilestone = async (milestoneName) => {
-        if (!projectId) {
-            console.error('Cannot create milestone without a project');
-            return null;
-        }
+        if (!projectId) return null;
 
-        // Create a new milestone in the database
         const newMilestone = await createMilestone({
             milestone: {
                 name: milestoneName,
@@ -47,28 +43,13 @@ const MilestoneSelect = ({
                 project_id: projectId,
             },
         });
-
-        const newMapped = {
-            label: newMilestone.name,
-            value: newMilestone.id,
-        };
-
+        const newMapped = { label: newMilestone.name, value: newMilestone.id };
+        // This was also correct, call parent onChange
         onChange(newMapped);
-
         return newMapped;
     };
 
-    // Update parent component when selected milestone changes
-    useEffect(() => {
-        if (selectedMilestone && onChange) {
-            onChange(selectedMilestone);
-        }
-    }, [selectedMilestone, onChange]);
-
-    // Reset selected milestone when projectId changes
-    useEffect(() => {
-        setSelectedMilestone(null);
-    }, [projectId]);
+    // The key prop in the parent component already handles resetting this component when projectId changes.
 
     return isLoading ? (
         <Spinner color="default" variant="wave" size="sm" />
@@ -81,7 +62,7 @@ const MilestoneSelect = ({
             defaultValue={milestoneOptions?.find((opt) => opt.value === defaultValue)}
             onChange={(value) => {
                 const option = milestoneOptions?.find((opt) => opt.value === value);
-                setSelectedMilestone(option);
+                onChange(option || null);
             }}
             onCreate={projectId ? handleCreateMilestone : null}
             placement={placement}

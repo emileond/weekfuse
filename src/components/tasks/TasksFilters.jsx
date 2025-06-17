@@ -15,6 +15,8 @@ function TasksFilters({
     showStatusFilter = false,
     showProjectFilter = true,
     showMilestoneFilter = true,
+    preserveProjectFilter = false,
+    preserveMilestoneFilter = false,
 }) {
     // Filter state variables
     const [selectedProject, setSelectedProject] = useState(initialFilters.project_id || null);
@@ -61,12 +63,22 @@ function TasksFilters({
 
     // Clear all filters
     const clearFilters = () => {
-        setSelectedProject(null);
-        setSelectedMilestone(null);
+        // Only clear project filter if not preserved
+        if (!preserveProjectFilter) {
+            setSelectedProject(null);
+        }
+
+        // Only clear milestone filter if not preserved
+        if (!preserveMilestoneFilter) {
+            setSelectedMilestone(null);
+        }
+
+        // Always clear these filters
         setSelectedTags([]);
         setSelectedIntegrationSource(null);
         setSelectedPriority(null);
         setSelectedStatuses(null);
+
         setResetKey((prevKey) => prevKey + 1); // Increment reset key to force re-render
     };
 

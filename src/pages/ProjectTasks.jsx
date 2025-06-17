@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useDisclosure, Progress, Chip, Spinner, Button } from '@heroui/react';
+import { useDisclosure, Progress, Chip, Spinner } from '@heroui/react';
 import AppLayout from '../components/layout/AppLayout';
 import PageLayout from '../components/layout/PageLayout';
 import { RiAddLine } from 'react-icons/ri';
@@ -134,6 +134,8 @@ function ProjectTasksPage() {
                         showStatusFilter
                         showProjectFilter={!(!projectId || !milestoneId)}
                         showMilestoneFilter={!milestoneId}
+                        preserveProjectFilter={!!projectId}
+                        preserveMilestoneFilter={!!milestoneId}
                         onFiltersChange={setFilters}
                         initialFilters={{
                             project_id: projectId,

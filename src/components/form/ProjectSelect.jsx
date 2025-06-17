@@ -1,3 +1,4 @@
+// project select component:
 import { useState, useEffect } from 'react';
 import CreatableSelect from './CreatableSelect';
 import { useProjects, useCreateProject } from '../../hooks/react-query/projects/useProjects';
@@ -19,10 +20,9 @@ const ProjectSelect = ({
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: projects, isLoading } = useProjects(currentWorkspace);
     const { mutateAsync: createProject } = useCreateProject(currentWorkspace);
-    const [selectedProject, setSelectedProject] = useState();
-    const [selectedProjects, setSelectedProjects] = useState([]);
 
-    // Convert projects to options format for CreatableSelect
+    // ✅ NO MORE INTERNAL STATE OR USEEFFECT FOR SELECTION
+
     const projectOptions = projects
         ? projects.map((project) => ({
               label: project.name,
@@ -30,46 +30,18 @@ const ProjectSelect = ({
           }))
         : [];
 
-    // Handle project creation
     const handleCreateProject = async (projectName) => {
-        // Create a new project in the database
         const newProject = await createProject({
             project: {
                 name: projectName,
                 workspace_id: currentWorkspace?.workspace_id,
             },
         });
-
-        const mappedNew = {
-            label: projectName,
-            value: newProject.id,
-        };
-
+        const mappedNew = { label: projectName, value: newProject.id };
+        // This was already correct, it calls the parent onChange
         onChange(mappedNew);
-
         return mappedNew;
     };
-
-    // Update parent component when selected project(s) change
-    useEffect(() => {
-        if (onChange) {
-            if (multiSelect) {
-                if (selectedProjects.length > 0) {
-                    onChange(selectedProjects.map((project) => project.value));
-                }
-            } else if (selectedProject) {
-                onChange(selectedProject);
-            }
-        }
-    }, [selectedProject, selectedProjects, onChange, multiSelect]);
-
-    // Set default selection for multi-select mode
-    useEffect(() => {
-        if (multiSelect && projects && projects.length > 0 && selectedProjects.length === 0) {
-            // Set all projects as default for multi-select mode
-            setSelectedProjects(projectOptions);
-        }
-    }, [multiSelect, projects, projectOptions, selectedProjects.length]);
 
     return isLoading ? (
         <Spinner color="default" variant="wave" size="sm" />
@@ -78,27 +50,22 @@ const ProjectSelect = ({
             label={label}
             placeholder={placeholder}
             options={projectOptions}
-            defaultValue={
-                multiSelect
-                    ? projectOptions // Default to all projects in multi-select mode
-                    : projectOptions?.find((opt) => opt.value === defaultValue)
-            }
+            defaultValue={projectOptions?.find((opt) => opt.value === defaultValue)}
             onChange={(value) => {
                 if (multiSelect) {
-                    // For multi-select, value is an array of project IDs
+                    // This logic remains for multi-select
                     const selectedOptions = Array.isArray(value)
                         ? value
                               .map((id) => projectOptions.find((opt) => opt.value === id))
                               .filter(Boolean)
                         : [];
-                    setSelectedProjects(selectedOptions);
+                    onChange(selectedOptions.map((opt) => opt.value));
                 } else {
-                    // For single select, value is a single project ID
                     const option = projectOptions.find((opt) => opt.value === value);
-                    setSelectedProject(option);
+                    onChange(option || null);
                 }
             }}
-            onCreate={!multiSelect ? handleCreateProject : undefined} // Disable creation in multi-select mode
+            onCreate={!multiSelect ? handleCreateProject : undefined}
             placement={placement}
             className={className}
             triggerClassName={triggerClassName}
