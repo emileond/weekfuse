@@ -28,6 +28,9 @@ export const clickupSync = task({
 
             const access_token = payload.access_token;
 
+            // Get project_id from integration config if available
+            const project_id = payload.config?.project_id || null;
+
             // Get user profile
             const userData = await ky
                 .get('https://api.clickup.com/api/v2/user', {
@@ -93,6 +96,7 @@ export const clickupSync = task({
                             host: task.url,
                             assignee: payload.user_id,
                             creator: payload.user_id,
+                            project_id: project_id,
                         },
                         {
                             onConflict: 'integration_source, external_id, host, workspace_id',

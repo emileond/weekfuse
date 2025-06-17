@@ -17,9 +17,11 @@ import {
     Button,
     useDisclosure,
     Switch,
+    Divider,
 } from '@heroui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
+import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
 const ClickupIntegrationCard = () => {
     const { data: user } = useUser();
@@ -109,8 +111,13 @@ const ClickupIntegrationCard = () => {
 
     const handleConfigure = () => {
         // Set default values from existing config when opening the modal
-        if (integration && integration.config && integration.config.syncStatus) {
-            setValue('syncStatus', integration.config.syncStatus === 'prompt');
+        if (integration && integration.config) {
+            if (integration.config.syncStatus) {
+                setValue('syncStatus', integration.config.syncStatus === 'prompt');
+            }
+            if (integration.config.project_id) {
+                setValue('project_id', integration.config.project_id);
+            }
         } else {
             // Default to false (never) if no config exists
             setValue('syncStatus', false);
@@ -125,6 +132,7 @@ const ClickupIntegrationCard = () => {
         // Use form data for the config
         const config = {
             syncStatus: data.syncStatus ? 'prompt' : 'never',
+            project_id: data.project_id,
         };
 
         updateIntegrationConfig.mutate(
@@ -181,25 +189,46 @@ const ClickupIntegrationCard = () => {
                     <form onSubmit={handleSubmit(onSubmit)} id="clickup-config">
                         <ModalHeader>Clickup Configuration</ModalHeader>
                         <ModalBody>
-                            <div className="space-y-3">
-                                <span className="font-semibold">Status sync</span>
-                                <p className="text-default-600 text-sm">
-                                    What should happen when you change the status of an imported
-                                    task?
-                                </p>
-                                <Controller
-                                    name="syncStatus"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <div className="flex items-center gap-2">
-                                            <Switch
-                                                isSelected={field.value}
-                                                onValueChange={field.onChange}
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <span className="font-semibold">Sync task status</span>
+                                    <p className="text-default-600 text-sm">
+                                        What should happen when you change the status of an imported
+                                        task?
+                                    </p>
+                                    <Controller
+                                        name="syncStatus"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <div className="flex items-center gap-2">
+                                                <Switch
+                                                    isSelected={field.value}
+                                                    onValueChange={field.onChange}
+                                                />
+                                                <span>Ask to update in ClickUp</span>
+                                            </div>
+                                        )}
+                                    />
+                                </div>
+                                <Divider />
+                                <div className="space-y-3">
+                                    <span className="font-semibold">Assign to project</span>
+                                    <p className="text-default-600 text-sm">
+                                        Choose a project for all tasks imported from Jira
+                                    </p>
+                                    <Controller
+                                        name="project_id"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <ProjectSelect
+                                                defaultValue={field.value}
+                                                onChange={(option) => {
+                                                    field.onChange(option ? option.value : null);
+                                                }}
                                             />
-                                            <span>Show prompt to update on Clickup</span>
-                                        </div>
-                                    )}
-                                />
+                                        )}
+                                    />
+                                </div>
                             </div>
                         </ModalBody>
                         <ModalFooter>

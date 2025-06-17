@@ -18,6 +18,9 @@ export const githubSync = task({
         logger.log('Starting GitHub sync task');
 
         try {
+            // Get project_id from integration config if available
+            const project_id = payload.config?.project_id || null;
+
             // Check if token has expired
             const currentTime = dayjs().utc();
             const tokenExpired =
@@ -105,6 +108,7 @@ export const githubSync = task({
                             host: issue.url,
                             assignee: payload.user_id,
                             creator: payload.user_id,
+                            project_id: project_id,
                         },
                         {
                             onConflict: 'integration_source, external_id, host, workspace_id',

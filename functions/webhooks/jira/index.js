@@ -23,10 +23,10 @@ export async function onRequestPost(context) {
 
         // Handle different webhook events
         if (webhookEvent === 'jira:issue_created') {
-            // Get the user integration to find the workspace_id
+            // Get the user integration to find the workspace_id and config
             const { data: integrationData, error: integrationError } = await supabase
                 .from('user_integrations')
-                .select('workspace_id, user_id')
+                .select('workspace_id, user_id, config')
                 .eq('type', 'jira')
                 .eq('status', 'active')
                 .eq('external_data->>accountId', user.accountId)
@@ -46,6 +46,9 @@ export async function onRequestPost(context) {
             // Use the first matching integration
             const workspace_id = integrationData.workspace_id;
             const user_id = integrationData.user_id;
+
+            // Get project_id from integration config if available
+            const project_id = integrationData.config?.project_id || null;
 
             // Convert description to Tiptap format if available
             const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
@@ -72,6 +75,7 @@ export async function onRequestPost(context) {
                 host: host,
                 assignee: user_id,
                 creator: user_id,
+                project_id: project_id,
             });
 
             if (insertError) {
@@ -87,9 +91,6 @@ export async function onRequestPost(context) {
         }
 
         if (webhookEvent === 'jira:issue_updated') {
-            // Convert description to Tiptap format if available
-            const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
-
             // Extract host from issue.self URL
             let host = null;
             if (issue.self) {
@@ -101,6 +102,30 @@ export async function onRequestPost(context) {
                 }
             }
 
+            // Get the integration config to find the project_id
+            // Get the user integration to find the workspace_id and config
+            const { data: integration, error: integrationError } = await supabase
+                .from('user_integrations')
+                .select('workspace_id, user_id, config')
+                .eq('type', 'jira')
+                .eq('status', 'active')
+                .eq('external_data->>accountId', user.accountId)
+                .single();
+
+            if (integrationError) {
+                console.error(
+                    `Error fetching integration for Jira issue ${issue.id}:`,
+                    integrationError,
+                );
+                // Continue without project_id if integration not found
+            }
+
+            // Get project_id from integration config if available
+            const project_id = integration?.config?.project_id || null;
+
+            // Convert description to Tiptap format if available
+            const convertedDesc = convertJiraAdfToTiptap(issue?.fields?.description);
+
             // Update the task in the database
             const { data: updateData, error: updateError } = await supabase
                 .from('tasks')
@@ -110,6 +135,7 @@ export async function onRequestPost(context) {
                     integration_source: 'jira',
                     external_id: issue.id,
                     external_data: issue,
+                    project_id: project_id,
                 })
                 .eq('integration_source', 'jira')
                 .eq('external_id', issue.id)

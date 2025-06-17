@@ -65,7 +65,7 @@ export async function onRequestPost(context) {
 
             const { data: integration, error: integrationError } = await supabase
                 .from('user_integrations')
-                .select('workspace_id, user_id, access_token')
+                .select('workspace_id, user_id, access_token, config')
                 .eq('type', 'clickup')
                 .eq('user_id', task.creator)
                 .single();
@@ -98,6 +98,9 @@ export async function onRequestPost(context) {
                     ? markdownToTipTap(taskData.description)
                     : null;
 
+                // Get project_id from integration config if available
+                const project_id = integration.config?.project_id || null;
+
                 // Update the task in supabase
                 const { error: updateError } = await supabase
                     .from('tasks')
@@ -107,6 +110,7 @@ export async function onRequestPost(context) {
                         external_id: taskData.id,
                         external_data: taskData,
                         host: taskData.url,
+                        project_id: project_id,
                     })
                     .eq('integration_source', 'clickup')
                     .eq('id', task.id);

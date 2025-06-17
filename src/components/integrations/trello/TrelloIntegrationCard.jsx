@@ -18,9 +18,11 @@ import {
     useDisclosure,
     RadioGroup,
     Radio,
+    Divider,
 } from '@heroui/react';
 import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import { useQueryClient } from '@tanstack/react-query';
+import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
 const TrelloIntegrationCard = () => {
     const { data: user } = useUser();
@@ -111,8 +113,13 @@ const TrelloIntegrationCard = () => {
 
     const handleConfigure = () => {
         // Set default values from existing config when opening the modal
-        if (integration && integration.config && integration.config.syncStatus) {
-            setValue('syncStatus', integration.config.syncStatus);
+        if (integration && integration.config) {
+            if (integration.config.syncStatus) {
+                setValue('syncStatus', integration.config.syncStatus);
+            }
+            if (integration.config.project_id) {
+                setValue('project_id', integration.config.project_id);
+            }
         } else {
             // Default to 'auto' if no config exists
             setValue('syncStatus', 'auto');
@@ -127,6 +134,7 @@ const TrelloIntegrationCard = () => {
         // Use form data for the config
         const config = {
             syncStatus: data.syncStatus,
+            project_id: data.project_id,
         };
 
         updateIntegrationConfig.mutate(
@@ -178,28 +186,52 @@ const TrelloIntegrationCard = () => {
                     <form onSubmit={handleSubmit(onSubmit)} id="trello-config">
                         <ModalHeader>Trello Configuration</ModalHeader>
                         <ModalBody>
-                            <div className="space-y-3">
-                                <span className="font-semibold">Status sync</span>
-                                <p className="text-default-600 text-sm">
-                                    What should happen when you change the status of an imported
-                                    task?
-                                </p>
-                                <Controller
-                                    name="syncStatus"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <RadioGroup
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                        >
-                                            <Radio value="auto">Update on Trello</Radio>
-                                            <Radio value="prompt">
-                                                Show prompt to update on Trello
-                                            </Radio>
-                                            <Radio value="never">Don&apos;t update on Trello</Radio>
-                                        </RadioGroup>
-                                    )}
-                                />
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <span className="font-semibold">Sync task status</span>
+                                    <p className="text-default-600 text-sm">
+                                        What should happen when you change the status of an imported
+                                        task?
+                                    </p>
+                                    <Controller
+                                        name="syncStatus"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <RadioGroup
+                                                size="sm"
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <Radio value="auto">
+                                                    Automatically update in Trello
+                                                </Radio>
+                                                <Radio value="prompt">
+                                                    Ask before updating in Trello
+                                                </Radio>
+                                                <Radio value="never">Do nothing in Trello</Radio>
+                                            </RadioGroup>
+                                        )}
+                                    />
+                                </div>
+                                <Divider />
+                                <div className="space-y-3">
+                                    <span className="font-semibold">Assign to project</span>
+                                    <p className="text-default-600 text-sm">
+                                        Choose a project for all tasks imported from Jira
+                                    </p>
+                                    <Controller
+                                        name="project_id"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <ProjectSelect
+                                                defaultValue={field.value}
+                                                onChange={(option) => {
+                                                    field.onChange(option ? option.value : null);
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </div>
                             </div>
                         </ModalBody>
                         <ModalFooter>

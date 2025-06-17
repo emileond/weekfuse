@@ -27,6 +27,9 @@ export const trelloSync = task({
 
             const access_token = payload.access_token;
 
+            // Get project_id from integration config if available
+            const project_id = payload.config?.project_id || null;
+
             // Get boards the member belongs to
             const boards = await ky
                 .get(
@@ -80,6 +83,7 @@ export const trelloSync = task({
                             host: card.url,
                             assignee: payload.user_id,
                             creator: payload.user_id,
+                            project_id: project_id,
                         },
                         {
                             onConflict: 'integration_source, external_id, host, workspace_id',

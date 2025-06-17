@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
         // We need to find the integration that has access to the board in the webhook
         const { data: integrationData, error: integrationError } = await supabase
             .from('user_integrations')
-            .select('workspace_id, user_id, access_token')
+            .select('workspace_id, user_id, access_token, config')
             .eq('type', 'trello')
             .eq('status', 'active');
 
@@ -92,6 +92,9 @@ export async function onRequestPost(context) {
         const user_id = validIntegration.user_id;
         const access_token = validIntegration.access_token;
 
+        // Get project_id from integration config if available
+        const project_id = validIntegration.config?.project_id || null;
+
         // Handle different action types
         if (action.type === 'createCard' || action.type === 'updateCard') {
             // Get the full card data using the card ID
@@ -129,6 +132,7 @@ export async function onRequestPost(context) {
                     host: cardData.url,
                     assignee: user_id,
                     creator: user_id,
+                    project_id: project_id,
                 },
                 {
                     onConflict: 'integration_source, external_id, host, workspace_id',
