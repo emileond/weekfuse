@@ -120,8 +120,8 @@ const KanbanView = ({ items }) => {
     };
 
     return (
-        <div className="flex gap-3 h-[80vh]">
-            <div className="basis-1/3 p-2 bg-content2 rounded-2xl overflow-y-hidden">
+        <div className="flex gap-3 h-[calc(100vh-216px)]">
+            <div className="basis-1/3 flex flex-col h-full bg-content2 rounded-2xl p-2 gap-2">
                 <div className="py-1 mb-1">
                     <Chip variant="flat" size="sm">
                         To do
@@ -135,7 +135,7 @@ const KanbanView = ({ items }) => {
                     onDragEnd={handleDragEnd}
                 />
             </div>
-            <div className="basis-1/3 p-2 bg-content2 rounded-2xl overflow-y-hidden">
+            <div className="basis-1/3 flex flex-col h-full bg-content2 rounded-2xl p-2 gap-2">
                 <div className="py-1 mb-1">
                     <Chip variant="flat" size="sm" color="primary">
                         In progress
@@ -149,7 +149,7 @@ const KanbanView = ({ items }) => {
                     onDragEnd={handleDragEnd}
                 />
             </div>
-            <div className="basis-1/3 p-2 bg-content2 rounded-2xl overflow-y-hidden">
+            <div className="basis-1/3 flex flex-col h-full bg-content2 rounded-2xl p-2 gap-2">
                 <div className="py-1 mb-1">
                     <Chip variant="flat" size="sm" color="success">
                         Done

@@ -244,8 +244,8 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                     {isBacklogCollapsed ? 'Show backlog' : 'Hide backlog'}
                 </Button>
             </div>
-            <div className="flex gap-3 h-[82vh]">
-                <div className="basis-2/3 grow flex gap-4 overflow-x-auto snap-x ">
+            <div className="flex gap-3 h-[calc(100vh-140px)]">
+                <div className="basis-2/3 grow flex gap-4 overflow-x-auto snap-x">
                     {days.map((day) => {
                         const dateStr = day.format('YYYY-MM-DD'); // Column date
 

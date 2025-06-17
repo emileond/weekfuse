@@ -19,11 +19,13 @@ function AppLayout({ children }) {
     }, []);
 
     return (
-        <div className={`flex ${!showSidebar && 'flex-col'} h-screen w-screen overflow-hidden`}>
+        <div
+            className={`flex ${!showSidebar ? 'flex-col' : ''} h-screen w-screen bg-background overflow-hidden`}
+        >
             <TakuWidget />
             {showSidebar && <Sidebar />}
             {!showSidebar && <Appbar />}
-            {children}
+            <div className="flex-1 overflow-y-auto">{children}</div>
         </div>
     );
 }
