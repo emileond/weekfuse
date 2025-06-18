@@ -36,19 +36,16 @@ export async function onRequestDelete(context) {
         try {
             // Revoke the token with TickTick's API if they provide such an endpoint
             // This is optional and depends on TickTick's API capabilities
-            await ky.post(
-                `https://api.ticktick.com/oauth/revoke`,
-                {
-                    json: {
-                        client_id: context.env.TICKTICK_CLIENT_ID,
-                        client_secret: context.env.TICKTICK_CLIENT_SECRET,
-                        token: access_token,
-                    },
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+            await ky.post(`https://api.ticktick.com/oauth/revoke`, {
+                json: {
+                    client_id: context.env.TICKTICK_CLIENT_ID,
+                    client_secret: context.env.TICKTICK_CLIENT_SECRET,
+                    token: access_token,
                 },
-            );
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
 
             console.log(`Successfully revoked TickTick token: ${access_token}`);
         } catch (revokeError) {
@@ -107,19 +104,28 @@ export async function onRequestPost(context) {
         // Initialize Supabase client
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
-        // Exchange authorization code for access token
+        const { TICKTICK_CLIENT_ID, TICKTICK_CLIENT_SECRET } = context.env;
+
+        // --- Step 1: Create the Basic Auth header ---
+        const basicAuthHeader = `Basic ${btoa(`${TICKTICK_CLIENT_ID}:${TICKTICK_CLIENT_SECRET}`)}`;
+
+        // --- Step 2: Create the URL-encoded body ---
+        const requestBody = new URLSearchParams({
+            code: code,
+            grant_type: 'authorization_code',
+            redirect_uri: 'https://weekfuse.com/integrations/oauth/callback/ticktick',
+            scope: 'tasks:read tasks:write', // It's good practice to include the scope
+        });
+
+        // --- Step 3: Make the corrected API call ---
         const tokenResponse = await ky
-            .post('https://api.ticktick.com/oauth/token', {
-                json: {
-                    client_id: context.env.TICKTICK_CLIENT_ID,
-                    client_secret: context.env.TICKTICK_CLIENT_SECRET,
-                    code,
-                    grant_type: 'authorization_code',
-                    redirect_uri: 'https://weekfuse.com/integrations/oauth/callback/ticktick',
-                },
+            .post('https://ticktick.com/oauth/token', {
+                // Using the endpoint from the docs
                 headers: {
-                    'Content-Type': 'application/json',
+                    Authorization: basicAuthHeader,
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
+                body: requestBody, // Use the 'body' option with the URLSearchParams object
             })
             .json();
 
@@ -163,15 +169,12 @@ export async function onRequestPost(context) {
 
         // Get user's projects
         const projects = await ky
-            .get(
-                `https://api.ticktick.com/api/v2/projects`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${access_token}`,
-                        'Content-Type': 'application/json',
-                    },
+            .get(`https://api.ticktick.com/api/v2/projects`, {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
                 },
-            )
+            })
             .json();
 
         // Get all tasks from all projects
@@ -184,7 +187,7 @@ export async function onRequestPost(context) {
                 return ky
                     .get(projectTasksUrl, {
                         headers: {
-                            'Authorization': `Bearer ${access_token}`,
+                            Authorization: `Bearer ${access_token}`,
                             'Content-Type': 'application/json',
                         },
                     })
