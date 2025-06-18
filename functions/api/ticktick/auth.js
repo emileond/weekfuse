@@ -130,8 +130,6 @@ export async function onRequestPost(context) {
             .json();
 
         const access_token = tokenResponse.access_token;
-        const refresh_token = tokenResponse.refresh_token;
-        const expires_in = tokenResponse.expires_in;
 
         if (!access_token) {
             throw new Error('Failed to obtain access token');
@@ -143,8 +141,6 @@ export async function onRequestPost(context) {
             .upsert({
                 type: 'ticktick',
                 access_token: access_token,
-                refresh_token: refresh_token,
-                expires_in: expires_in,
                 user_id,
                 workspace_id,
                 status: 'active',
