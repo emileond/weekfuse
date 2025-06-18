@@ -147,6 +147,38 @@ const OAuthCallback = () => {
         }
     };
 
+    const handleMondayCallback = async ({ code }) => {
+        setLoading(true);
+        try {
+            await ky.post('/api/monday/auth', {
+                json: {
+                    code,
+                    user_id: user.id,
+                    workspace_id: currentWorkspace.workspace_id,
+                },
+            });
+
+            toast.success('Monday.com Integration connected');
+            await queryClient.cancelQueries({
+                queryKey: ['user_integration', user?.id, 'monday'],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ['user_integration', user?.id, 'monday'],
+            });
+        } catch (error) {
+            let errorMessage = 'Failed to connect Monday.com Integration';
+            if (error.response) {
+                const errorData = await error.response.json();
+                errorMessage = errorData.message || errorMessage;
+            }
+            console.error('Error connecting to Monday.com:', error);
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+            navigate('/integrations');
+        }
+    };
+
     useEffect(() => {
         if (!user || !currentWorkspace) return;
 
@@ -171,6 +203,9 @@ const OAuthCallback = () => {
                 break;
             case 'clickup':
                 handleClickupCallback({ code });
+                break;
+            case 'monday':
+                handleMondayCallback({ code });
                 break;
             default:
                 toast.error('Unsupported OAuth provider');

@@ -7,6 +7,7 @@ import GithubIntegrationCard from '../components/integrations/github/GithubInteg
 import JiraIntegrationCard from '../components/integrations/jira/JiraIntegrationCard.jsx';
 import TrelloIntegrationCard from '../components/integrations/trello/TrelloIntegrationCard.jsx';
 import ClickupIntegrationCard from '../components/integrations/clickup/ClickupIntegrationCard.jsx';
+import MondayIntegrationCard from '../components/integrations/monday/MondayIntegrationCard.jsx';
 
 function IntegrationsPage() {
     // Define all integrations with GitHub having dynamic status and handlers
@@ -47,6 +48,7 @@ function IntegrationsPage() {
                     <JiraIntegrationCard />
                     <TrelloIntegrationCard />
                     <ClickupIntegrationCard />
+                    <MondayIntegrationCard />
                     {integrations?.map((integration) => (
                         <IntegrationCard
                             key={integration.id}
