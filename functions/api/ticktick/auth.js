@@ -193,7 +193,7 @@ export async function onRequestPost(context) {
             const projectTasksResults = await Promise.all(taskPromises);
 
             // Combine all tasks from all projects
-            allTasks = projectTasksResults?.tasks.flat();
+            allTasks = projectTasksResults.map((result) => result.tasks || []).flat();
         }
 
         // Process and store tasks
