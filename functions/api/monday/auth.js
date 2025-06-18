@@ -93,14 +93,16 @@ export async function onRequestPost(context) {
     const { code, user_id, workspace_id } = body;
 
     if (!code || !user_id || !workspace_id) {
-        return Response.json({ success: false, error: 'Missing data' }, { status: 400 });
+        return new Response(JSON.stringify({ success: false, error: 'Missing data' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 
     try {
-        // Initialize Supabase client
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
-        // Exchange the authorization code for an access token
+        // --- Step 1: Exchange code for access token (your existing code is fine) ---
         const tokenResponse = await ky
             .post('https://auth.monday.com/oauth2/token', {
                 json: {
@@ -110,104 +112,107 @@ export async function onRequestPost(context) {
                     redirect_uri: 'https://weekfuse.com/integrations/oauth/callback/monday',
                     grant_type: 'authorization_code',
                 },
-                headers: {
-                    'Content-Type': 'application/json',
-                },
             })
             .json();
 
         const access_token = tokenResponse.access_token;
-
         if (!access_token) {
-            return Response.json(
-                { success: false, error: 'Failed to obtain access token' },
-                { status: 500 },
-            );
+            throw new Error('Failed to obtain access token');
         }
 
-        // Save the access token in Supabase
-        const { data: upsertData, error: updateError } = await supabase
-            .from('user_integrations')
-            .upsert({
-                type: 'monday',
-                access_token: access_token,
-                user_id,
-                workspace_id,
-                status: 'active',
-                last_sync: toUTC(),
-                config: { syncStatus: 'prompt' },
-            })
-            .select('id')
-            .single();
-
-        if (updateError) {
-            console.error('Supabase update error:', updateError);
-            return Response.json(
-                {
-                    success: false,
-                    error: 'Failed to save integration data',
-                },
-                { status: 500 },
-            );
-        }
-
-        const integration_id = upsertData.id;
-
-        // Get boards the user has access to
-        const boardsQuery = `
-            query {
-                boards {
-                    id
-                    name
-                    description
-                    items {
-                        id
-                        name
-                        column_values {
-                            id
-                            title
-                            text
-                        }
-                    }
-                }
-            }
-        `;
-
-        const boardsResponse = await ky
+        // --- Step 2: Get the Monday User ID of the person who authorized the app ---
+        const meQuery = 'query { me { id name } }';
+        const meResponse = await ky
             .post('https://api.monday.com/v2', {
-                json: {
-                    query: boardsQuery,
-                },
-                headers: {
-                    Authorization: access_token,
-                    'Content-Type': 'application/json',
-                },
+                headers: { Authorization: `Bearer ${access_token}` },
+                json: { query: meQuery },
             })
             .json();
 
-        const boards = boardsResponse.data?.boards || [];
+        const mondayUserId = meResponse.data.me.id;
+        if (!mondayUserId) {
+            throw new Error('Could not retrieve Monday.com user ID.');
+        }
 
-        // Process and store items from all boards
-        if (boards && Array.isArray(boards)) {
-            const allItems = [];
+        // --- Step 3: Fetch all relevant items in a loop to handle pagination ---
+        let allIncompleteItems = [];
+        let cursor = null;
 
-            // Collect all items from all boards
-            boards.forEach((board) => {
-                if (board.items && Array.isArray(board.items)) {
-                    board.items.forEach((item) => {
-                        // Add board info to each item for reference
-                        item.board = {
-                            id: board.id,
-                            name: board.name,
-                        };
-                        allItems.push(item);
-                    });
+        do {
+            // This query finds items assigned to the user that are NOT marked as "Done".
+            // NOTE: This assumes your "Done" status is literally named "Done".
+            // A more robust solution would first query boards for their specific "done" status labels.
+            const itemsQuery = `
+              query($cursor: String) {
+                items_page_by_column_values(
+                  limit: 100,
+                  cursor: $cursor,
+                  columns: [
+                    { column_id: "person", column_values: ["${mondayUserId}"] },
+                    { column_id: "status", column_values: ["Done"], negate: true }
+                  ]
+                ) {
+                  cursor
+                  items {
+                    id
+                    name
+                    board {
+                      id
+                      name
+                    }
+                    column_values {
+                      id
+                      title
+                      text
+                      value
+                    }
+                  }
                 }
-            });
+              }
+            `;
 
-            // Process and store items
-            const upsertPromises = allItems.map((item) => {
-                // Convert description to Tiptap format if available
+            const itemsResponse = await ky
+                .post('https://api.monday.com/v2', {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    json: {
+                        query: itemsQuery,
+                        variables: { cursor },
+                    },
+                })
+                .json();
+
+            if (itemsResponse.errors) {
+                console.error('GraphQL Errors:', JSON.stringify(itemsResponse.errors, null, 2));
+                throw new Error('Failed to fetch items from Monday.com');
+            }
+
+            const pageData = itemsResponse.data.items_page_by_column_values;
+            if (pageData && pageData.items.length > 0) {
+                allIncompleteItems.push(...pageData.items);
+            }
+            cursor = pageData.cursor;
+        } while (cursor);
+
+        console.log(`Found ${allIncompleteItems.length} incomplete items assigned to the user.`);
+
+        // --- Step 4: Save the integration and process the fetched items ---
+        const { error: updateError } = await supabase.from('user_integrations').upsert({
+            type: 'monday',
+            access_token,
+            user_id,
+            workspace_id,
+            status: 'active',
+            last_sync: toUTC(),
+            config: { syncStatus: 'complete' },
+        });
+
+        if (updateError) throw updateError;
+
+        if (allIncompleteItems.length > 0) {
+            const upsertPromises = allIncompleteItems.map((item) => {
                 const descriptionColumn = item.column_values.find(
                     (col) => col.title.toLowerCase() === 'description' || col.id === 'description',
                 );
@@ -236,74 +241,52 @@ export async function onRequestPost(context) {
                     },
                 );
             });
+            await Promise.all(upsertPromises);
+        }
 
-            const results = await Promise.all(upsertPromises);
-
-            results.forEach((result, index) => {
-                if (result.error) {
-                    console.error(`Upsert error for item ${allItems[index].id}:`, result.error);
-                } else {
-                    console.log(`Item ${allItems[index].id} imported successfully`);
-                }
+        // --- Step 5: Set up webhooks (optional but good to have) ---
+        const uniqueBoardIds = [...new Set(allIncompleteItems.map((item) => item.board.id))];
+        if (uniqueBoardIds.length > 0) {
+            const webhookUrl = 'https://weekfuse.com/webhooks/monday';
+            const webhookPromises = uniqueBoardIds.map((boardId) => {
+                const webhookMutation = `
+                    mutation {
+                        create_webhook(board_id: ${boardId}, url: "${webhookUrl}", event: change_column_value) {
+                            id
+                        }
+                    }`;
+                return ky
+                    .post('https://api.monday.com/v2', {
+                        headers: {
+                            Authorization: `Bearer ${access_token}`,
+                            'Content-Type': 'application/json',
+                        },
+                        json: { query: webhookMutation },
+                    })
+                    .json()
+                    .catch((err) =>
+                        console.error(`Failed to create webhook for board ${boardId}:`, err),
+                    );
             });
+            await Promise.all(webhookPromises);
         }
 
-        // Set up webhooks for each board
-        if (boards && Array.isArray(boards)) {
-            try {
-                const webhookUrl = 'https://weekfuse.com/webhooks/monday';
-
-                // Create webhooks for each board
-                const webhookPromises = boards.map(async (board) => {
-                    try {
-                        // Create a webhook for this board
-                        const webhookMutation = `
-                            mutation {
-                                create_webhook(board_id: ${board.id}, url: "${webhookUrl}", event: "change_column_value") {
-                                    id
-                                }
-                            }
-                        `;
-
-                        await ky.post('https://api.monday.com/v2', {
-                            json: {
-                                query: webhookMutation,
-                            },
-                            headers: {
-                                Authorization: `Bearer ${access_token}`,
-                                'Content-Type': 'application/json',
-                            },
-                        });
-
-                        console.log(
-                            `Webhook created successfully for board ${board.id} (${board.name})`,
-                        );
-                        return { success: true, boardId: board.id };
-                    } catch (webhookError) {
-                        console.error(
-                            `Error creating webhook for board ${board.id}:`,
-                            webhookError,
-                        );
-                        return { success: false, boardId: board.id, error: webhookError };
-                    }
-                });
-
-                await Promise.all(webhookPromises);
-            } catch (webhooksError) {
-                console.error('Error creating webhooks:', webhooksError);
-                // Continue with the flow even if webhook creation fails
-            }
-        }
-
-        return Response.json({ success: true });
+        return new Response(
+            JSON.stringify({
+                success: true,
+                items_imported: allIncompleteItems.length,
+            }),
+            { headers: { 'Content-Type': 'application/json' } },
+        );
     } catch (error) {
         console.error('Error in Monday auth flow:', error);
-        return Response.json(
-            {
-                success: false,
-                error: 'Internal server error',
-            },
-            { status: 500 },
-        );
+        if (error.response) {
+            const errorBody = await error.response.text();
+            console.error('API Error Body:', errorBody);
+        }
+        return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 }
