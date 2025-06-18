@@ -47,6 +47,10 @@ const deleteIntegration = async ({ id, installation_id, type, access_token }) =>
             await ky.delete('/api/trello/auth', {
                 json: { id },
             });
+        } else if (type === 'ticktick' && id) {
+            await ky.delete('/api/ticktick/auth', {
+                json: { id },
+            });
         } else if (type === 'clickup' && id) {
             await ky.delete('/api/clickup/auth', {
                 json: { id },

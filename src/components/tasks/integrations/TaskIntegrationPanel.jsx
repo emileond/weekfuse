@@ -4,6 +4,7 @@ import JiraTaskDetails from './jira/JiraTaskDetails.jsx';
 import GithubTaskDetails from './github/GithubTaskDetails.jsx';
 import TrelloTaskDetails from './trello/TrelloTaskDetails.jsx';
 import ClickupTaskDetails from './clickup/ClickupTaskDetails.jsx';
+import TickTickTaskDetails from './ticktick/TickTickTaskDetails.jsx';
 
 const TaskIntegrationLink = ({ source, external_data, host }) => {
     switch (source) {
@@ -66,6 +67,20 @@ const TaskIntegrationLink = ({ source, external_data, host }) => {
                     </Link>
                 </div>
             );
+
+        case 'ticktick':
+            return (
+                <div className="flex gap-1 items-center">
+                    <Link
+                        className="font-medium text-blue-700 text-sm"
+                        isExternal
+                        showAnchorIcon
+                        href={`https://ticktick.com/webapp/#p/${external_data?.projectId}/tasks/${external_data?.id}`}
+                    >
+                        See in TickTick
+                    </Link>
+                </div>
+            );
     }
 };
 
@@ -82,6 +97,9 @@ export const TaskIntegrationDetails = ({ task_id, source, external_data }) => {
 
         case 'clickup':
             return <ClickupTaskDetails external_data={external_data} />;
+
+        case 'ticktick':
+            return <TickTickTaskDetails task_id={task_id} external_data={external_data} />;
     }
 };
 

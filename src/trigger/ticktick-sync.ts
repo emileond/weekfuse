@@ -26,7 +26,7 @@ export const ticktickSync = task({
                 .eq('id', payload.id);
 
             const access_token = payload.access_token;
-            
+
             // Check if token needs refresh
             if (payload.refresh_token && payload.expires_in) {
                 // Implement token refresh logic if needed
@@ -39,7 +39,7 @@ export const ticktickSync = task({
             // Get user's projects
             const projects = await ky
                 .get(
-                    `https://api.ticktick.com/api/v2/projects`,
+                    `https://api.ticktick.com/open/v1/project`,
                     {
                         headers: {
                             'Authorization': `Bearer ${access_token}`,
@@ -54,8 +54,9 @@ export const ticktickSync = task({
 
             // Iterate through each project and get all tasks
             if (projects && Array.isArray(projects)) {
-                const taskPromises = projects.map((project) => {
-                    const projectTasksUrl = `https://api.ticktick.com/api/v2/project/${project.id}/tasks`;
+                const updatedProjects = [{id: 'inbox'}, ...projects];
+                const taskPromises = updatedProjects.map((project) => {
+                    const projectTasksUrl = `https://api.ticktick.com/open/v1/project/${project.id}/data`;
                     return ky
                         .get(projectTasksUrl, {
                             headers: {
@@ -69,7 +70,7 @@ export const ticktickSync = task({
                 const projectTasksResults = await Promise.all(taskPromises);
 
                 // Combine all tasks from all projects
-                allTasks = projectTasksResults.flat();
+                allTasks = projectTasksResults.map((result) => result.tasks || []).flat();
             }
 
             const tasksData = allTasks;
