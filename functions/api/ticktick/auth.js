@@ -196,6 +196,8 @@ export async function onRequestPost(context) {
             allTasks = projectTasksResults.map((result) => result.tasks || []).flat();
         }
 
+        console.log(allTasks);
+
         // Process and store tasks
         if (allTasks && Array.isArray(allTasks)) {
             const upsertPromises = allTasks.map((task) => {
