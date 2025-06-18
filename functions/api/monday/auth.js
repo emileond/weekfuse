@@ -36,15 +36,12 @@ export async function onRequestDelete(context) {
         try {
             // Revoke the token with Monday's API
             // Note: Monday.com might have a different approach to revoking tokens
-            await ky.delete(
-                `https://api.monday.com/v2/oauth/revoke`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${access_token}`,
-                        'Content-Type': 'application/json',
-                    },
+            await ky.delete(`https://api.monday.com/v2/oauth/revoke`, {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
                 },
-            );
+            });
 
             console.log(`Successfully revoked Monday token: ${access_token}`);
         } catch (revokeError) {
@@ -104,18 +101,20 @@ export async function onRequestPost(context) {
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
         // Exchange the authorization code for an access token
-        const tokenResponse = await ky.post('https://auth.monday.com/oauth2/token', {
-            json: {
-                client_id: context.env.MONDAY_CLIENT_ID,
-                client_secret: context.env.MONDAY_CLIENT_SECRET,
-                code,
-                redirect_uri: 'https://weekfuse.com/integrations/oauth/callback/monday',
-                grant_type: 'authorization_code',
-            },
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }).json();
+        const tokenResponse = await ky
+            .post('https://auth.monday.com/oauth2/token', {
+                json: {
+                    client_id: context.env.MONDAY_CLIENT_ID,
+                    client_secret: context.env.MONDAY_CLIENT_SECRET,
+                    code,
+                    redirect_uri: 'https://weekfuse.com/integrations/oauth/callback/monday',
+                    grant_type: 'authorization_code',
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .json();
 
         const access_token = tokenResponse.access_token;
 
@@ -174,15 +173,17 @@ export async function onRequestPost(context) {
             }
         `;
 
-        const boardsResponse = await ky.post('https://api.monday.com/v2', {
-            json: {
-                query: boardsQuery,
-            },
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-Type': 'application/json',
-            },
-        }).json();
+        const boardsResponse = await ky
+            .post('https://api.monday.com/v2', {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: boardsQuery,
+                }),
+            })
+            .json();
 
         const boards = boardsResponse.data?.boards || [];
 
@@ -191,9 +192,9 @@ export async function onRequestPost(context) {
             const allItems = [];
 
             // Collect all items from all boards
-            boards.forEach(board => {
+            boards.forEach((board) => {
                 if (board.items && Array.isArray(board.items)) {
-                    board.items.forEach(item => {
+                    board.items.forEach((item) => {
                         // Add board info to each item for reference
                         item.board = {
                             id: board.id,
@@ -205,10 +206,14 @@ export async function onRequestPost(context) {
             });
 
             // Process and store items
-            const upsertPromises = allItems.map(item => {
+            const upsertPromises = allItems.map((item) => {
                 // Convert description to Tiptap format if available
-                const descriptionColumn = item.column_values.find(col => col.title.toLowerCase() === 'description' || col.id === 'description');
-                const tiptapDescription = descriptionColumn?.text ? markdownToTipTap(descriptionColumn.text) : null;
+                const descriptionColumn = item.column_values.find(
+                    (col) => col.title.toLowerCase() === 'description' || col.id === 'description',
+                );
+                const tiptapDescription = descriptionColumn?.text
+                    ? markdownToTipTap(descriptionColumn.text)
+                    : null;
 
                 return supabase.from('tasks').upsert(
                     {
@@ -265,15 +270,20 @@ export async function onRequestPost(context) {
                                 query: webhookMutation,
                             },
                             headers: {
-                                'Authorization': `Bearer ${access_token}`,
+                                Authorization: `Bearer ${access_token}`,
                                 'Content-Type': 'application/json',
                             },
                         });
 
-                        console.log(`Webhook created successfully for board ${board.id} (${board.name})`);
+                        console.log(
+                            `Webhook created successfully for board ${board.id} (${board.name})`,
+                        );
                         return { success: true, boardId: board.id };
                     } catch (webhookError) {
-                        console.error(`Error creating webhook for board ${board.id}:`, webhookError);
+                        console.error(
+                            `Error creating webhook for board ${board.id}:`,
+                            webhookError,
+                        );
                         return { success: false, boardId: board.id, error: webhookError };
                     }
                 });
