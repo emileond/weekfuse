@@ -165,7 +165,7 @@ export async function onRequestPost(context) {
 
         // Get user's projects
         const projects = await ky
-            .get(`https://api.ticktick.com/api/v2/projects`, {
+            .get(`https://api.ticktick.com/open/v1/project`, {
                 headers: {
                     Authorization: `Bearer ${access_token}`,
                     'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ export async function onRequestPost(context) {
         // Iterate through each project and get all tasks
         if (projects && Array.isArray(projects)) {
             const taskPromises = projects.map((project) => {
-                const projectTasksUrl = `https://api.ticktick.com/api/v2/project/${project.id}/tasks`;
+                const projectTasksUrl = `https://api.ticktick.com/open/v1/project/${project.id}/data`;
                 return ky
                     .get(projectTasksUrl, {
                         headers: {
@@ -193,7 +193,7 @@ export async function onRequestPost(context) {
             const projectTasksResults = await Promise.all(taskPromises);
 
             // Combine all tasks from all projects
-            allTasks = projectTasksResults.flat();
+            allTasks = projectTasksResults?.tasks.flat();
         }
 
         // Process and store tasks
