@@ -175,13 +175,13 @@ export async function onRequestPost(context) {
 
         const boardsResponse = await ky
             .post('https://api.monday.com/v2', {
+                json: {
+                    query: boardsQuery,
+                },
                 headers: {
-                    Authorization: `Bearer ${access_token}`,
+                    Authorization: access_token,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    query: boardsQuery,
-                }),
             })
             .json();
 
