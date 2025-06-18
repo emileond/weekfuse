@@ -33,26 +33,6 @@ export async function onRequestDelete(context) {
 
         const { access_token, user_id, workspace_id } = data;
 
-        try {
-            // Revoke the token with TickTick's API if they provide such an endpoint
-            // This is optional and depends on TickTick's API capabilities
-            await ky.post(`https://api.ticktick.com/oauth/revoke`, {
-                json: {
-                    client_id: context.env.TICKTICK_CLIENT_ID,
-                    client_secret: context.env.TICKTICK_CLIENT_SECRET,
-                    token: access_token,
-                },
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            console.log(`Successfully revoked TickTick token: ${access_token}`);
-        } catch (revokeError) {
-            console.error('Error revoking TickTick token:', revokeError);
-            // Continue with deletion from database even if API revocation fails
-        }
-
         // Delete the token from the database
         const { error: deleteError } = await supabase
             .from('user_integrations')
@@ -178,7 +158,8 @@ export async function onRequestPost(context) {
 
         // Iterate through each project and get all tasks
         if (projects && Array.isArray(projects)) {
-            const taskPromises = projects.map((project) => {
+            const updatedProjects = [{id: 'inbox'}, ...projects];
+            const taskPromises = updatedProjects.map((project) => {
                 const projectTasksUrl = `https://api.ticktick.com/open/v1/project/${project.id}/data`;
                 return ky
                     .get(projectTasksUrl, {
@@ -195,9 +176,7 @@ export async function onRequestPost(context) {
             // Combine all tasks from all projects
             allTasks = projectTasksResults.map((result) => result.tasks || []).flat();
         }
-
-        console.log(allTasks);
-
+        
         // Process and store tasks
         if (allTasks && Array.isArray(allTasks)) {
             const upsertPromises = allTasks.map((task) => {
