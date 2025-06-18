@@ -167,15 +167,11 @@ export async function onRequestPost(context) {
 
             // This inner loop handles pagination for the items on the current board
             while (hasMorePages) {
-                // This is the final, correct query. It accepts a `$rules` variable.
+                // Simplified query that doesn't use the complex rules parameter
                 const itemsQuery = `
-                  query($boardId: ID!, $rules: [ItemsQueryRule!], $cursor: String) {
+                  query($boardId: ID!, $cursor: String) {
                     boards(ids: [$boardId]) {
-                      items_page(
-                        limit: 100,
-                        cursor: $cursor,
-                        query_params: { rules: $rules }
-                      ) {
+                      items_page(limit: 100, cursor: $cursor) {
                         cursor
                         items {
                           id
@@ -185,7 +181,8 @@ export async function onRequestPost(context) {
                             id
                             text
                             value
-                            column { title }
+                            title
+                            type
                           }
                         }
                       }
@@ -193,27 +190,8 @@ export async function onRequestPost(context) {
                   }
                 `;
 
-                // **This is the critical part**: We build the rules object in JavaScript.
-                // This ensures the variables are correctly formatted and avoids the previous errors.
-                const rules = [
-                    // Rule 1: Item is assigned to our user.
-                    {
-                        column_id: 'person',
-                        compare_value: [mondayUserId], // The user ID is injected directly here.
-                        operator: 'any_of',
-                    },
-                    // Rule 2: Status is NOT "Done".
-                    // `compare_value: [1]` refers to the *index* of the "Done" label in a standard status column.
-                    {
-                        column_id: 'status',
-                        compare_value: [1],
-                        operator: 'is_not', // This is the correct operator for negation.
-                    },
-                ];
-
                 const variables = {
                     boardId: board.id,
-                    rules: rules, // We pass the entire JavaScript array as the variable.
                     cursor,
                 };
 
@@ -221,7 +199,51 @@ export async function onRequestPost(context) {
 
                 const itemsPage = pageData.boards[0]?.items_page;
                 if (itemsPage && itemsPage.items.length > 0) {
-                    allIncompleteItems.push(...itemsPage.items);
+                    // Filter items to only include those assigned to the user and not completed
+                    const filteredItems = itemsPage.items.filter(item => {
+                        // Find the person column to check if the item is assigned to the user
+                        const personColumn = item.column_values.find(
+                            col => col.title === 'Person' || col.title === 'Assignee' || col.id === 'person'
+                        );
+
+                        // Find the status column to check if the item is completed
+                        const statusColumn = item.column_values.find(
+                            col => col.title === 'Status' || col.id === 'status'
+                        );
+
+                        // Check if the item is assigned to the user
+                        let isAssignedToUser = false;
+                        if (personColumn && personColumn.value) {
+                            try {
+                                const personValue = JSON.parse(personColumn.value);
+                                isAssignedToUser = personValue.personsAndTeams && 
+                                    personValue.personsAndTeams.some(person => person.id === mondayUserId);
+                            } catch (e) {
+                                // If parsing fails, assume it's not assigned to the user
+                                isAssignedToUser = false;
+                            }
+                        }
+
+                        // Check if the item is not completed
+                        let isNotCompleted = true;
+                        if (statusColumn && statusColumn.value) {
+                            try {
+                                const statusValue = JSON.parse(statusColumn.value);
+                                // Check if the status is "Done" or "Completed"
+                                isNotCompleted = !(statusValue.label === 'Done' || 
+                                                  statusValue.label === 'Completed' || 
+                                                  statusValue.label === 'Complete');
+                            } catch (e) {
+                                // If parsing fails, assume it's not completed
+                                isNotCompleted = true;
+                            }
+                        }
+
+                        return isAssignedToUser && isNotCompleted;
+                    });
+
+                    console.log(`Board ${board.name} (${board.id}): Found ${itemsPage.items.length} items, filtered to ${filteredItems.length} items assigned to user and not completed`);
+                    allIncompleteItems.push(...filteredItems);
                 }
 
                 cursor = itemsPage ? itemsPage.cursor : null;
@@ -246,10 +268,15 @@ export async function onRequestPost(context) {
 
         if (allIncompleteItems.length > 0) {
             const upsertPromises = allIncompleteItems.map((item) => {
+                // Find the description column, handling both possible structures
                 const descriptionColumn = item.column_values.find(
-                    (col) => col.column.title.toLowerCase() === 'description',
+                    (col) => (col.title && col.title.toLowerCase() === 'description') || 
+                             (col.id && col.id.toLowerCase() === 'description')
                 );
                 const tiptapDescription = markdownToTipTap(descriptionColumn?.text);
+
+                // Get the board ID, handling both possible structures
+                const boardId = item.board?.id || item.board_id;
 
                 return supabase.from('tasks').upsert(
                     {
@@ -259,7 +286,7 @@ export async function onRequestPost(context) {
                         integration_source: 'monday',
                         external_id: item.id,
                         external_data: { ...item },
-                        host: `https://monday.com/boards/${item.board.id}/pulses/${item.id}`,
+                        host: `https://monday.com/boards/${boardId}/pulses/${item.id}`,
                         assignee: user_id,
                         creator: user_id,
                     },
@@ -272,7 +299,11 @@ export async function onRequestPost(context) {
         }
 
         // --- Step 6: Set up webhooks on all relevant boards ---
-        const uniqueBoardIds = [...new Set(allIncompleteItems.map((item) => item.board.id))];
+        // Extract board IDs from the items, ensuring we have the correct property path
+        const uniqueBoardIds = [...new Set(allIncompleteItems.map((item) => {
+            // Handle both possible structures: item.board.id or item.board_id
+            return item.board?.id || item.board_id;
+        }))].filter(Boolean); // Filter out any undefined or null values
         if (uniqueBoardIds.length > 0) {
             const webhookUrl = 'https://weekfuse.com/webhooks/monday';
             const webhookPromises = uniqueBoardIds.map((boardId) => {
