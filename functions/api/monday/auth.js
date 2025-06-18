@@ -181,6 +181,10 @@ export async function onRequestPost(context) {
                             id
                             text
                             value
+                            type
+                          }
+                          columns {
+                            id
                             title
                             type
                           }
@@ -201,14 +205,27 @@ export async function onRequestPost(context) {
                 if (itemsPage && itemsPage.items.length > 0) {
                     // Filter items to only include those assigned to the user and not completed
                     const filteredItems = itemsPage.items.filter(item => {
+                        // Create a map of column id to title for easier lookup
+                        const columnMap = {};
+                        if (item.columns) {
+                            item.columns.forEach(col => {
+                                columnMap[col.id] = col.title;
+                            });
+                        }
+
                         // Find the person column to check if the item is assigned to the user
                         const personColumn = item.column_values.find(
-                            col => col.title === 'Person' || col.title === 'Assignee' || col.id === 'person'
+                            col => col.id === 'person' || 
+                                  (columnMap[col.id] && 
+                                   (columnMap[col.id] === 'Person' || 
+                                    columnMap[col.id] === 'Assignee'))
                         );
 
                         // Find the status column to check if the item is completed
                         const statusColumn = item.column_values.find(
-                            col => col.title === 'Status' || col.id === 'status'
+                            col => col.id === 'status' || 
+                                  (columnMap[col.id] && 
+                                   columnMap[col.id] === 'Status')
                         );
 
                         // Check if the item is assigned to the user
@@ -268,10 +285,18 @@ export async function onRequestPost(context) {
 
         if (allIncompleteItems.length > 0) {
             const upsertPromises = allIncompleteItems.map((item) => {
-                // Find the description column, handling both possible structures
+                // Create a map of column id to title for easier lookup
+                const columnMap = {};
+                if (item.columns) {
+                    item.columns.forEach(col => {
+                        columnMap[col.id] = col.title;
+                    });
+                }
+
+                // Find the description column
                 const descriptionColumn = item.column_values.find(
-                    (col) => (col.title && col.title.toLowerCase() === 'description') || 
-                             (col.id && col.id.toLowerCase() === 'description')
+                    (col) => col.id.toLowerCase() === 'description' || 
+                             (columnMap[col.id] && columnMap[col.id].toLowerCase() === 'description')
                 );
                 const tiptapDescription = markdownToTipTap(descriptionColumn?.text);
 
