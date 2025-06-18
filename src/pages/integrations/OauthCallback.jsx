@@ -179,6 +179,38 @@ const OAuthCallback = () => {
         }
     };
 
+    const handleTickTickCallback = async ({ code }) => {
+        setLoading(true);
+        try {
+            await ky.post('/api/ticktick/auth', {
+                json: {
+                    code,
+                    user_id: user.id,
+                    workspace_id: currentWorkspace.workspace_id,
+                },
+            });
+
+            toast.success('TickTick Integration connected');
+            await queryClient.cancelQueries({
+                queryKey: ['user_integration', user?.id, 'ticktick'],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ['user_integration', user?.id, 'ticktick'],
+            });
+        } catch (error) {
+            let errorMessage = 'Failed to connect TickTick Integration';
+            if (error.response) {
+                const errorData = await error.response.json();
+                errorMessage = errorData.message || errorMessage;
+            }
+            console.error('Error connecting to TickTick:', error);
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+            navigate('/integrations');
+        }
+    };
+
     useEffect(() => {
         if (!user || !currentWorkspace) return;
 
@@ -206,6 +238,9 @@ const OAuthCallback = () => {
                 break;
             case 'monday':
                 handleMondayCallback({ code });
+                break;
+            case 'ticktick':
+                handleTickTickCallback({ code });
                 break;
             default:
                 toast.error('Unsupported OAuth provider');
