@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { markdownToTipTap } from '../../../src/utils/editorUtils.js';
 
-export async function onRequest(context) {
+export async function onRequestPost(context) {
     // Verify the request is from Todoist
     // Todoist sends a X-Todoist-Hmac-SHA256 header with a signature
     const signature = context.request.headers.get('X-Todoist-Hmac-SHA256');
@@ -65,7 +65,7 @@ async function handleTaskAdded(supabase, taskData) {
             .select('workspace_id, user_id, config')
             .eq('type', 'todoist')
             .eq('status', 'active')
-            .eq('external_data->>user_id', taskData.user_id)
+            .eq('external_data->>id', taskData.user_id)
             .single();
 
         if (integrationError || !integrationData || integrationData.length === 0) {
@@ -73,27 +73,25 @@ async function handleTaskAdded(supabase, taskData) {
             return;
         }
 
+        const project_id = integrationData.config?.project_id || null;
+
         const tiptapDescription = taskData.description
             ? markdownToTipTap(taskData.description)
             : null;
 
-        await supabase.from('tasks').upsert(
-            {
-                name: taskData.content,
-                description: tiptapDescription,
-                workspace_id: integrationData.workspace_id,
-                integration_source: 'todoist',
-                external_id: taskData.id,
-                external_data: taskData,
-                host: `https://todoist.com/app/task/${taskData.id}`,
-                assignee: integrationData.user_id,
-                creator: integrationData.user_id,
-                due_date: taskData.due ? new Date(taskData.due.date).toISOString() : null,
-            },
-            {
-                onConflict: 'integration_source, external_id, host, workspace_id',
-            },
-        );
+        await supabase.from('tasks').insert({
+            name: taskData.content,
+            description: tiptapDescription,
+            workspace_id: integrationData.workspace_id,
+            integration_source: 'todoist',
+            external_id: taskData.id,
+            external_data: taskData,
+            host: `https://todoist.com/app/task/${taskData.id}`,
+            assignee: integrationData.user_id,
+            creator: integrationData.user_id,
+            due_date: taskData.due ? new Date(taskData.due.date).toISOString() : null,
+            project_id: project_id,
+        });
 
         console.log(`Task ${taskData.id} added for user ${integrationData.user_id}`);
     } catch (error) {
@@ -127,7 +125,7 @@ async function handleTaskUpdated(supabase, taskData) {
                     name: taskData.content,
                     description: tiptapDescription,
                     external_data: taskData,
-                    date: taskData.due ? new Date(taskData.due.date).toISOString() : null,
+                    due_date: taskData.due ? new Date(taskData.due.date).toISOString() : null,
                 })
                 .eq('id', task.id);
 
