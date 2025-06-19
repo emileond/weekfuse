@@ -13,7 +13,6 @@ import { useTaskCountByProject } from '../../hooks/react-query/projects/useProje
 import { Link } from 'react-router-dom';
 import { useMilestones } from '../../hooks/react-query/milestones/useMilestones.js';
 import MilestoneCard from '../milestones/MilestoneCard.jsx';
-import toast from 'react-hot-toast';
 import UpdateProjectModal from './UpdateProjectModal.jsx';
 import DeleteProjectConfirmationDialog from './DeleteProjectConfirmationDialog.jsx';
 

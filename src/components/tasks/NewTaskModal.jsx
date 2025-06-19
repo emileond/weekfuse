@@ -15,7 +15,7 @@ import { useUser } from '../../hooks/react-query/user/useUser.js';
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defaultMilestone }) => {
     const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
-    const { mutateAsync: createTask, isPending } = useCreateTask(currentWorkspace);
+    const { mutateAsync: createTask, isPending } = useCreateTask();
     const [selectedDate, setSelectedDate] = useState(defaultDate); // State to track selected date
     const [selectedProject, setSelectedProject] = useState(
         defaultProject ? { value: defaultProject } : null,

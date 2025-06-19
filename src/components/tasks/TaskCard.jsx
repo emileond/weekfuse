@@ -10,8 +10,6 @@ import {
     ModalBody,
     ModalFooter,
     Button,
-    Card,
-    CardBody,
 } from '@heroui/react';
 import { RiCalendarCloseLine, RiMoreLine } from 'react-icons/ri';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
@@ -25,6 +23,7 @@ import { useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 
 const TaskCard = ({ task, sm }) => {
     const [isCompleted, setIsCompleted] = useState(task?.status === 'completed');
+    const [isDeleting, setIsDeleting] = useState(false);
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: deleteTask } = useDeleteTask(currentWorkspace);
     const { isOpen, onOpenChange } = useDisclosure();
@@ -57,12 +56,14 @@ const TaskCard = ({ task, sm }) => {
     };
 
     const handleDelete = async () => {
+        setIsDeleting(true);
         try {
             await deleteTask({ taskId: task.id });
             onDeleteModalClose();
         } catch (error) {
             console.error('Error deleting task:', error);
         }
+        setIsDeleting(false);
     };
 
     return (
@@ -80,10 +81,10 @@ const TaskCard = ({ task, sm }) => {
                         </p>
                     </ModalBody>
                     <ModalFooter>
-                        <Button variant="flat" onPress={onDeleteModalClose}>
+                        <Button variant="flat" onPress={onDeleteModalClose} isDisabled={isDeleting}>
                             Cancel
                         </Button>
-                        <Button color="danger" onPress={handleDelete}>
+                        <Button color="danger" onPress={handleDelete} isLoading={isDeleting}>
                             Delete
                         </Button>
                     </ModalFooter>

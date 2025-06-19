@@ -245,20 +245,21 @@ export function useTasksCount(currentWorkspace, { startDate, endDate }) {
 
 // Function to create a new task
 const createTask = async ({ task }) => {
-    const { error } = await supabaseClient.from('tasks').insert(task);
+    const { data, error } = await supabaseClient.from('tasks').insert(task).select().single();
 
     if (error) {
         throw new Error('Failed to create task');
     }
+    return data;
 };
 
 // Hook to create a new task
-export const useCreateTask = (currentWorkspace) => {
+export const useCreateTask = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: createTask,
-        onSuccess: () => {
+        onSuccess: (newTask) => {
             // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
                 queryKey: ['tasks'],
@@ -268,6 +269,18 @@ export const useCreateTask = (currentWorkspace) => {
                 queryKey: ['backlogTasks'],
                 refetchType: 'all',
             });
+
+            // Invalidate the counts for the project and milestone of the new task
+            if (newTask.project_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByProject', newTask.project_id],
+                });
+            }
+            if (newTask.milestone_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByMilestone', newTask.milestone_id],
+                });
+            }
         },
     });
 };
@@ -288,12 +301,18 @@ const updateTask = async ({ taskId, updates }) => {
     }
 
     // Use the potentially modified 'finalUpdates' object.
-    const { error } = await supabaseClient.from('tasks').update(finalUpdates).eq('id', taskId);
+    const { data, error } = await supabaseClient
+        .from('tasks')
+        .update(finalUpdates)
+        .eq('id', taskId)
+        .select()
+        .single();
 
     if (error) {
         console.error('Supabase error:', error);
         throw error;
     }
+    return data;
 };
 
 // Hook to update a task
@@ -302,10 +321,19 @@ export const useUpdateTask = (currentWorkspace) => {
 
     return useMutation({
         mutationFn: updateTask,
+        onMutate: async ({ taskId }) => {
+            // Snapshot the task's state before the mutation
+            const { data: previousTask } = await supabaseClient
+                .from('tasks')
+                .select('project_id, milestone_id')
+                .eq('id', taskId)
+                .single();
+            return { previousTask };
+        },
         onError: (error) => {
             console.error('Error updating task:', error);
         },
-        onSuccess: () => {
+        onSuccess: (updatedTask, variables, context) => {
             // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
                 queryKey: ['tasks', currentWorkspace?.workspace_id],
@@ -315,6 +343,37 @@ export const useUpdateTask = (currentWorkspace) => {
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
                 refetchType: 'all',
             });
+
+            const previousTask = context.previousTask;
+
+            // Invalidate the count for the task's NEW project and milestone
+            if (updatedTask.project_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByProject', updatedTask.project_id],
+                });
+            }
+            if (updatedTask.milestone_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByMilestone', updatedTask.milestone_id],
+                });
+            }
+
+            // If the project was changed, invalidate the count for the OLD project
+            if (previousTask?.project_id && previousTask.project_id !== updatedTask.project_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByProject', previousTask.project_id],
+                });
+            }
+
+            // If the milestone was changed, invalidate the count for the OLD milestone
+            if (
+                previousTask?.milestone_id &&
+                previousTask.milestone_id !== updatedTask.milestone_id
+            ) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByMilestone', previousTask.milestone_id],
+                });
+            }
         },
     });
 };
@@ -400,10 +459,19 @@ export const useDeleteTask = (currentWorkspace) => {
 
     return useMutation({
         mutationFn: ({ taskId }) => deleteTask({ taskId }),
+        onMutate: async ({ taskId }) => {
+            // Snapshot the task's state before it's deleted
+            const { data: previousTask } = await supabaseClient
+                .from('tasks')
+                .select('project_id, milestone_id')
+                .eq('id', taskId)
+                .single();
+            return { previousTask };
+        },
         onError: (error) => {
             console.error('Error deleting task:', error);
         },
-        onSuccess: () => {
+        onSuccess: (data, variables, context) => {
             // Invalidate all task-related queries for the workspace
             queryClient.invalidateQueries({
                 queryKey: ['tasks', currentWorkspace?.workspace_id],
@@ -413,6 +481,20 @@ export const useDeleteTask = (currentWorkspace) => {
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
                 refetchType: 'all',
             });
+
+            const previousTask = context.previousTask;
+
+            // Invalidate the counts for the project and milestone of the deleted task
+            if (previousTask?.project_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByProject', previousTask.project_id],
+                });
+            }
+            if (previousTask?.milestone_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ['taskCountByMilestone', previousTask.milestone_id],
+                });
+            }
         },
     });
 };
