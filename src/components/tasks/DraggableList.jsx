@@ -13,7 +13,14 @@ const DraggableList = ({ id, items, group, smallCards, onDragStart, onDragEnd })
         dropZoneClass: 'bg-default text-default-500 opacity-30',
         plugins: [animations()],
         onDragstart: onDragStart ? (e) => onDragStart(e, id) : undefined,
-        onDragend: onDragEnd ? (e) => onDragEnd(e, id) : undefined,
+        onDragend: onDragEnd
+            ? (e) => {
+                  if (e && e.draggedNode && e.draggedNode.el) {
+                      e.draggedNode.el.style.zIndex = 10;
+                  }
+                  return onDragEnd(e, id);
+              }
+            : undefined,
     });
 
     useEffect(() => {

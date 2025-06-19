@@ -1,87 +1,119 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from '@heroui/react';
-import { RiFlag2Line, RiArrowUpDoubleLine, RiArrowDownWideLine, RiEqualLine } from 'react-icons/ri';
+import { useState, useMemo, useEffect } from 'react';
+import {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Button,
+    Listbox,
+    ListboxItem,
+} from '@heroui/react';
+import {
+    RiFlag2Line,
+    RiArrowUpDoubleLine,
+    RiArrowDownWideLine,
+    RiEqualLine,
+    RiCheckLine,
+} from 'react-icons/ri';
 
 export default function PrioritySelect({
     label = 'Priority',
     defaultValue,
     onChange,
     triggerClassName = '',
+    placement = 'bottom',
 }) {
-    // store the selected key (a string)…
-    const [selectedKey, setSelectedKey] = useState(
-        defaultValue != null ? defaultValue.toString() : null,
-    );
+    const [isOpen, setIsOpen] = useState(false);
+    // Store the selected option object itself for consistency
+    const [selectedOption, setSelectedOption] = useState(null);
 
-    // our menu options, with string keys
     const options = useMemo(
         () => [
             {
                 label: 'High',
                 key: '2',
+                value: 2,
                 icon: <RiArrowUpDoubleLine fontSize="1rem" className="text-danger" />,
             },
             {
                 label: 'Medium',
                 key: '1',
+                value: 1,
                 icon: <RiEqualLine fontSize="1rem" className="text-orange-500" />,
             },
             {
                 label: 'Low',
                 key: '0',
+                value: 0,
                 icon: <RiArrowDownWideLine fontSize="1rem" className="text-blue-500" />,
             },
         ],
         [],
     );
 
-    // derive the selected option object for display & callback
-    const selectedOption = options.find((o) => o.key === selectedKey);
-
-    // notify parent when selection changes
+    // Effect to set the initial selected option based on defaultValue
     useEffect(() => {
-        if (onChange) {
-            // Pass the selected option or null if nothing is selected
-            onChange(selectedOption || null);
-        }
-    }, [selectedOption, onChange]);
+        const defaultOption = options.find((opt) => opt.value === defaultValue) || null;
+        setSelectedOption(defaultOption);
+    }, [defaultValue, options]);
 
-    // handler for the DropdownMenu
-    const handleSelectionChange = (newKeys) => {
-        // newKeys is a Set<string>
-        if (newKeys.size === 0) {
-            // Handle deselection
-            setSelectedKey(null);
+    const handleSelect = (option) => {
+        const isAlreadySelected = selectedOption && selectedOption.key === option.key;
+
+        if (isAlreadySelected) {
+            setSelectedOption(null); // Deselect
+            if (onChange) onChange(null);
         } else {
-            const [first] = Array.from(newKeys);
-            setSelectedKey(first);
+            setSelectedOption(option); // Select
+            if (onChange) onChange(option);
         }
+        setIsOpen(false); // Close popover after selection
     };
 
+    const displayIcon = selectedOption?.icon || <RiFlag2Line fontSize="1rem" />;
+    const displayLabel = selectedOption?.label || label;
+
     return (
-        <Dropdown>
-            <DropdownTrigger>
-                <Button
-                    size="sm"
-                    variant="light"
-                    className={`text-default-600 ${triggerClassName}`}
-                    startContent={selectedOption?.icon || <RiFlag2Line fontSize="1rem" />}
+        <Popover placement={placement} isOpen={isOpen} onOpenChange={setIsOpen}>
+            <PopoverTrigger>
+                {/* We can keep the div wrapper as a good practice seen in CreatableSelect */}
+                <div>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="light"
+                        className={`text-default-600 ${triggerClassName}`}
+                        startContent={displayIcon}
+                        onPress={() => setIsOpen(true)}
+                    >
+                        {displayLabel}
+                    </Button>
+                </div>
+            </PopoverTrigger>
+            <PopoverContent className="p-0">
+                <Listbox
+                    aria-label="Priority select"
+                    onAction={(key) => {
+                        const option = options.find((opt) => opt.key === key);
+                        if (option) {
+                            handleSelect(option);
+                        }
+                    }}
                 >
-                    {selectedOption?.label || label}
-                </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-                aria-label="Priority select"
-                selectionMode="single"
-                selectedKeys={selectedKey ? new Set([selectedKey]) : new Set()}
-                onSelectionChange={handleSelectionChange}
-            >
-                {options.map((opt) => (
-                    <DropdownItem key={opt.key} startContent={opt.icon}>
-                        {opt.label}
-                    </DropdownItem>
-                ))}
-            </DropdownMenu>
-        </Dropdown>
+                    {options.map((opt) => {
+                        const isSelected = selectedOption && selectedOption.key === opt.key;
+                        return (
+                            <ListboxItem
+                                key={opt.key}
+                                startContent={opt.icon}
+                                endContent={isSelected ? <RiCheckLine /> : null}
+                                className={isSelected ? 'text-primary' : ''}
+                            >
+                                {opt.label}
+                            </ListboxItem>
+                        );
+                    })}
+                </Listbox>
+            </PopoverContent>
+        </Popover>
     );
 }
