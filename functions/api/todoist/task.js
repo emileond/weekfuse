@@ -1,6 +1,5 @@
 import ky from 'ky';
 import { createClient } from '@supabase/supabase-js';
-import { toUTC } from '../../../src/utils/dateUtils.js';
 
 export async function onRequestPatch(context) {
     try {
@@ -58,26 +57,20 @@ export async function onRequestPatch(context) {
         // Update the task's completed status in Todoist
         if (state === 'completed') {
             // Close the task
-            await ky.post(
-                `https://api.todoist.com/rest/v2/tasks/${external_id}/close`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
+            await ky.post(`https://api.todoist.com/api/v1/tasks/${external_id}/close`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
                 },
-            );
+            });
         } else {
             // Reopen the task
-            await ky.post(
-                `https://api.todoist.com/rest/v2/tasks/${external_id}/reopen`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
+            await ky.post(`https://api.todoist.com/api/v1/tasks/${external_id}/reopen`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
                 },
-            );
+            });
         }
 
         return Response.json({

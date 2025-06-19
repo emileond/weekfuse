@@ -139,19 +139,43 @@ export async function onRequestPost(context) {
 
         const integration_id = upsertData.id;
 
-        // Get all active tasks from Todoist
-        const tasks = await ky
-            .get('https://api.todoist.com/rest/v2/tasks', {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                    'Content-Type': 'application/json',
-                },
-            })
-            .json();
+        // Get all active tasks from Todoist with pagination
+        let allTasks = [];
+        let nextCursor = null;
+
+        do {
+            // Build query parameters for pagination
+            const queryParams = nextCursor ? `?cursor=${nextCursor}` : '';
+
+            // Make API request
+            const response = await ky
+                .get(`https://api.todoist.com/api/v1/tasks${queryParams}`, {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .json();
+
+            // Add results to our collection
+            if (response.results && Array.isArray(response.results)) {
+                allTasks = [...allTasks, ...response.results];
+            }
+
+            // Update cursor for next page
+            nextCursor = response.next_cursor;
+
+            // Log pagination progress
+            if (nextCursor) {
+                console.log(`Fetched ${response.results.length} tasks, continuing with next page...`);
+            }
+        } while (nextCursor);
+
+        console.log(`Fetched a total of ${allTasks.length} tasks from Todoist`);
 
         // Process and store tasks
-        if (tasks && Array.isArray(tasks)) {
-            const upsertPromises = tasks.map((task) => {
+        if (allTasks.length > 0) {
+            const upsertPromises = allTasks.map((task) => {
                 // Convert markdown description to Tiptap format if available
                 const tiptapDescription = task?.description
                     ? markdownToTipTap(task.description)
@@ -181,9 +205,9 @@ export async function onRequestPost(context) {
 
             results.forEach((result, index) => {
                 if (result.error) {
-                    console.error(`Upsert error for task ${tasks[index].id}:`, result.error);
+                    console.error(`Upsert error for task ${allTasks[index].id}:`, result.error);
                 } else {
-                    console.log(`Task ${tasks[index].id} imported successfully`);
+                    console.log(`Task ${allTasks[index].id} imported successfully`);
                 }
             });
         }

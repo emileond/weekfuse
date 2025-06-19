@@ -138,6 +138,21 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
                 }
                 break;
 
+            case 'todoist':
+                try {
+                    const state = newStatus;
+                    await ky.patch('/api/todoist/task', {
+                        json: {
+                            external_id: task.external_id,
+                            state,
+                            user_id: user.id,
+                        },
+                    });
+                } catch (error) {
+                    console.error('Error updating Todoist task:', error);
+                }
+                break;
+
             case 'jira':
                 // For Jira, we don't automatically update the status here
                 // Instead, we show the transitions modal when syncStatus is "prompt"
