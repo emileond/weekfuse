@@ -1,7 +1,4 @@
 import useCurrentWorkspace from '../../../../hooks/useCurrentWorkspace.js';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
 import { Chip, Link, Spinner } from '@heroui/react';
 import {
     RiExternalLinkLine,
@@ -11,7 +8,6 @@ import {
     RiPriceTag3Line,
     RiFlagFill,
 } from 'react-icons/ri';
-import { colorContrast } from '../../../../utils/colorContrast.js';
 import { formatDate } from '../../../../utils/dateUtils.js';
 import { useTickTickProject } from '../../../../hooks/react-query/integrations/ticktick/useTickTickProject.js';
 import { useUser } from '../../../../hooks/react-query/user/useUser.js';
@@ -26,8 +22,6 @@ const TickTickTaskDetails = ({ task_id, external_data }) => {
     };
     const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
-    const queryClient = useQueryClient();
-    const [isLoading, setIsLoading] = useState(false);
 
     // --- React Query Hooks ---
     const { data: tickTickProject, isLoading: isProjectLoading } = useTickTickProject({

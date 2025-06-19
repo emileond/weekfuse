@@ -5,6 +5,7 @@ import GithubTaskDetails from './github/GithubTaskDetails.jsx';
 import TrelloTaskDetails from './trello/TrelloTaskDetails.jsx';
 import ClickupTaskDetails from './clickup/ClickupTaskDetails.jsx';
 import TickTickTaskDetails from './ticktick/TickTickTaskDetails.jsx';
+import TodoistTaskDetails from './todoist/TodoistTaskDetails.jsx';
 
 const TaskIntegrationLink = ({ source, external_data, host }) => {
     switch (source) {
@@ -50,7 +51,7 @@ const TaskIntegrationLink = ({ source, external_data, host }) => {
                         showAnchorIcon
                         href={external_data?.shortUrl}
                     >
-                        See in Trello
+                        Open in Trello
                     </Link>
                 </div>
             );
@@ -63,7 +64,7 @@ const TaskIntegrationLink = ({ source, external_data, host }) => {
                         showAnchorIcon
                         href={external_data?.url}
                     >
-                        See in ClickUp
+                        Open in ClickUp
                     </Link>
                 </div>
             );
@@ -77,7 +78,21 @@ const TaskIntegrationLink = ({ source, external_data, host }) => {
                         showAnchorIcon
                         href={`https://ticktick.com/webapp/#p/${external_data?.projectId}/tasks/${external_data?.id}`}
                     >
-                        See in TickTick
+                        Open in TickTick
+                    </Link>
+                </div>
+            );
+
+        case 'todoist':
+            return (
+                <div className="flex gap-1 items-center">
+                    <Link
+                        className="font-medium text-blue-700 text-sm"
+                        isExternal
+                        showAnchorIcon
+                        href={external_data?.url}
+                    >
+                        Open in Todoist
                     </Link>
                 </div>
             );
@@ -100,6 +115,9 @@ export const TaskIntegrationDetails = ({ task_id, source, external_data }) => {
 
         case 'ticktick':
             return <TickTickTaskDetails task_id={task_id} external_data={external_data} />;
+
+        case 'todoist':
+            return <TodoistTaskDetails external_data={external_data} />;
     }
 };
 

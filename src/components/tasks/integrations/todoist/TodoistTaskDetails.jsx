@@ -1,11 +1,9 @@
-import useCurrentWorkspace from '../../../../hooks/useCurrentWorkspace.js';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import { Chip, Link } from '@heroui/react';
-import { RiExternalLinkLine, RiCalendarLine, RiPriceTag3Line, RiListUnordered } from 'react-icons/ri';
-import { colorContrast } from '../../../../utils/colorContrast.js';
+import { Chip, Spinner } from '@heroui/react';
+import { RiCalendarLine, RiPriceTag3Line, RiListUnordered, RiFlagFill, RiExternalLinkLine } from 'react-icons/ri';
 import { formatDate } from '../../../../utils/dateUtils.js';
+import { useUser } from '../../../../hooks/react-query/user/useUser.js';
+import useCurrentWorkspace from '../../../../hooks/useCurrentWorkspace.js';
+import { useTodoistProject } from '../../../../hooks/react-query/integrations/todoist/useTodoistProject.js';
 
 const TodoistTaskDetails = ({ external_data }) => {
     // Check if due date has passed
@@ -15,23 +13,32 @@ const TodoistTaskDetails = ({ external_data }) => {
         const due = new Date(dueDate);
         return due < now;
     };
-    
+
+    const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
-    const queryClient = useQueryClient();
-    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch project details if project_id is available
+    const { data: todoistProject, isLoading: isProjectLoading } = useTodoistProject({
+        projectId: external_data?.project_id,
+        user_id: user?.id,
+        workspace_id: currentWorkspace?.workspace_id,
+    });
+
+    // Use project name from API response if available, otherwise fallback to saved name or ID
+    const projectName = todoistProject?.name || external_data?.project_name || `Project ${external_data?.project_id}`;
 
     // Convert Todoist priority to a more readable format
     const getPriorityLabel = (priority) => {
         switch (priority) {
             case 4:
-                return { label: 'Priority 1', color: '#ff5252' }; // Highest
+                return { label: 'P1', color: 'text-danger' }; // Highest
             case 3:
-                return { label: 'Priority 2', color: '#ff9800' }; // High
+                return { label: 'P2', color: 'text-warning' }; // High
             case 2:
-                return { label: 'Priority 3', color: '#2196f3' }; // Medium
+                return { label: 'P3', color: 'text-blue' }; // Medium
             case 1:
             default:
-                return { label: 'Priority 4', color: '#757575' }; // Low/Normal
+                return { label: 'P4', color: 'text-default' }; // Low/Normal
         }
     };
 
@@ -46,8 +53,9 @@ const TodoistTaskDetails = ({ external_data }) => {
                         size="sm"
                         variant="bordered"
                         startContent={<RiListUnordered fontSize=".9rem" />}
+                        isLoading={isProjectLoading}
                     >
-                        {external_data.project_name || `Project ${external_data.project_id}`}
+                        {projectName}
                     </Chip>
                 </div>
             )}
@@ -57,10 +65,13 @@ const TodoistTaskDetails = ({ external_data }) => {
                     <label className="text-sm">Priority</label>
                     <Chip
                         size="sm"
-                        style={{
-                            background: getPriorityLabel(external_data.priority).color,
-                            color: colorContrast(getPriorityLabel(external_data.priority).color, 'y'),
-                        }}
+                        variant="light"
+                        startContent={
+                            <RiFlagFill
+                                fontSize=".9rem"
+                                className={getPriorityLabel(external_data.priority).color}
+                            />
+                        }
                     >
                         {getPriorityLabel(external_data.priority).label}
                     </Chip>
@@ -108,18 +119,6 @@ const TodoistTaskDetails = ({ external_data }) => {
                     </div>
                 </div>
             )}
-
-            <div className="flex flex-col gap-1">
-                <label className="text-sm">Todoist Link</label>
-                <Link
-                    href={`https://todoist.com/app/task/${external_data.id}`}
-                    isExternal
-                    className="text-sm text-default-700"
-                    showAnchorIcon
-                >
-                    Open in Todoist
-                </Link>
-            </div>
         </>
     );
 };
