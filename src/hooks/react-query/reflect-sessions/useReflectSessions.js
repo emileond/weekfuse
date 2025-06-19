@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseClient } from '../../../lib/supabase';
+import ky from 'ky'; // Import ky here
 
 // Fetch all reflect sessions for a user
 const fetchReflectSessions = async ({ user_id }) => {
@@ -50,19 +51,27 @@ export const useReflectSessionById = (session_id) => {
     });
 };
 
-// Function to create a new reflect session
-const createReflectSession = async ({ session }) => {
-    const { data, error } = await supabaseClient
-        .from('reflect_sessions')
-        .insert(session)
-        .select()
-        .single();
+// Function to create a new reflect session by calling your AI endpoint
+const createReflectSession = async (payload) => {
+    try {
+        const response = await ky
+            .post('/api/ai/reflect/start', {
+                json: payload,
+                timeout: 180000, // 3 min timeout for AI processing
+            })
+            .json();
 
-    if (error) {
-        throw new Error('Failed to create reflect session');
+        // The endpoint must return the full session object or at least an object with an `id`.
+        if (response?.id) {
+            return response;
+        } else {
+            throw new Error('API did not return a session ID.');
+        }
+    } catch (error) {
+        // Log the detailed error and re-throw a user-friendly one
+        console.error('Error in createReflectSession API call:', error);
+        throw new Error('Failed to create reflection session via API.');
     }
-
-    return data;
 };
 
 // Hook to create a new reflect session
@@ -70,13 +79,17 @@ export const useCreateReflectSession = (user_id) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: createReflectSession,
+        mutationFn: createReflectSession, // Use the updated function
         onSuccess: () => {
-            // Invalidate and refetch the reflect sessions query for the user
+            // Invalidate and refetch the reflect sessions list to update the UI
+            // This is now handled automatically by React Query on success
             queryClient.invalidateQueries({
                 queryKey: ['reflectSessions', user_id],
-                refetchType: 'all', // Force refetch to update UI
             });
+        },
+        onError: (error) => {
+            // You can add default error handling for the mutation here if you want
+            console.error('Mutation failed:', error.message);
         },
     });
 };
@@ -103,16 +116,8 @@ export const useUpdateReflectSession = (user_id) => {
             console.error('Error updating reflect session:', error);
         },
         onSuccess: (_, variables) => {
-            // Invalidate and refetch the reflect sessions query for the user
-            queryClient.invalidateQueries({
-                queryKey: ['reflectSessions', user_id],
-                refetchType: 'all', // Force refetch to update UI
-            });
-            // Also invalidate the specific session query
-            queryClient.invalidateQueries({
-                queryKey: ['reflectSession', variables.session_id],
-                refetchType: 'all', // Force refetch to update UI
-            });
+            queryClient.invalidateQueries({ queryKey: ['reflectSessions', user_id] });
+            queryClient.invalidateQueries({ queryKey: ['reflectSession', variables.session_id] });
         },
     });
 };
@@ -136,20 +141,12 @@ export const useDeleteReflectSession = (user_id) => {
             console.error('Error deleting reflect session:', error);
         },
         onSuccess: (_, variables) => {
-            // Option 1 (Recommended): Optimistically update the 'reflectSessions' cache
             queryClient.setQueryData(['reflectSessions', user_id], (oldData) => {
                 if (oldData) {
                     return oldData.filter((session) => session.id !== variables.session_id);
                 }
                 return oldData;
             });
-
-            queryClient.invalidateQueries({
-                queryKey: ['reflectSessions', user_id],
-                refetchType: 'all',
-            });
-
-            // Remove the specific session from the cache (good practice for single item queries)
             queryClient.removeQueries(['reflectSession', variables.session_id]);
         },
     });

@@ -2,8 +2,10 @@ import AppLayout from '../../components/layout/AppLayout';
 import PageLayout from '../../components/layout/PageLayout';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
-import { useReflectSessions } from '../../hooks/react-query/reflect-sessions/useReflectSessions.js';
-import { useQueryClient } from '@tanstack/react-query';
+import {
+    useReflectSessions,
+    useCreateReflectSession,
+} from '../../hooks/react-query/reflect-sessions/useReflectSessions.js';
 import {
     Button,
     Modal,
@@ -21,7 +23,6 @@ import EmptyState from '../../components/EmptyState';
 import { RiAddFill } from 'react-icons/ri';
 import RangeDatepicker from '../../components/form/RangeDatepicker.jsx';
 import ProjectSelect from '../../components/form/ProjectSelect.jsx';
-import ky from 'ky';
 import { toUTC } from '../../utils/dateUtils.js';
 import { useNavigate } from 'react-router-dom';
 import ReflectSessionCard from './ReflectSessionCard.jsx';
@@ -29,16 +30,14 @@ import ReflectSessionCard from './ReflectSessionCard.jsx';
 function ReflectPage() {
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: user } = useUser();
-    const { data } = useReflectSessions(user?.id);
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
+    const { data: reflectSessionsData } = useReflectSessions(user?.id); // Renamed to avoid conflict
+    const { mutate: createReflectSession, isPending } = useCreateReflectSession(user?.id);
 
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
-    // State for form data
     const [dateRange, setDateRange] = useState({ from: null, to: null });
     const [selectedProjects, setSelectedProjects] = useState([]);
-    const [isPending, setIsPending] = useState(false);
 
     const {
         register,
@@ -47,61 +46,36 @@ function ReflectPage() {
         formState: { errors },
     } = useForm();
 
-    const onSubmit = async (formData) => {
-        try {
-            setIsPending(true);
-
-            if (!dateRange.from || !dateRange.to) {
-                toast.error('Please select a date range');
-                return;
-            }
-
-            // Convert dates to UTC format
-            const startDate = toUTC(dateRange.from);
-            const endDate = toUTC(dateRange.to);
-
-            // Prepare data for API call
-            const payload = {
-                start_date: startDate,
-                end_date: endDate,
-                projects: selectedProjects,
-                user_id: user.id,
-                workspace_id: currentWorkspace?.workspace_id,
-            };
-
-            // Make API call to create a new reflect session
-            const response = await ky
-                .post('/api/ai/reflect/start', {
-                    json: payload,
-                    timeout: 180000, // 3 min timeout for AI processing
-                })
-                .json();
-
-            // After a success response, redirect user to /reflect/session/{id}
-            if (response?.id) {
-                toast.success('Reflection session created successfully');
-
-                // Invalidate and refetch the reflect sessions query to update UI
-                queryClient.invalidateQueries({
-                    queryKey: ['reflectSessions', user.id],
-                    refetchType: 'all', // Force refetch to update UI
-                });
-
-                navigate(`/reflect/session/${response.id}`);
-            } else {
-                toast.error('Failed to create reflection session');
-            }
-
-            onClose();
-            reset();
-        } catch (error) {
-            console.error('Error creating reflection session:', error);
-            toast.error('Failed to create reflection session');
-        } finally {
-            setIsPending(false);
+    // --- REFACTORED onSubmit FUNCTION ---
+    const onSubmit = () => {
+        if (!dateRange.from || !dateRange.to) {
+            toast.error('Please select a date range');
+            return;
         }
-    };
 
+        const payload = {
+            start_date: toUTC(dateRange.from),
+            end_date: toUTC(dateRange.to),
+            projects: selectedProjects,
+            user_id: user.id,
+            workspace_id: currentWorkspace?.workspace_id,
+        };
+
+        createReflectSession(payload, {
+            onSuccess: (newSession) => {
+                toast.success('Reflection session created successfully');
+                // The invalidation happens automatically via the hook's onSuccess.
+                // We just need to navigate.
+                navigate(`/reflect/session/${newSession.id}`);
+                onClose();
+                reset();
+            },
+            onError: (error) => {
+                toast.error(error.message || 'Failed to create reflection session');
+            },
+        });
+    };
+    
     return (
         <AppLayout>
             <PageLayout
@@ -113,8 +87,8 @@ function ReflectPage() {
                 onClick={onOpen}
             >
                 <div className="flex flex-col gap-3 mb-12">
-                    {data?.length ? (
-                        data.map((session) => (
+                    {reflectSessionsData?.length ? (
+                        reflectSessionsData.map((session) => (
                             <ReflectSessionCard key={session?.id} session={session} />
                         ))
                     ) : (
@@ -128,7 +102,12 @@ function ReflectPage() {
                 </div>
                 <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
                     <ModalContent>
-                        <form onSubmit={handleSubmit(onSubmit)}>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                onSubmit();
+                            }}
+                        >
                             <ModalHeader className="flex flex-col gap-1">
                                 Start a reflection session
                             </ModalHeader>

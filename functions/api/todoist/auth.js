@@ -121,8 +121,6 @@ export async function onRequestPost(context) {
             })
             .json();
 
-        console.log('Todoist user info:', userInfo);
-
         // Save the access token in Supabase
         const { data: upsertData, error: updateError } = await supabase
             .from('user_integrations')

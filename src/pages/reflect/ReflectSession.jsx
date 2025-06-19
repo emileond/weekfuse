@@ -181,7 +181,6 @@ function ReflectSessionPage() {
                                 </Chip>
                             )}
                         </div>
-                        <button onClick={handleStartTour}>Start Tour</button>
                         <Tabs selectedKey={activeTab} onSelectionChange={setActiveTab}>
                             <Tab key="insights" title="Insights" id="step1">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
