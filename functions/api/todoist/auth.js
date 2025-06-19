@@ -111,6 +111,18 @@ export async function onRequestPost(context) {
             );
         }
 
+        // Get user info from Todoist API
+        const userInfo = await ky
+            .get('https://api.todoist.com/api/v1/user', {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .json();
+
+        console.log('Todoist user info:', userInfo);
+
         // Save the access token in Supabase
         const { data: upsertData, error: updateError } = await supabase
             .from('user_integrations')
@@ -121,6 +133,7 @@ export async function onRequestPost(context) {
                 workspace_id,
                 status: 'active',
                 last_sync: toUTC(),
+                external_data: userInfo, // Save user info in external_data
                 config: { syncStatus: 'prompt' },
             })
             .select('id')
@@ -167,7 +180,9 @@ export async function onRequestPost(context) {
 
             // Log pagination progress
             if (nextCursor) {
-                console.log(`Fetched ${response.results.length} tasks, continuing with next page...`);
+                console.log(
+                    `Fetched ${response.results.length} tasks, continuing with next page...`,
+                );
             }
         } while (nextCursor);
 

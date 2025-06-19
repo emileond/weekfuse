@@ -58,7 +58,9 @@ export const todoistSync = task({
 
                 // Log pagination progress
                 if (nextCursor) {
-                    logger.log(`Fetched ${response.results.length} tasks, continuing with next page...`);
+                    logger.log(
+                        `Fetched ${response.results.length} tasks, continuing with next page...`,
+                    );
                 }
             } while (nextCursor);
 
@@ -68,7 +70,9 @@ export const todoistSync = task({
             if (allTasks.length > 0) {
                 const upsertPromises = allTasks.map((task) => {
                     // Convert markdown description to Tiptap format if available
-                    const tiptapDescription = task?.description ? markdownToTipTap(task.description) : null;
+                    const tiptapDescription = task?.description
+                        ? markdownToTipTap(task.description)
+                        : null;
 
                     return supabase.from('tasks').upsert(
                         {
@@ -83,7 +87,7 @@ export const todoistSync = task({
                             creator: payload.user_id,
                             project_id: project_id,
                             // Set due date if available
-                            date: task.due ? new Date(task.due.date).toISOString() : null,
+                            due_date: task.due ? new Date(task.due.date).toISOString() : null,
                         },
                         {
                             onConflict: 'integration_source, external_id, host, workspace_id',
