@@ -36,8 +36,6 @@ export async function onRequestDelete(context) {
         await ky.delete(
             `https://api.todoist.com/api/v1/access_tokens?client_id=${context.env.TODOIST_CLIENT_ID}&client_secret=${context.env.TODOIST_CLIENT_SECRET}&access_token=${access_token}`,
         );
-        console.log(`Successfully revoked Todoist token: ${access_token}`);
-        console.error('Error revoking Todoist token:', revokeError);
 
         // Delete the token from the database
         const { error: deleteError } = await supabase
