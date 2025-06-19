@@ -73,6 +73,10 @@ const TrelloIntegrationCard = () => {
                         queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
                         refetchType: 'all',
                     });
+                    queryClient.invalidateQueries({
+                        queryKey: ['fuzzySearchTasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
                 },
                 onError: (error) => {
                     console.error('Error disconnecting Trello:', error);

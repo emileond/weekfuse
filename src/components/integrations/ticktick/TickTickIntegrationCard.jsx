@@ -47,8 +47,8 @@ const TickTickIntegrationCard = () => {
 
     const handleConnect = () => {
         window.location.href =
-            'https://ticktick.com/oauth/authorize?client_id=' + 
-            import.meta.env.VITE_TICKTICK_CLIENT_ID + 
+            'https://ticktick.com/oauth/authorize?client_id=' +
+            import.meta.env.VITE_TICKTICK_CLIENT_ID +
             '&redirect_uri=https://weekfuse.com/integrations/oauth/callback/ticktick&response_type=code';
     };
 
@@ -73,6 +73,10 @@ const TickTickIntegrationCard = () => {
                     });
                     queryClient.invalidateQueries({
                         queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                        refetchType: 'all',
+                    });
+                    queryClient.invalidateQueries({
+                        queryKey: ['fuzzySearchTasks', currentWorkspace?.workspace_id],
                         refetchType: 'all',
                     });
                 },
