@@ -9,6 +9,7 @@ import TrelloIntegrationCard from '../components/integrations/trello/TrelloInteg
 import ClickupIntegrationCard from '../components/integrations/clickup/ClickupIntegrationCard.jsx';
 import MondayIntegrationCard from '../components/integrations/monday/MondayIntegrationCard.jsx';
 import TickTickIntegrationCard from '../components/integrations/ticktick/TickTickIntegrationCard.jsx';
+import TodoistIntegrationCard from '../components/integrations/todoist/TodoistIntegrationCard.jsx';
 
 function IntegrationsPage() {
     // Define all integrations with GitHub having dynamic status and handlers
@@ -50,6 +51,7 @@ function IntegrationsPage() {
                     <TrelloIntegrationCard />
                     <ClickupIntegrationCard />
                     <TickTickIntegrationCard />
+                    <TodoistIntegrationCard />
                     {/*<MondayIntegrationCard />*/}
                     {integrations?.map((integration) => (
                         <IntegrationCard
