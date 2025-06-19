@@ -169,7 +169,7 @@ export async function onRequestPost(context) {
                         assignee: user_id,
                         creator: user_id,
                         // Set due date if available
-                        date: task.due ? new Date(task.due.date).toISOString() : null,
+                        due_date: task.due ? new Date(task.due.date).toISOString() : null,
                     },
                     {
                         onConflict: 'integration_source, external_id, host, workspace_id',
