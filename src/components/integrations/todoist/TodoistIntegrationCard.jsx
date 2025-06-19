@@ -62,7 +62,6 @@ const TodoistIntegrationCard = () => {
         deleteIntegration.mutate(
             {
                 id: integration.id,
-                access_token: integration.access_token,
                 type: 'todoist',
             },
             {

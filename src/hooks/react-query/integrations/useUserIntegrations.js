@@ -37,7 +37,7 @@ export const useUserIntegration = (user_id, type) => {
 };
 
 // Delete integration
-const deleteIntegration = async ({ id, installation_id, type, access_token }) => {
+const deleteIntegration = async ({ id, installation_id, type }) => {
     try {
         if (type === 'github' && installation_id) {
             await ky.delete('/api/github/auth', {
@@ -45,6 +45,10 @@ const deleteIntegration = async ({ id, installation_id, type, access_token }) =>
             });
         } else if (type === 'trello' && id) {
             await ky.delete('/api/trello/auth', {
+                json: { id },
+            });
+        } else if (type === 'todoist' && id) {
+            await ky.delete('/api/todoist/auth', {
                 json: { id },
             });
         } else if (type === 'ticktick' && id) {
@@ -75,7 +79,6 @@ const deleteIntegration = async ({ id, installation_id, type, access_token }) =>
                 type,
                 id,
                 installation_id,
-                access_token,
             });
             throw new Error('Invalid type or missing parameters for deletion.');
         }

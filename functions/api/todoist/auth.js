@@ -33,15 +33,11 @@ export async function onRequestDelete(context) {
 
         const { access_token, user_id, workspace_id } = data;
 
-        try {
-            // Revoke the token with Todoist's API (if they provide a revocation endpoint)
-            // Note: Todoist doesn't seem to have a token revocation endpoint in their docs
-            // So we'll just delete it from our database
-            console.log(`Removing Todoist token from database: ${access_token}`);
-        } catch (revokeError) {
-            console.error('Error revoking Todoist token:', revokeError);
-            // Continue with deletion from database even if API revocation fails
-        }
+        await ky.delete(
+            `https://api.todoist.com/api/v1/access_tokens?client_id=${context.env.TODOIST_CLIENT_ID}&client_secret=${context.env.TODOIST_CLIENT_SECRET}&access_token=${access_token}`,
+        );
+        console.log(`Successfully revoked Todoist token: ${access_token}`);
+        console.error('Error revoking Todoist token:', revokeError);
 
         // Delete the token from the database
         const { error: deleteError } = await supabase
@@ -95,16 +91,18 @@ export async function onRequestPost(context) {
         const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_SERVICE_KEY);
 
         // Exchange the authorization code for an access token
-        const tokenResponse = await ky.post('https://todoist.com/oauth/access_token', {
-            json: {
-                client_id: context.env.TODOIST_CLIENT_ID,
-                client_secret: context.env.TODOIST_CLIENT_SECRET,
-                code: code,
-            },
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }).json();
+        const tokenResponse = await ky
+            .post('https://todoist.com/oauth/access_token', {
+                json: {
+                    client_id: context.env.TODOIST_CLIENT_ID,
+                    client_secret: context.env.TODOIST_CLIENT_SECRET,
+                    code: code,
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .json();
 
         const access_token = tokenResponse.access_token;
 
@@ -157,7 +155,9 @@ export async function onRequestPost(context) {
         if (tasks && Array.isArray(tasks)) {
             const upsertPromises = tasks.map((task) => {
                 // Convert markdown description to Tiptap format if available
-                const tiptapDescription = task?.description ? markdownToTipTap(task.description) : null;
+                const tiptapDescription = task?.description
+                    ? markdownToTipTap(task.description)
+                    : null;
 
                 return supabase.from('tasks').upsert(
                     {
