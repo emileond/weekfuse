@@ -109,9 +109,6 @@ export default function NavBar() {
                             </NavbarItem>
                         </div>
                     )}
-                    <NavbarItem className="hidden sm:flex">
-                        <ThemeSwitcher />
-                    </NavbarItem>
                 </NavbarContent>
                 <NavbarMenu>
                     {menuItems.map((item, index) => (

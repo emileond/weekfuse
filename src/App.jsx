@@ -1,5 +1,4 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { useDarkMode } from './hooks/theme/useDarkMode.js';
 import DashboardPage from './pages/Dashboard.jsx';
 import ProtectedRoute from './components/nav/ProtectedRoute.jsx';
 import LandingPage from './pages/Landing.jsx';
@@ -39,7 +38,6 @@ import PaywallPage from './pages/marketing/Paywall.jsx';
 
 function App() {
     const { isLoading } = useUser();
-    const [darkMode] = useDarkMode();
     const [currentWorkspace, setCurrentWorkspace] = useState(null);
     const router = createBrowserRouter([
         {
@@ -237,7 +235,7 @@ function App() {
     ]);
 
     return (
-        <main className={`${darkMode ? 'dark' : ''} text-foreground bg-background`}>
+        <main className={`text-foreground bg-background`}>
             <CurrentWorkspaceContext.Provider value={[currentWorkspace, setCurrentWorkspace]}>
                 {isLoading && <Progress aria-label="loading" size="sm" isIndeterminate />}
                 <RouterProvider router={router} />

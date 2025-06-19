@@ -15,6 +15,7 @@
     "@formkit/drag-and-drop": "^0.5.2",
     "@google/genai": "^1.5.1",
     "@heroui/react": "^2.7.5",
+    "@heroui/use-theme": "^2.1.9",
     "@leeoniya/ufuzzy": "^1.0.18",
     "@lottiefiles/dotlottie-react": "^0.14.1",
     "@mdx-js/rollup": "^3.1.0",

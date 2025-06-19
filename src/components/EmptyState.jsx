@@ -1,5 +1,5 @@
 import { Button, Image } from '@heroui/react';
-import { useDarkMode } from '../hooks/theme/useDarkMode';
+import { useTheme } from '@heroui/use-theme';
 
 function EmptyState({
     title = 'No items',
@@ -9,9 +9,11 @@ function EmptyState({
     customElements,
     onClick,
 }) {
-    const [isDarkMode] = useDarkMode();
+    const { theme } = useTheme();
 
-    const imageSrc = isDarkMode ? '/empty-states/dark/empty.svg' : '/empty-states/light/empty.svg';
+    const imageSrc = theme.includes('dark')
+        ? '/empty-states/dark/empty.svg'
+        : '/empty-states/light/empty.svg';
 
     const handleOnClick = () => {
         if (onClick) {
