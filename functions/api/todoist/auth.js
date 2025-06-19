@@ -227,27 +227,6 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Schedule a sync job to keep tasks updated
-        try {
-            await ky.post('https://api.trigger.dev/api/v1/runs', {
-                json: {
-                    id: 'todoist-sync',
-                    payload: {
-                        id: integration_id,
-                        access_token,
-                        user_id,
-                        workspace_id,
-                    },
-                },
-                headers: {
-                    Authorization: `Bearer ${context.env.TRIGGER_API_KEY}`,
-                },
-            });
-        } catch (triggerError) {
-            console.error('Error scheduling Todoist sync job:', triggerError);
-            // Continue even if job scheduling fails
-        }
-
         return Response.json({ success: true });
     } catch (error) {
         console.error('Error in Todoist auth flow:', error);
