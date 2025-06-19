@@ -122,6 +122,22 @@ const TaskCheckbox = ({ task, isCompleted, onChange, sm }) => {
                 }
                 break;
 
+            case 'ticktick':
+                try {
+                    const state = newStatus;
+                    await ky.patch('/api/ticktick/task', {
+                        json: {
+                            external_id: task.external_id,
+                            project_id: task?.external_data?.projectId,
+                            state,
+                            user_id: user.id,
+                        },
+                    });
+                } catch (error) {
+                    console.error('Error updating Tick Tick task:', error);
+                }
+                break;
+
             case 'jira':
                 // For Jira, we don't automatically update the status here
                 // Instead, we show the transitions modal when syncStatus is "prompt"
