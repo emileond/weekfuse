@@ -1,33 +1,51 @@
 import { Button, ButtonGroup, Tooltip } from '@heroui/react';
 import { RiListCheck3, RiKanbanView, RiTableView } from 'react-icons/ri';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-const STORAGE_KEY = 'taskViewPreference';
+// The base key for localStorage to keep naming consistent
+const BASE_STORAGE_KEY = 'taskViewPreference';
 
-const TaskViewToggle = ({ hideList, hideKanban, hideTable, onChange }) => {
-    // Initialize state from localStorage or default to 'list'
+const TaskViewToggle = ({ pageKey = 'global', hideList, hideKanban, hideTable, onChange }) => {
+    // Create a dynamic storage key based on the pageKey prop.
+    // This makes the preference unique to the page (e.g., 'taskViewPreference_dashboard').
+    const storageKey = useMemo(() => `${BASE_STORAGE_KEY}_${pageKey}`, [pageKey]);
+
+    // Initialize state from localStorage using the dynamic key, or default to 'list'
     const [view, setView] = useState(() => {
-        const savedView = localStorage.getItem(STORAGE_KEY);
-        return savedView || 'list';
+        // Ensure localStorage is available before using it (for SSR safety)
+        if (typeof window !== 'undefined') {
+            const savedView = localStorage.getItem(storageKey);
+            return savedView || 'list';
+        }
+        return 'list';
     });
 
     const ICON_SIZE = '1.3REM';
 
-    // Update view handler that updates state, localStorage, and calls onChange
+    // Update view handler that updates state, localStorage (with dynamic key), and calls onChange
     const handleViewChange = (newView) => {
         setView(newView);
-        localStorage.setItem(STORAGE_KEY, newView);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(storageKey, newView);
+        }
         if (onChange) {
             onChange(newView);
         }
     };
 
-    // Notify parent component of initial view on mount
+    // This effect synchronizes the component's state with localStorage when the pageKey changes.
+    // This ensures that if the component is used across different pages while staying mounted,
+    // it always reflects the correct preference for the current page.
     useEffect(() => {
+        const savedView = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : 'list';
+        const currentView = savedView || 'list';
+
+        setView(currentView); // Update the component's internal state
+
         if (onChange) {
-            onChange(view);
+            onChange(currentView); // Notify the parent component of the correct view
         }
-    }, []);
+    }, [pageKey, storageKey, onChange]); // Rerun when the page context changes
 
     return (
         <div className="flex items-center gap-3 p-1 mx-auto fixed bottom-4 md:left-[240px] md:right-0 left-0 right-0 w-32 rounded-2xl bg-background shadow z-10">

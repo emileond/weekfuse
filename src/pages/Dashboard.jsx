@@ -32,7 +32,6 @@ import KanbanView from '../components/tasks/KanbanView.jsx';
 import TableView from '../components/tasks/TableView.jsx';
 import { PomodoroWidget } from '../components/widgets/pomodoro/PomodoroWidget.jsx';
 import { BreathExerciseWidget } from '../components/widgets/relax/BreathExerciseWidget.jsx';
-import ThemeSwitcher from '../components/theme/ThemeSwitcher.jsx';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -242,7 +241,7 @@ function DashboardPage() {
                     </div>
                 }
             >
-                <TaskViewToggle onChange={handleViewChange} />
+                <TaskViewToggle pageKey="today" onChange={handleViewChange} />
                 <TasksFilters
                     showFilters={showFilters}
                     onShowFiltersChange={setShowFilters}

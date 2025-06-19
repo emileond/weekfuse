@@ -128,7 +128,11 @@ function ProjectTasksPage() {
                 icon={<RiAddLine fontSize="1.1rem" />}
                 onClick={onOpenChange}
             >
-                <TaskViewToggle hideList onChange={handleViewChange} />
+                <TaskViewToggle
+                    pageKey={milestone ? 'milestone' : 'project'}
+                    hideList
+                    onChange={handleViewChange}
+                />
                 {(projectId || milestoneId) && (
                     <TasksFilters
                         showStatusFilter

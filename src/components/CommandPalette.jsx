@@ -21,6 +21,7 @@ import {
 import { useFuzzySearchTasks } from '../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 import NewTaskModal from './tasks/NewTaskModal.jsx';
+import ThemeSwitcher from './theme/ThemeSwitcher.jsx';
 import debounce from '../utils/debounceUtils.js';
 import { useHotkeys } from 'react-hotkeys-hook';
 import UFuzzy from '@leeoniya/ufuzzy';
@@ -31,6 +32,7 @@ const CommandPalette = () => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const { isOpen: isNewTaskModalOpen, onOpenChange: onNewTaskModalOpenChange } = useDisclosure();
+    const { isOpen: isThemeSwitcherOpen, onOpenChange: onThemeSwitcherOpenChange } = useDisclosure();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -180,7 +182,7 @@ const CommandPalette = () => {
                 onNewTaskModalOpenChange();
                 break;
             case 'change-theme':
-                console.log('Change theme');
+                onThemeSwitcherOpenChange();
                 break;
             case 'suggest-feature':
                 console.log('Suggest feature');
@@ -292,6 +294,14 @@ const CommandPalette = () => {
                                 </>
                             )}
                         </div>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
+
+            <Modal isOpen={isThemeSwitcherOpen} onOpenChange={onThemeSwitcherOpenChange} size="lg">
+                <ModalContent>
+                    <ModalBody>
+                        <ThemeSwitcher />
                     </ModalBody>
                 </ModalContent>
             </Modal>

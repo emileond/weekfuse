@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import dayjs from 'dayjs';
 import { supabaseClient } from '../../lib/supabase.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
@@ -70,7 +70,24 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
     const startDate = days[0]?.startOf('day').toISOString();
     const endDate = days[days.length - 1]?.endOf('day').toISOString();
 
-    const [isBacklogCollapsed, setIsBacklogCollapsed] = useState(false);
+    const [isBacklogCollapsed, setIsBacklogCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('isBacklogCollapsed') === 'true';
+        }
+        return false;
+    });
+
+    // This effect persists the collapsed state to localStorage whenever it changes.
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('isBacklogCollapsed', String(isBacklogCollapsed));
+        }
+    }, [isBacklogCollapsed]);
+
+    // This callback is passed to the child components to toggle the state.
+    const handleToggleCollapse = useCallback(() => {
+        setIsBacklogCollapsed((prevState) => !prevState);
+    }, []);
 
     const handleRollback = async () => {
         if (!lastPlanResponse || !Array.isArray(lastPlanResponse)) {
@@ -231,7 +248,7 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                 <Button
                     size="sm"
                     variant="flat"
-                    onPress={() => setIsBacklogCollapsed(!isBacklogCollapsed)}
+                    onPress={handleToggleCollapse}
                     startContent={
                         isBacklogCollapsed ? (
                             <RiExpandLeftLine fontSize="1.1rem" />
