@@ -7,51 +7,58 @@ import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import ky from 'ky';
 
-function PlanningStep({ goToNextStep }) {
+// Helper objects to map UI-friendly selections to backend-friendly data
+const dayStringToNumber = {
+    friday: 5,
+    saturday: 6,
+    sunday: 0,
+    monday: 1,
+};
+
+function PlanningStep({ goToNextStep, currentWorkspace }) {
     const { data: user } = useUser();
     const queryClient = useQueryClient();
     const [isPending, setIsPending] = useState(false);
 
-    // Initialize react-hook-form with default values
     const {
         control,
         handleSubmit,
         formState: { isSubmitSuccessful },
     } = useForm({
         defaultValues: {
-            planningDay: 'sunday',
-            planningTime: 'morning',
+            planningDay: 'friday',
             enableReminders: true,
         },
     });
 
-    // Function to handle saving the planning routine
     const handleSaveRoutine = async (formData) => {
         setIsPending(true);
         try {
             const { data: sessionData } = await supabaseClient.auth.getSession();
-            if (!sessionData.session) {
-                throw new Error('You must be logged in to save settings.');
-            }
+            if (!sessionData.session) throw new Error('You must be logged in to save settings.');
 
-            // Prepare the data for your API
+            // 1. Get the user's timezone from their browser
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            // 2. Prepare the robust data payload for your backend
             const updateData = {
-                planning_day: formData.planningDay,
-                planning_time: formData.planningTime,
-                reminders_enabled: formData.enableReminders,
+                planning_reminder: formData.enableReminders,
+                planning_day_of_week: dayStringToNumber[formData.planningDay],
+                planning_timezone: timezone,
             };
 
-            // Example API call - adjust the endpoint as needed
-            await ky.post('/api/update-planning-routine', {
-                json: {
-                    updateData,
-                    session: sessionData.session,
-                },
-            });
+            // 3. Send to your API
+            await ky
+                .post('/api/update-workspace', {
+                    json: {
+                        updateData,
+                        workspaceId: currentWorkspace.workspace_id,
+                        session: sessionData.session,
+                    },
+                })
+                .json();
 
             toast.success('Your planning routine has been saved!');
-
-            // Invalidate any queries that fetch user settings or preferences
             await queryClient.invalidateQueries({ queryKey: ['user', user?.id, 'preferences'] });
 
             goToNextStep();
@@ -92,12 +99,11 @@ function PlanningStep({ goToNextStep }) {
                 control={control}
                 render={({ field: { onChange, value } }) => (
                     <Switch size="sm" isSelected={value} onValueChange={onChange}>
-                        Send me a gentle reminder
+                        Send me planning reminders
                     </Switch>
                 )}
             />
 
-            {/* Submission Button */}
             <Button
                 color="primary"
                 type="submit"

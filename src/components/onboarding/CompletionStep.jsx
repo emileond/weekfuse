@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import ky from 'ky';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
-function CompletionStep({ currentWorkspace }) {
+function CompletionStep({ currentWorkspace, setCurrentWorkspace }) {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const queryClient = useQueryClient();
@@ -40,9 +40,13 @@ function CompletionStep({ currentWorkspace }) {
                 .json();
 
             // Invalidate workspaces query to refresh data
-            if (user?.id) {
-                await queryClient.invalidateQueries(['workspaces', user.id]);
-            }
+            await queryClient.invalidateQueries(['workspaces', user.id]);
+
+            // Update the current workspace with the new name
+            setCurrentWorkspace({
+                ...currentWorkspace,
+                onboarded: true,
+            });
         } catch (error) {
             console.error('Error updating workspace onboarding status:', error);
             toast.error('Failed to update workspace status.');
@@ -54,7 +58,7 @@ function CompletionStep({ currentWorkspace }) {
     // Update workspace when component mounts
     useEffect(() => {
         updateWorkspaceOnboarding();
-    }, [currentWorkspace, user, queryClient]);
+    }, []);
 
     // Function to handle navigation to dashboard
     const goToDashboard = () => {
