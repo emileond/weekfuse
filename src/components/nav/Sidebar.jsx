@@ -4,10 +4,12 @@ import Logo from '../Logo';
 import { navItems } from './navItems';
 import UserMenu from './UserMenu';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
-import WorkspaceUsageCard from '../marketing/WorkspaceUsageCard';
+import TrialEndsCard from '../marketing/TrialEndsCard.jsx';
 import CommandPalette from '../CommandPalette.jsx';
+import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 
 function Sidebar() {
+    const [currentWorkspace] = useCurrentWorkspace();
     const location = useLocation();
 
     return (
@@ -40,9 +42,9 @@ function Sidebar() {
                 })}
             </nav>
             <div className="flex flex-col gap-3">
+                {currentWorkspace?.subscription_status === 'trial' && <TrialEndsCard />}
                 <Divider />
                 <CommandPalette />
-                {/*<WorkspaceUsageCard />*/}
                 <UserMenu />
             </div>
         </div>

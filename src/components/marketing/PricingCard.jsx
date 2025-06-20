@@ -25,11 +25,11 @@ function PricingCard({
     }
 
     // Conditional styling for LTD and highlighted plans
-    const cardClasses = `flex-1 min-w-[300px] flex flex-col transition-transform duration-300 hover:scale-105 ${
-        highlight && !isLTD ? 'border-2 border-primary' : ''
+    const cardClasses = `flex-1 min-w-[300px] flex flex-col transition-transform duration-300 hover:shadow-xl ${
+        highlight && !isLTD ? 'border-2 border-primary-400/60' : ''
     } ${
         isLTD || highlight
-            ? 'bg-gradient-to-br from-content1 to-primary-50 border-2 border-primary-500 shadow-xl shadow-primary/20'
+            ? 'bg-gradient-to-br from-content1 to-primary-50/50 border-2 border-primary-400/60 shadow-lg shadow-primary/20'
             : ''
     }`;
 
@@ -49,9 +49,7 @@ function PricingCard({
             <CardBody className="p-6 flex-grow">
                 <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold">${displayPrice}</span>
-                    <span className={isLTD ? 'text-primary-300' : 'text-default-500'}>
-                        {periodText}
-                    </span>
+                    <span className="text-default-500">{periodText}</span>
                 </div>
                 {!isLTD && (
                     <p className="text-small text-default-500 mt-1">
@@ -67,7 +65,7 @@ function PricingCard({
                     ))}
                 </ul>
             </CardBody>
-            <CardFooter className="p-6">
+            <CardFooter className="py-3 px-6">
                 <Button
                     as={Link}
                     to={checkoutUrl}
@@ -75,7 +73,7 @@ function PricingCard({
                     variant={buttonVariant}
                     fullWidth
                     size="lg"
-                    className="font-semibold"
+                    className="font-medium"
                 >
                     {isLTD ? 'Get Lifetime Access' : 'Get Started'}
                 </Button>
