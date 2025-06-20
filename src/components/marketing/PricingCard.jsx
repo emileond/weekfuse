@@ -1,5 +1,11 @@
 import { Button, Card, CardBody, CardFooter, CardHeader, Chip, Divider } from '@heroui/react';
-import { RiRocket2Fill, RiCheckFill } from 'react-icons/ri';
+import {
+    RiRocket2Fill,
+    RiCheckFill,
+    RiFireFill,
+    RiPriceTag2Fill,
+    RiPriceTag3Fill,
+} from 'react-icons/ri';
 import { Link } from 'react-router-dom';
 
 function PricingCard({
@@ -37,13 +43,18 @@ function PricingCard({
 
     return (
         <Card shadow="md" className={cardClasses}>
-            <CardHeader className="flex flex-col items-start gap-3 p-6">
+            <CardHeader className="flex items-center justify-between gap-3 p-6">
+                <h4 className="text-lg font-medium">{name}</h4>
                 {isLTD && (
-                    <Chip size="sm" color="primary" variant="flat" startContent={<RiRocket2Fill />}>
-                        Lifetime Deal
+                    <Chip
+                        size="sm"
+                        color="secondary"
+                        variant="flat"
+                        startContent={<RiPriceTag3Fill fontSize="0.9rem" className="mr-1" />}
+                    >
+                        Lifetime deal
                     </Chip>
                 )}
-                <h3 className="text-lg font-medium">{name}</h3>
             </CardHeader>
             <Divider />
             <CardBody className="p-6 flex-grow">
@@ -52,7 +63,7 @@ function PricingCard({
                     <span className="text-default-500">{periodText}</span>
                 </div>
                 {!isLTD && (
-                    <p className="text-small text-default-500 mt-1">
+                    <p className="text-sm text-default-500 mt-1">
                         Billed {isYearly ? 'yearly' : 'monthly'}
                     </p>
                 )}
@@ -60,7 +71,7 @@ function PricingCard({
                     {features?.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3">
                             <RiCheckFill className="text-success text-xl" />
-                            <span>{feature}</span>
+                            <span className="text-sm text-default-600">{feature}</span>
                         </li>
                     ))}
                 </ul>
