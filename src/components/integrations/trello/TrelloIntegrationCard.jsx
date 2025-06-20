@@ -24,7 +24,7 @@ import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import { useQueryClient } from '@tanstack/react-query';
 import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
-const TrelloIntegrationCard = () => {
+const TrelloIntegrationCard = ({ isCompact }) => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'trello');
     const deleteIntegration = useDeleteIntegration(user.id, 'trello');
@@ -174,6 +174,7 @@ const TrelloIntegrationCard = () => {
             <IntegrationCard
                 id="trello"
                 name="Trello"
+                isCompact={isCompact}
                 isLoading={loading}
                 isPending={isPending}
                 description="Import all Trello cards from boards visible to you."

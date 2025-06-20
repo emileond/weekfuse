@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useUser } from '../../hooks/react-query/user/useUser';
 import toast from 'react-hot-toast';
 import ky from 'ky';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 function CompletionStep({ currentWorkspace }) {
     const navigate = useNavigate();
@@ -61,10 +62,9 @@ function CompletionStep({ currentWorkspace }) {
     };
 
     return (
-        <div className="mb-6 flex flex-col">
-            <p className="mb-6">Head over to your dashboard to get started.</p>
-            <div className="my-6">
-                <PiCheckCircleDuotone className="text-success-500 text-8xl mx-auto" />
+        <div className="flex flex-col">
+            <div className="h-72">
+                <DotLottieReact src="/lottie/rocket.lottie" autoplay loop />
             </div>
             <Button color="primary" size="lg" onPress={goToDashboard} isLoading={isLoading}>
                 Go to Dashboard

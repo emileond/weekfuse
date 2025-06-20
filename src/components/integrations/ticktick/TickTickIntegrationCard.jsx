@@ -24,7 +24,7 @@ import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import { useQueryClient } from '@tanstack/react-query';
 import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
-const TickTickIntegrationCard = () => {
+const TickTickIntegrationCard = ({ isCompact }) => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'ticktick');
     const deleteIntegration = useDeleteIntegration(user.id, 'ticktick');
@@ -176,6 +176,7 @@ const TickTickIntegrationCard = () => {
             <IntegrationCard
                 id="ticktick"
                 name="TickTick"
+                isCompact={isCompact}
                 isLoading={loading}
                 isPending={isPending}
                 description="Import all TickTick tasks from projects visible to you."

@@ -24,7 +24,7 @@ import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import { useQueryClient } from '@tanstack/react-query';
 import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
-const TodoistIntegrationCard = () => {
+const TodoistIntegrationCard = ({ isCompact }) => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'todoist');
     const deleteIntegration = useDeleteIntegration(user.id, 'todoist');
@@ -178,6 +178,7 @@ const TodoistIntegrationCard = () => {
             <IntegrationCard
                 id="todoist"
                 name="Todoist"
+                isCompact={isCompact}
                 isLoading={loading}
                 isPending={isPending}
                 description="Import all your active Todoist tasks."

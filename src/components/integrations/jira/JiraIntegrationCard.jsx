@@ -23,7 +23,7 @@ import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import { useQueryClient } from '@tanstack/react-query';
 import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
-const JiraIntegrationCard = () => {
+const JiraIntegrationCard = ({ isCompact }) => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'jira');
     const deleteIntegration = useDeleteIntegration(user.id, 'jira');
@@ -155,6 +155,7 @@ const JiraIntegrationCard = () => {
                 name="Jira"
                 isLoading={loading}
                 isPending={isPending}
+                isCompact={isCompact}
                 description="Import Jira tickets assigned to you."
                 status={status}
                 onConnect={handleConnect}

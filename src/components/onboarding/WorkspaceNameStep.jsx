@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Input } from '@heroui/react';
-import { PiWarningBold } from 'react-icons/pi';
 import { supabaseClient } from '../../lib/supabase.js';
 import { useUser } from '../../hooks/react-query/user/useUser';
 import { useQueryClient } from '@tanstack/react-query';
@@ -71,31 +70,31 @@ function WorkspaceNameStep({ currentWorkspace, setCurrentWorkspace, goToNextStep
     };
 
     return (
-        <div className="mb-6">
-            <p className="my-3">Update your workspace name to get started</p>
-            <form onSubmit={handleSubmit(handleUpdateWorkspace)} className="flex flex-col gap-6">
-                <Input
-                    label="Workspace Name"
-                    type="text"
-                    fullWidth
-                    aria-label="Workspace Name"
-                    isInvalid={!!errors?.workspaceName}
-                    errorMessage={errors?.workspaceName?.message}
-                    defaultValue={currentWorkspace?.name || ''}
-                    {...register('workspaceName', {
-                        required: 'Workspace Name is required',
-                    })}
-                />
-                <Button
-                    color="primary"
-                    type="submit"
-                    isLoading={isPending}
-                    disabled={isSubmitSuccessful}
-                >
-                    {isSubmitSuccessful ? 'Workspace Name Updated' : 'Update Workspace Name'}
-                </Button>
-            </form>
-        </div>
+        <form onSubmit={handleSubmit(handleUpdateWorkspace)} className="flex flex-col gap-6">
+            <Input
+                variant="faded"
+                label="Workspace Name"
+                labelPlacement="outside"
+                placeholder="My workspace"
+                type="text"
+                fullWidth
+                aria-label="Workspace Name"
+                isInvalid={!!errors?.workspaceName}
+                errorMessage={errors?.workspaceName?.message}
+                defaultValue={currentWorkspace?.name || ''}
+                {...register('workspaceName', {
+                    required: 'Workspace Name is required',
+                })}
+            />
+            <Button
+                color="primary"
+                type="submit"
+                isLoading={isPending}
+                disabled={isSubmitSuccessful}
+            >
+                {isSubmitSuccessful ? 'Workspace Name Updated' : 'Update Workspace Name'}
+            </Button>
+        </form>
     );
 }
 

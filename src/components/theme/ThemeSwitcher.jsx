@@ -88,7 +88,7 @@ const ThemePreviewCard = ({ themeInfo, isSelected, onSelect }) => {
 };
 
 // The main ThemeSwitcher component
-export default function ThemeSwitcher() {
+export default function ThemeSwitcher({ isOnboarding }) {
     const { theme, setTheme } = useTheme();
 
     const themeOptions = useMemo(
@@ -106,15 +106,17 @@ export default function ThemeSwitcher() {
     return (
         <Card shadow="none">
             <CardHeader>
-                <div>
-                    <div className="flex items-center gap-1 mb-2">
-                        <RiPaintBrushLine fontSize="1.2rem" />
-                        <p className="text-lg font-medium">Theme</p>
+                {!isOnboarding && (
+                    <div>
+                        <div className="flex items-center gap-1 mb-2">
+                            <RiPaintBrushLine fontSize="1.2rem" />
+                            <p className="text-lg font-medium">Theme</p>
+                        </div>
+                        <p className="text-sm text-default-500">
+                            Customize the look and feel of the app
+                        </p>
                     </div>
-                    <p className="text-sm text-default-500">
-                        Customize the look and feel of the app
-                    </p>
-                </div>
+                )}
             </CardHeader>
             <CardBody className="p-4 max-w-lg">
                 {/* The gallery of theme previews */}

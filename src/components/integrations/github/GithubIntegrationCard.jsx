@@ -25,7 +25,7 @@ import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import { useQueryClient } from '@tanstack/react-query';
 import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
-const GithubIntegrationCard = () => {
+const GithubIntegrationCard = ({ isCompact }) => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'github');
     const deleteIntegration = useDeleteIntegration(user.id, 'github');
@@ -174,6 +174,7 @@ const GithubIntegrationCard = () => {
             <IntegrationCard
                 id="github"
                 name="Github"
+                isCompact={isCompact}
                 isLoading={loading}
                 isPending={isPending}
                 icon={<RiGithubFill />}

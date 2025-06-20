@@ -57,8 +57,8 @@ const AvatarUploader = () => {
     if (!userProfile) return null; // Prevents rendering when data isn't ready
 
     return (
-        <div className="flex items-center gap-3">
-            <Avatar showFallback className="w-16 h-16" src={userProfile.avatar} />
+        <div className="flex flex-col items-center gap-6">
+            <Avatar alt="User avatar" showFallback className="w-32 h-32" src={userProfile.avatar} />
             <input
                 type="file"
                 accept="image/png, image/jpeg, image/jpg"
@@ -67,8 +67,8 @@ const AvatarUploader = () => {
                 onChange={handleFileChange}
             />
             <label htmlFor="avatar-upload">
-                <Button size="sm" as="span" variant="bordered" disabled={uploading}>
-                    {uploading ? <Spinner size="sm" /> : 'Upload new'}
+                <Button size="sm" as="span" variant="bordered" color="primary" disabled={uploading}>
+                    {uploading ? <Spinner size="sm" /> : 'Change avatar'}
                 </Button>
             </label>
         </div>

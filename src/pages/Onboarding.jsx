@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useUser } from '../hooks/react-query/user/useUser';
 import { useWorkspaces } from '../hooks/react-query/teams/useWorkspaces';
-import PageLayout from '../components/layout/PageLayout';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import OnboardingSteps from '../components/onboarding/OnboardingSteps';
 import Logo from '../components/Logo.jsx';
@@ -22,8 +21,8 @@ function OnboardingPage() {
     }, [workspaces, currentWorkspace, setCurrentWorkspace]);
 
     return (
-        <div className="w-screen h-screen bg-content1 flex justify-center items-center">
-            <PageLayout maxW="xl" title="">
+        <div className="w-screen h-screen bg-content1 flex justify-center items-center bg-gradient-to-b from-content1 to-primary-50">
+            <div className="p-9">
                 <div className="flex justify-center mb-10">
                     <Logo />
                 </div>
@@ -31,7 +30,7 @@ function OnboardingPage() {
                     currentWorkspace={currentWorkspace}
                     setCurrentWorkspace={setCurrentWorkspace}
                 />
-            </PageLayout>
+            </div>
         </div>
     );
 }

@@ -23,7 +23,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import useCurrentWorkspace from '../../../hooks/useCurrentWorkspace.js';
 import ProjectSelect from '../../../components/form/ProjectSelect.jsx';
 
-const ClickupIntegrationCard = () => {
+const ClickupIntegrationCard = ({ isCompact }) => {
     const { data: user } = useUser();
     const { data: integration, isLoading, isPending } = useUserIntegration(user?.id, 'clickup');
     const deleteIntegration = useDeleteIntegration(user.id, 'clickup');
@@ -177,6 +177,7 @@ const ClickupIntegrationCard = () => {
             <IntegrationCard
                 id="clickup"
                 name="Clickup"
+                isCompact={isCompact}
                 isLoading={loading}
                 isPending={isPending}
                 description="Import all Clickup tasks assigned to you."

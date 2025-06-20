@@ -31,6 +31,7 @@ function IntegrationCard({
     onReset,
     hasConfigOptions,
     onConfigure,
+    isCompact,
 }) {
     const BTN_ICON_SIZE = '1rem';
 
@@ -156,17 +157,22 @@ function IntegrationCard({
                                     </Chip>
                                 </Skeleton>
                             )}
+                            {isCompact && (
+                                <div className="flex items-center gap-2">{getActions()}</div>
+                            )}
                         </>
                     )}
                 </CardHeader>
-                <CardBody className="py-3">
-                    <Skeleton isLoaded={!isPending}>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ">
-                            {description}
-                        </p>
-                    </Skeleton>
-                </CardBody>
-                {status !== 'soon' && (
+                {!isCompact && (
+                    <CardBody className="py-3">
+                        <Skeleton isLoaded={!isPending}>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ">
+                                {description}
+                            </p>
+                        </Skeleton>
+                    </CardBody>
+                )}
+                {status !== 'soon' && !isCompact && (
                     <>
                         <Divider />
                         <CardFooter className="flex justify-end gap-2 pt-4">

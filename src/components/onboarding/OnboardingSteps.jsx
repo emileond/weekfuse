@@ -1,30 +1,63 @@
 import { useState, useEffect } from 'react';
+import ProfileStep from './ProfileStep.jsx';
 import WorkspaceNameStep from './WorkspaceNameStep';
-import InviteTeamStep from './InviteTeamStep';
+import PlanningStep from './PlanningStep.jsx';
+import IntegrationsStep from './IntegrationsStep.jsx';
 import CompletionStep from './CompletionStep';
-import { Card, CardBody, Progress } from '@heroui/react';
+import ThemeStep from './ThemeStep';
+import { Button, Card, CardBody, CardFooter, Progress } from '@heroui/react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 function OnboardingSteps({ currentWorkspace, setCurrentWorkspace }) {
+    const [parent] = useAutoAnimate();
     // Track current step by ID instead of index
-    const [currentStepId, setCurrentStepId] = useState('workspace-name');
+    const [currentStepId, setCurrentStepId] = useState('welcome');
 
     // Define steps and their visibility conditions
     const steps = [
         {
-            id: 'workspace-name',
+            id: 'welcome',
+            title: 'Welcome to Weekfuse!',
+            description:
+                "We're happy you're here. Let's start with the basics to personalize your experience",
+            component: ProfileStep,
+            isVisible: () => true,
+        },
+        {
+            id: 'workspace',
             title: "Let's set up your workspace",
+            description:
+                'A workspace is a dedicated area for your tasks. What should we call yours?',
             component: WorkspaceNameStep,
             isVisible: () => !currentWorkspace?.name || currentWorkspace.name === 'My workspace',
         },
         {
-            id: 'invite-team',
-            title: 'Invite your team',
-            component: InviteTeamStep,
+            id: 'integrations',
+            title: 'Bring your tasks together',
+            description:
+                'Connect your tools to see everything in one place. You can always do this later.',
+            component: IntegrationsStep,
+            isVisible: () => true, // Always visible
+        },
+        {
+            id: 'planning',
+            title: 'Find your planning rhythm',
+            description:
+                'A weekly planning ritual is key to a balanced week. When is a good time for you to plan?',
+            component: PlanningStep,
+            isVisible: () => true, // Always visible
+        },
+        {
+            id: 'theme',
+            title: 'Choose your theme',
+            description: 'Select your favorite theme',
+            component: ThemeStep,
             isVisible: () => true, // Always visible
         },
         {
             id: 'completion',
             title: "You're All Set! ",
+            description: 'Your workspace is ready',
             component: CompletionStep,
             isVisible: () => true, // Always visible
         },
@@ -67,32 +100,39 @@ function OnboardingSteps({ currentWorkspace, setCurrentWorkspace }) {
     const StepComponent = currentStep.component;
 
     return (
-        <Card shadow="sm" className="p-3">
+        <Card shadow="none" className="p-3 bg-transparent max-w-lg mx-auto">
             <CardBody>
-                <div className="flex gap-4 items-center py-3">
-                    {steps.map((step, index) => (
-                        <Progress
-                            size="sm"
-                            color="secondary"
-                            value={
-                                index >= steps.findIndex((step) => step.id === currentStepId)
-                                    ? 0
-                                    : 100
-                            }
-                        />
-                    ))}
-                </div>
-                <div className="flex flex-col gap-6">
-                    <div className="mt-6">
-                        <h1 className="text-2xl font-semibold mb-3">{currentStep.title}</h1>
-                        <StepComponent
-                            currentWorkspace={currentWorkspace}
-                            setCurrentWorkspace={setCurrentWorkspace}
-                            goToNextStep={goToNextStep}
-                        />
+                <div className="min-h-[60vh] flex flex-col gap-6 text-center" ref={parent}>
+                    <div className="mb-6">
+                        <h1 className="text-3xl font-semibold mb-6">{currentStep.title}</h1>
+                        <p className="text-default-600 text-pretty">{currentStep.description}</p>
                     </div>
+                    <StepComponent
+                        currentWorkspace={currentWorkspace}
+                        setCurrentWorkspace={setCurrentWorkspace}
+                        goToNextStep={goToNextStep}
+                    />
+                    <Button onPress={goToNextStep}>Next</Button>
                 </div>
             </CardBody>
+            <CardFooter>
+                <div className="flex items-center justify-center w-[280px] mx-auto">
+                    <div className="grow flex gap-4 items-center justify-around py-3">
+                        {steps.map((step, index) => (
+                            <Progress
+                                key={index}
+                                size="sm"
+                                color="secondary"
+                                value={
+                                    index >= steps.findIndex((step) => step.id === currentStepId)
+                                        ? 0
+                                        : 100
+                                }
+                            />
+                        ))}
+                    </div>
+                </div>
+            </CardFooter>
         </Card>
     );
 }
