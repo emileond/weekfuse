@@ -129,6 +129,31 @@ export const useUpdateIntegrationConfig = (user_id, type) => {
     });
 };
 
+// Fetch all active integrations for a user
+const fetchActiveIntegrations = async ({ user_id }) => {
+    const { data, error } = await supabaseClient
+        .from('user_integrations')
+        .select('id, type, status, installation_id, config')
+        .eq('user_id', user_id)
+        .eq('status', 'active');
+
+    if (error) {
+        throw new Error('Failed to fetch active integrations');
+    }
+
+    return data || [];
+};
+
+// Hook to fetch all active integrations for a user
+export const useActiveIntegrations = (user_id) => {
+    return useQuery({
+        queryKey: ['active_integrations', user_id],
+        queryFn: () => fetchActiveIntegrations({ user_id }),
+        staleTime: 1000 * 60 * 60, // 60 minutes
+        enabled: !!user_id,
+    });
+};
+
 // Hook to delete an integration
 export const useDeleteIntegration = (user_id, type) => {
     const queryClient = useQueryClient();
@@ -139,6 +164,11 @@ export const useDeleteIntegration = (user_id, type) => {
             // Invalidate the relevant query
             queryClient.invalidateQueries({
                 queryKey: ['user_integration', user_id, type],
+                exact: true,
+            });
+            // Also invalidate the active integrations query
+            queryClient.invalidateQueries({
+                queryKey: ['active_integrations', user_id],
                 exact: true,
             });
         },

@@ -9,7 +9,7 @@ import {
     Divider,
 } from '@heroui/react';
 import { useState, useRef } from 'react';
-import { RiSearchLine, RiAddLine, RiCheckLine, RiCheckboxBlankCircleLine } from 'react-icons/ri';
+import { RiSearchLine, RiAddLine, RiCheckLine } from 'react-icons/ri';
 
 const CreatableSelect = ({
     label,
@@ -148,7 +148,7 @@ const CreatableSelect = ({
                         size="sm"
                         variant="light"
                         className={`text-default-600 ${triggerClassName}`}
-                        startContent={icon}
+                        startContent={selectedOption?.startContent || icon}
                         disabled={disabled}
                         onPress={() => setIsOpen(true)}
                     >
@@ -211,7 +211,8 @@ const CreatableSelect = ({
                                         }
                                     }}
                                     className={isSelected ? 'text-primary' : ''}
-                                    startContent={
+                                    startContent={option?.startContent || null}
+                                    endContent={
                                         isSelected ? (
                                             <RiCheckLine fontSize="1rem" />
                                         ) : (

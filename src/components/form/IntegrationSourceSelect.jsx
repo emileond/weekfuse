@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import CreatableSelect from './CreatableSelect';
 import { RiApps2Line } from 'react-icons/ri';
-import IntegrationSourceIcon from '../tasks/integrations/IntegrationSourceIcon.jsx';
+import { useUser } from '../../hooks/react-query/user/useUser.js';
+import { useActiveIntegrations } from '../../hooks/react-query/integrations/useUserIntegrations';
+import { Avatar } from '@heroui/react';
 
 const IntegrationSourceSelect = ({
     label = 'Integration',
@@ -13,15 +15,54 @@ const IntegrationSourceSelect = ({
     triggerClassName = '',
     disabled = false,
 }) => {
+    const { data: user } = useUser();
     const [selectedSource, setSelectedSource] = useState(defaultValue);
 
-    // Hardcoded options for integration sources
-    const sourceOptions = [
-        { label: 'GitHub', value: 'github' },
-        { label: 'Jira', value: 'jira' },
-        { label: 'Clickup', value: 'clickup' },
-        { label: 'Trello', value: 'trello' },
+    // All possible integration options
+    const iconClass = 'w-5 h-5';
+    const allSourceOptions = [
+        { label: 'GitHub', value: 'github', startContent: <Avatar className={iconClass} /> },
+        {
+            label: 'Jira',
+            value: 'jira',
+            startContent: <Avatar className={iconClass} src="/integrations/jira.png" />,
+        },
+        {
+            label: 'Trello',
+            value: 'trello',
+            startContent: <Avatar className={iconClass} src="/integrations/trello.png" />,
+        },
+        {
+            label: 'Clickup',
+            value: 'clickup',
+            startContent: <Avatar className={iconClass} src="/integrations/clickup.png" />,
+        },
+        {
+            label: 'Tick tick',
+            value: 'ticktick',
+            startContent: <Avatar className={iconClass} src="/integrations/ticktick.png" />,
+        },
+        {
+            label: 'Todoist',
+            value: 'todoist',
+            startContent: <Avatar className={iconClass} src="/integrations/todoist.png" />,
+        },
     ];
+
+    // Only fetch active integrations if user_id is provided
+    const { data: activeIntegrations, isLoading } = useActiveIntegrations(user?.id);
+    
+    // Filter options based on active integrations if user_id is provided
+    // Otherwise, show all options
+    const sourceOptions =
+        user?.id && activeIntegrations?.length
+            ? allSourceOptions.filter((option) =>
+                  activeIntegrations.some((integration) => integration.type === option.value),
+              )
+            : allSourceOptions;
+
+    // If there are no active integrations after filtering, show all options
+    const finalSourceOptions = sourceOptions.length > 0 ? sourceOptions : allSourceOptions;
 
     // Update parent component when selected source changes
     useEffect(() => {
@@ -34,16 +75,16 @@ const IntegrationSourceSelect = ({
         <CreatableSelect
             label={label}
             placeholder={placeholder}
-            options={sourceOptions}
-            defaultValue={sourceOptions.find((opt) => opt.value === defaultValue)}
+            options={finalSourceOptions}
+            defaultValue={finalSourceOptions.find((opt) => opt.value === defaultValue)}
             onChange={(value) => {
-                const option = sourceOptions.find((opt) => opt.value === value);
+                const option = finalSourceOptions.find((opt) => opt.value === value);
                 setSelectedSource(option?.value || null);
             }}
             placement={placement}
             className={className}
             triggerClassName={triggerClassName}
-            disabled={disabled}
+            disabled={disabled || isLoading}
             icon={<RiApps2Line fontSize="1rem" />}
             onCreate={null} // No creation allowed for integration sources
         />
