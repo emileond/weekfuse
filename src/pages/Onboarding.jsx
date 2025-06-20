@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useUser } from '../hooks/react-query/user/useUser';
+import { useUserProfile } from '../hooks/react-query/user/useUserProfile.js';
 import { useWorkspaces } from '../hooks/react-query/teams/useWorkspaces';
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import OnboardingSteps from '../components/onboarding/OnboardingSteps';
@@ -8,6 +9,7 @@ import Logo from '../components/Logo.jsx';
 function OnboardingPage() {
     const { data: user } = useUser();
     const { data: workspaces } = useWorkspaces(user);
+    const { data: userProfile } = useUserProfile(user);
     const [currentWorkspace, setCurrentWorkspace] = useCurrentWorkspace();
 
     useEffect(() => {
@@ -27,6 +29,7 @@ function OnboardingPage() {
                     <Logo />
                 </div>
                 <OnboardingSteps
+                    userProfile={userProfile}
                     currentWorkspace={currentWorkspace}
                     setCurrentWorkspace={setCurrentWorkspace}
                 />

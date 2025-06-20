@@ -12,11 +12,19 @@ const OAuthCallback = () => {
     const { data: user } = useUser();
     const [currentWorkspace] = useCurrentWorkspace();
     const { provider } = useParams();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const queryClient = useQueryClient();
     const { hash } = useLocation();
+
+    const handleNavigate = () => {
+        if (currentWorkspace?.onboarded) {
+            navigate('/integrations');
+        } else {
+            navigate('/onboarding');
+        }
+    };
 
     const handleGithubCallback = async ({ code, installation_id }) => {
         setLoading(true);
@@ -47,7 +55,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 
@@ -79,7 +87,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 
@@ -111,7 +119,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 
@@ -143,7 +151,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 
@@ -175,7 +183,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 
@@ -207,7 +215,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 
@@ -250,7 +258,7 @@ const OAuthCallback = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
-            navigate('/integrations');
+            handleNavigate();
         }
     };
 

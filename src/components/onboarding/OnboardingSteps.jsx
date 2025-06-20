@@ -8,7 +8,7 @@ import ThemeStep from './ThemeStep';
 import { Button, Card, CardBody, CardFooter, Progress } from '@heroui/react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
-function OnboardingSteps({ currentWorkspace, setCurrentWorkspace }) {
+function OnboardingSteps({ userProfile, currentWorkspace, setCurrentWorkspace }) {
     const [parent] = useAutoAnimate();
     // Track current step by ID instead of index
     const [currentStepId, setCurrentStepId] = useState('welcome');
@@ -21,7 +21,7 @@ function OnboardingSteps({ currentWorkspace, setCurrentWorkspace }) {
             description:
                 "We're happy you're here. Let's start with the basics to personalize your experience",
             component: ProfileStep,
-            isVisible: () => true,
+            isVisible: () => !userProfile?.name,
         },
         {
             id: 'workspace',
