@@ -112,7 +112,6 @@ function OnboardingSteps({ userProfile, currentWorkspace, setCurrentWorkspace })
                         setCurrentWorkspace={setCurrentWorkspace}
                         goToNextStep={goToNextStep}
                     />
-                    <Button onPress={goToNextStep}>Next</Button>
                 </div>
             </CardBody>
             <CardFooter>

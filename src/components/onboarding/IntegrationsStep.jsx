@@ -4,8 +4,9 @@ import ClickupIntegrationCard from '../integrations/clickup/ClickupIntegrationCa
 import TrelloIntegrationCard from '../integrations/trello/TrelloIntegrationCard.jsx';
 import TodoistIntegrationCard from '../integrations/todoist/TodoistIntegrationCard.jsx';
 import TickTickIntegrationCard from '../integrations/ticktick/TickTickIntegrationCard.jsx';
+import { Button } from '@heroui/react';
 
-function IntegrationsStep() {
+function IntegrationsStep({ goToNextStep }) {
     return (
         <div className="flex flex-col gap-3">
             <JiraIntegrationCard isCompact />
@@ -14,6 +15,9 @@ function IntegrationsStep() {
             <TrelloIntegrationCard isCompact />
             <TodoistIntegrationCard isCompact />
             <TickTickIntegrationCard isCompact />
+            <Button color="primary" onPress={goToNextStep}>
+                Continue
+            </Button>
         </div>
     );
 }

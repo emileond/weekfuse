@@ -1,9 +1,13 @@
 import ThemeSwitcher from '../theme/ThemeSwitcher.jsx';
+import { Button } from '@heroui/react';
 
-function ThemeStep() {
+function ThemeStep({ goToNextStep }) {
     return (
-        <div className="mb-6 flex flex-col">
+        <div className="flex flex-col gap-6">
             <ThemeSwitcher isOnboarding />
+            <Button color="primary" onPress={goToNextStep}>
+                Continue
+            </Button>
         </div>
     );
 }
