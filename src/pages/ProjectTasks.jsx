@@ -27,62 +27,74 @@ function ProjectTasksPage() {
     const [pageView, setPageView] = useState();
     const [filters, setFilters] = useState({});
 
-    // Fetch tasks for the specified project or milestone based on selected tab
     const { data: tasks, isPending } = useTasks(currentWorkspace, filters);
+    const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
+    const { data: projects } = useProjects(currentWorkspace);
+    const { data: milestones } = useMilestones(currentWorkspace);
+
+    // Memoize finding the current milestone object
+    const milestone = useMemo(
+        () => milestones?.find((m) => m.id === milestoneId),
+        [milestones, milestoneId],
+    );
+
+    const effectiveProjectId = useMemo(() => {
+        if (projectId) {
+            return projectId;
+        }
+        return milestone?.project_id;
+    }, [projectId, milestone]);
+
+    const project = useMemo(
+        () => projects?.find((p) => p.id === effectiveProjectId),
+        [projects, effectiveProjectId],
+    );
+
+    const { data: projectTaskCount } = useTaskCountByProject(effectiveProjectId);
+    const { data: milestoneTaskCount } = useTaskCountByMilestone(milestoneId);
 
     const handleViewChange = (newView) => {
         setPageView(newView);
     };
 
-    const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
-
-    // Fetch project details if projectId is provided
-    const { data: projects } = useProjects(currentWorkspace);
-    const project = projects?.find((p) => p.id === projectId);
-
-    // Fetch milestone details if milestoneId is provided
-    const { data: milestones } = useMilestones(currentWorkspace);
-    const milestone = milestones?.find((m) => m.id === milestoneId);
-
-    // Fetch task counts for the project or milestone
-    const { data: projectTaskCount } = useTaskCountByProject(projectId);
-    const { data: milestoneTaskCount } = useTaskCountByMilestone(milestoneId);
-
-    // Calculate task counts and percentages
     const taskCount = useMemo(() => {
         if (milestoneId && milestoneTaskCount) {
             return milestoneTaskCount;
-        } else if (projectId && projectTaskCount) {
+        } else if (effectiveProjectId && projectTaskCount) {
             return projectTaskCount;
         }
         return { total: 0, pending: 0, completed: 0 };
-    }, [milestoneId, projectId, milestoneTaskCount, projectTaskCount]);
+    }, [milestoneId, effectiveProjectId, milestoneTaskCount, projectTaskCount]);
 
     const completedPercentage = useMemo(() => {
         return taskCount.total > 0 ? Math.round((taskCount.completed / taskCount.total) * 100) : 0;
     }, [taskCount]);
 
-    // Render different views based on the selected view mode
+    useEffect(() => {
+        if (milestone) {
+            setPageTitle(`${milestone.name} Tasks`);
+            setPageDescription(`Tasks for milestone: ${milestone.name}`);
+        } else if (project) {
+            setPageTitle(`${project.name} Tasks`);
+            setPageDescription(`Tasks for project: ${project.name}`);
+        }
+    }, [project, milestone]);
+    
     const renderTasksView = () => {
         switch (pageView) {
             case 'list':
                 return (
                     <DraggableList
-                        id={projectId || milestoneId}
+                        id={effectiveProjectId || milestoneId}
                         items={tasks || []}
                         group="project-tasks"
                         onDragEnd={async (e, startCol) => {
-                            // Handle drag and drop logic for tasks
                             const endCol = e.parent.el.id;
-
-                            // Update task order
                             try {
                                 await updateMultipleTasks({
                                     tasks: e.values.map((item, index) => ({
                                         taskId: item.id,
-                                        updates: {
-                                            order: index,
-                                        },
+                                        updates: { order: index },
                                     })),
                                     startCol,
                                     endCol,
@@ -100,23 +112,13 @@ function ProjectTasksPage() {
         }
     };
 
-    // Set page title and description based on the project or milestone
-    useEffect(() => {
-        if (project) {
-            setPageTitle(`${project.name} Tasks`);
-            setPageDescription(`Tasks for project: ${project.name}`);
-        } else if (milestone) {
-            setPageTitle(`${milestone.name} Tasks`);
-            setPageDescription(`Tasks for milestone: ${milestone.name}`);
-        }
-    }, [project, milestone]);
-
     return (
         <AppLayout>
             <NewTaskModal
+                key={`${effectiveProjectId}-${milestoneId}`}
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
-                defaultProject={projectId}
+                defaultProject={effectiveProjectId}
                 defaultMilestone={milestoneId}
             />
             <PageLayout
@@ -133,16 +135,16 @@ function ProjectTasksPage() {
                     hideList
                     onChange={handleViewChange}
                 />
-                {(projectId || milestoneId) && (
+                {(effectiveProjectId || milestoneId) && (
                     <TasksFilters
                         showStatusFilter
-                        showProjectFilter={!(!projectId || !milestoneId)}
+                        showProjectFilter={!milestoneId}
                         showMilestoneFilter={!milestoneId}
-                        preserveProjectFilter={!!projectId}
+                        preserveProjectFilter={!!effectiveProjectId}
                         preserveMilestoneFilter={!!milestoneId}
                         onFiltersChange={setFilters}
                         initialFilters={{
-                            project_id: projectId,
+                            project_id: effectiveProjectId,
                             milestone_id: milestoneId,
                         }}
                     />
