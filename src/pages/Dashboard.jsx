@@ -173,7 +173,7 @@ function DashboardPage() {
                     />
                 );
             case 'kanban':
-                return <KanbanView items={todayTasks} />;
+                return <KanbanView items={todayTasks} isToday />;
             case 'table':
                 return <TableView items={todayTasks} />;
             default:

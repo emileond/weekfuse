@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { taskCompletedMessages } from '../../utils/toast-messages/taskCompleted.js';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
 
-const KanbanView = ({ items }) => {
+const KanbanView = ({ items, isToday }) => {
     // Get current workspace and update function
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
@@ -54,8 +54,9 @@ const KanbanView = ({ items }) => {
             ...item,
             status,
             order: index,
+            date: isToday && endCol === 'todo' ? dayjs().toISOString() : item?.date,
         }));
-
+        
         // Determine which column the item was dragged from
         let sourceColumn;
         if (startCol === 'todo') {
