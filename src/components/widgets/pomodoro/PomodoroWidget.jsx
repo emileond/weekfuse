@@ -6,7 +6,7 @@ import { PomodoroTimer } from './PomodoroTimer';
 export function PomodoroWidget() {
     const [isOpen, setIsOpen] = useState(false);
 
-    // The worker ref
+    const originalTitleRef = useRef(document.title);
     const workerRef = useRef(null);
 
     // Settings state (remains in component for the settings UI)
@@ -175,6 +175,46 @@ export function PomodoroWidget() {
         updateSettings,
         getTotalDuration,
     ]);
+
+    // Add this entire useEffect block inside your PomodoroWidget component.
+
+    // Effect to manage the browser tab title
+    useEffect(() => {
+        // Restore the original title on cleanup (when the component unmounts)
+        const cleanup = () => {
+            document.title = originalTitleRef.current;
+        };
+
+        // Handler for when the tab's visibility changes
+        const handleVisibilityChange = () => {
+            // If the user returns to the tab, restore the original title.
+            if (!document.hidden) {
+                document.title = originalTitleRef.current;
+            }
+        };
+
+        if (isRunning) {
+            // If the timer is running, listen for visibility changes.
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
+            // If the tab is already hidden, update the title immediately.
+            if (document.hidden) {
+                const minutes = String(Math.floor(time / 60)).padStart(2, '0');
+                const seconds = String(time % 60).padStart(2, '0');
+                const modeText = mode.includes('Break') ? 'Break' : 'Focus';
+                document.title = `${minutes}:${seconds} - ${modeText}`;
+            }
+        } else {
+            // If the timer is not running, ensure the title is the original one.
+            document.title = originalTitleRef.current;
+        }
+
+        // Cleanup function for the effect
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            cleanup();
+        };
+    }, [time, isRunning, mode]); // Rerun this effect whenever these states change
 
     return (
         <Popover isOpen={isOpen} onOpenChange={setIsOpen} placement="bottom">
