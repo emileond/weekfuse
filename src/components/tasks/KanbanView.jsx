@@ -1,7 +1,7 @@
 import DraggableList from './DraggableList.jsx';
 import { Chip } from '@heroui/react';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
-import { useTasks, useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
+import { useUpdateMultipleTasks } from '../../hooks/react-query/tasks/useTasks.js';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -56,7 +56,7 @@ const KanbanView = ({ items, isToday }) => {
             order: index,
             date: isToday && endCol === 'todo' ? dayjs().toISOString() : item?.date,
         }));
-        
+
         // Determine which column the item was dragged from
         let sourceColumn;
         if (startCol === 'todo') {

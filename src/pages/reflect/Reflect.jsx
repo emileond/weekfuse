@@ -17,7 +17,7 @@ import {
     Divider,
 } from '@heroui/react';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import EmptyState from '../../components/EmptyState';
 import { RiAddFill } from 'react-icons/ri';
@@ -26,6 +26,7 @@ import ProjectSelect from '../../components/form/ProjectSelect.jsx';
 import { toUTC } from '../../utils/dateUtils.js';
 import { useNavigate } from 'react-router-dom';
 import ReflectSessionCard from './ReflectSessionCard.jsx';
+import FeatureCarousel from '../../components/onboarding/FeatureCarousel.jsx';
 
 function ReflectPage() {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -38,6 +39,76 @@ function ReflectPage() {
 
     const [dateRange, setDateRange] = useState({ from: null, to: null });
     const [selectedProjects, setSelectedProjects] = useState([]);
+    const [showCarousel, setShowCarousel] = useState(false);
+
+    // Define features for the carousel
+    const carouselFeatures = [
+        {
+            title: "Welcome to Reflect",
+            description: "Reflect helps you gain insights from your completed tasks and projects.",
+            content: (
+                <div className="text-center">
+                    <img 
+                        src="/images/reflect-intro.svg" 
+                        alt="Reflect Introduction" 
+                        className="max-w-xs mx-auto"
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://placehold.co/300x200/e2e8f0/64748b?text=Reflect+Introduction";
+                        }}
+                    />
+                </div>
+            )
+        },
+        {
+            title: "Review Your Progress",
+            description: "Select a time period and projects to analyze your work patterns and achievements.",
+            content: (
+                <div className="text-center">
+                    <img 
+                        src="/images/reflect-review.svg" 
+                        alt="Review Progress" 
+                        className="max-w-xs mx-auto"
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://placehold.co/300x200/e2e8f0/64748b?text=Review+Progress";
+                        }}
+                    />
+                </div>
+            )
+        },
+        {
+            title: "AI-Powered Insights",
+            description: "Get personalized recommendations and identify opportunities for improvement.",
+            content: (
+                <div className="text-center">
+                    <img 
+                        src="/images/reflect-insights.svg" 
+                        alt="AI Insights" 
+                        className="max-w-xs mx-auto"
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://placehold.co/300x200/e2e8f0/64748b?text=AI+Insights";
+                        }}
+                    />
+                </div>
+            )
+        }
+    ];
+
+    // Check if this is the first visit to the Reflect page
+    useEffect(() => {
+        const hasVisitedReflect = localStorage.getItem('hasVisitedReflect');
+        if (!hasVisitedReflect) {
+            setShowCarousel(true);
+        }
+    }, []);
+
+    // Handle carousel close
+    const handleCarouselClose = () => {
+        setShowCarousel(false);
+        localStorage.setItem('hasVisitedReflect', 'true');
+    };
 
     const {
         register,
@@ -75,9 +146,16 @@ function ReflectPage() {
             },
         });
     };
-    
+
     return (
         <AppLayout>
+            {showCarousel && (
+                <FeatureCarousel 
+                    features={carouselFeatures} 
+                    onClose={handleCarouselClose} 
+                    backgroundImage="/images/reflect-bg.jpg" 
+                />
+            )}
             <PageLayout
                 title="Reflect"
                 maxW="3xl"
