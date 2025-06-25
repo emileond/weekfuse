@@ -42,7 +42,7 @@ const updateUserProfile = async (data, userId) => {
 };
 
 // Hook to update invitation
-export const useUpdateUserProfile = (user) => {
+export const useUpdateUserProfile = (user, currentWorkspace) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -50,6 +50,7 @@ export const useUpdateUserProfile = (user) => {
         onSuccess: () => {
             // Invalidate and refetch
             queryClient.invalidateQueries(['userProfile', user?.id]);
+            queryClient.invalidateQueries(['workspaceMembers', currentWorkspace?.workspace_id]);
         },
     });
 };

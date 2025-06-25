@@ -5,11 +5,13 @@ import ky from 'ky';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 import { useUpdateUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
+import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 
 const AvatarUploader = () => {
     const { data: user } = useUser();
+    const [currentWorkspace] = useCurrentWorkspace();
     const { data: userProfile } = useUserProfile(user);
-    const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user);
+    const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user, currentWorkspace);
     const [uploading, setUploading] = useState(false);
 
     const handleFileChange = useCallback(

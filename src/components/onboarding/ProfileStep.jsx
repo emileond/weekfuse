@@ -8,11 +8,13 @@ import {
     useUserProfile,
     useUpdateUserProfile,
 } from '../../hooks/react-query/user/useUserProfile.js';
+import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
 
 function ProfileStep({ goToNextStep }) {
     const { data: user } = useUser();
+    const [currentWorkspace] = useCurrentWorkspace();
     const { data: userProfile } = useUserProfile(user);
-    const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user);
+    const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user, currentWorkspace);
     const [isPending, setIsPending] = useState(false);
 
     // Initialize react-hook-form

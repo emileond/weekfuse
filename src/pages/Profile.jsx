@@ -12,11 +12,13 @@ import { useUpdateUserProfile } from '../hooks/react-query/user/useUserProfile.j
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import EmptyState from '../components/EmptyState.jsx';
+import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
 
 function ProfilePage() {
     const { data: user } = useUser();
+    const [currentWorkspace] = useCurrentWorkspace();
     const { data: userProfile } = useUserProfile(user);
-    const { data: invitations } = useUserInvitations(user);
+    const { data: invitations } = useUserInvitations(user, currentWorkspace);
     const { mutateAsync: updateUserProfile, isPending } = useUpdateUserProfile(user);
     const navigate = useNavigate();
     const { tab } = useParams();
