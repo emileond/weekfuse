@@ -119,12 +119,15 @@ export async function onRequestPost(context) {
             );
         }
 
+        const cacheBuster = Date.now();
+
         // Return the image URL
         return new Response(
             JSON.stringify({
                 success: true,
                 imageUrl: result.result.variants[0],
                 imageId: result.result.id,
+                cacheBuster: cacheBuster,
             }),
             {
                 status: 200,
