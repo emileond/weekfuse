@@ -10,6 +10,7 @@ import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
+import UserSelect from '../form/UserSelect.jsx';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 
 const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defaultMilestone }) => {
@@ -25,6 +26,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
     ); // State to track selected milestone
     const [selectedTags, setSelectedTags] = useState([]); // State to track selected tags
     const [selectedPriority, setSelectedPriority] = useState(null); // State to track selected priority
+    const [selectedUser, setSelectedUser] = useState(null);
 
     const {
         register,
@@ -46,7 +48,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                     tags: selectedTags.length > 0 ? selectedTags : null,
                     priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
                     status: 'pending',
-                    assignee: user?.id,
+                    assignee: selectedUser?.value || null,
                     creator: user?.id,
                 },
             });
@@ -57,6 +59,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
             setSelectedMilestone(null);
             setSelectedTags([]);
             setSelectedPriority(null);
+            setSelectedUser(null);
         } catch (error) {
             toast.error(error.message || 'Failed to create task');
         }
@@ -104,6 +107,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                                 )}
                                 <TagSelect onChange={setSelectedTags} multiple={true} />
                                 <PrioritySelect onChange={setSelectedPriority} />
+                                <UserSelect onChange={setSelectedUser} defaultToCurrentUser />
                             </div>
                         </div>
                     </ModalBody>
@@ -118,6 +122,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                                 setSelectedMilestone(null);
                                 setSelectedTags([]);
                                 setSelectedPriority(null);
+                                setSelectedUser(null);
                             }}
                             isDisabled={isPending}
                         >

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
-import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
@@ -16,10 +16,13 @@ import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
 import TaskCheckbox from './TaskCheckbox.jsx';
 import { markdownToTipTap } from '../../utils/editorUtils.js';
+import UserSelect from '../form/UserSelect.jsx';
+import { useWorkspaceMembers } from '../../hooks/react-query/teams/useWorkspaceMembers.js';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
+    const { data: members } = useWorkspaceMembers(currentWorkspace);
     const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
     const [description, setDescription] = useState(null);
@@ -28,6 +31,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [selectedTags, setSelectedTags] = useState([]);
     const [selectedPriority, setSelectedPriority] = useState(null);
     const [isNameEditing, setIsNameEditing] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
 
     // Memoize this value to avoid recalculation on every render
     const isExternal = useMemo(() => !!task?.integration_source, [task?.integration_source]);
@@ -72,6 +76,21 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 date: taskDate,
             });
 
+            if (members && task.assignee) {
+                const assigneeObject = members.find((member) => member.user_id === task.assignee);
+                setSelectedUser(
+                    assigneeObject
+                        ? {
+                              label: assigneeObject.name || assigneeObject.email,
+                              value: assigneeObject.user_id,
+                              avatar: assigneeObject.avatar,
+                          }
+                        : null,
+                );
+            } else {
+                setSelectedUser(null); // Reset if no assignee or members
+            }
+
             let initialDescription = null;
             if (task.description && typeof task.description === 'string') {
                 try {
@@ -93,7 +112,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             setSelectedPriority(priorityData);
             setIsNameEditing(false);
         }
-    }, [isOpen, task, reset]);
+    }, [isOpen, task, reset, members]);
 
     // Helper function to compare tags arrays - moved outside onSubmit and memoized
     const areTagsEqual = useCallback((tags1, tags2) => {
@@ -120,6 +139,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 milestone_id: selectedMilestone?.value || null,
                 tags: selectedTags.length > 0 ? selectedTags : null,
                 priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
+                assignee: selectedUser?.value || null,
             };
 
             // Check if the data has actually changed
@@ -137,6 +157,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 updates.project_id !== (task.project_id || null) ||
                 updates.milestone_id !== (task.milestone_id || null) ||
                 updates.priority !== task.priority ||
+                updates.assignee !== task.assignee ||
                 !areTagsEqual(updates.tags, task.tags);
 
             // Only make the database call if the data has changed
@@ -243,6 +264,11 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         <PrioritySelect
                                             defaultValue={task?.priority}
                                             onChange={setSelectedPriority}
+                                        />
+                                        <UserSelect
+                                            defaultValue={task?.assignee}
+                                            onChange={setSelectedUser}
+                                            disabled={isExternal}
                                         />
                                     </div>
                                     {task.status === 'completed' && task.completed_at && (

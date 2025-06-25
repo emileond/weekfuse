@@ -58,7 +58,12 @@ const AvatarUploader = () => {
 
     return (
         <div className="flex flex-col items-center gap-6">
-            <Avatar alt="User avatar" showFallback className="w-32 h-32" src={userProfile.avatar} />
+            <Avatar
+                alt="User avatar"
+                showFallback
+                className="w-32 h-32"
+                src={`/cdn-cgi/image/width=140,quality=80/${userProfile?.avatar}`}
+            />
             <input
                 type="file"
                 accept="image/png, image/jpeg, image/jpg"
