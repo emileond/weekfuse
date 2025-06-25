@@ -15,13 +15,14 @@ import { RiCheckboxCircleLine } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
 import TaskCheckbox from './TaskCheckbox.jsx';
+import { markdownToTipTap } from '../../utils/editorUtils.js';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
-    const [description, setDescription] = useState(task.description);
+    const [description, setDescription] = useState(null);
     const [selectedProject, setSelectedProject] = useState(null);
     const [selectedMilestone, setSelectedMilestone] = useState(null);
     const [selectedTags, setSelectedTags] = useState([]);
@@ -71,8 +72,19 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 date: taskDate,
             });
 
+            let initialDescription = null;
+            if (task.description && typeof task.description === 'string') {
+                try {
+                    initialDescription = JSON.parse(task.description);
+                } catch (e) {
+                    console.error('Failed to parse description, treating as plain text:', e);
+                    // This is a fallback if you have non-JSON data
+                    initialDescription = markdownToTipTap(task.description);
+                }
+            }
+
             // Batch state updates for better performance
-            setDescription(task.description || '');
+            setDescription(initialDescription);
             setSelectedDate(taskDate);
             setIsCompleted(task.status === 'completed');
             setSelectedProject(task.project_id ? { value: task.project_id } : null);
@@ -102,7 +114,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             // Create the updates object
             const updates = {
                 name: data.name,
-                description: description,
+                description: description ? JSON.stringify(description) : null,
                 date: selectedDate ? dayjs(selectedDate).toISOString() : null,
                 project_id: selectedProject?.value || null,
                 milestone_id: selectedMilestone?.value || null,
@@ -111,9 +123,12 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             };
 
             // Check if the data has actually changed
+            const hasDescriptionChanged =
+                (updates.description || null) !== (task.description || null);
+
             const hasChanged =
                 updates.name !== (task.name || '') ||
-                updates.description !== (task.description || '') ||
+                hasDescriptionChanged ||
                 (updates.date !== (task.date || null) &&
                     (updates.date === null ||
                         task.date === null ||
@@ -183,12 +198,15 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         </div>
                                     )}
                                 </div>
-                                <SimpleEditor
-                                    label="Description"
-                                    defaultContent={task?.description || null}
-                                    onChange={setDescription}
-                                    isEditable={!isExternal}
-                                />
+                                <div>
+                                    <SimpleEditor
+                                        label="Description"
+                                        defaultContent={description || null}
+                                        onChange={setDescription}
+                                        isEditable={!isExternal}
+                                        taskName={watch('name')}
+                                    />
+                                </div>
                                 {task?.integration_source && (
                                     <TaskIntegrationDescription
                                         source={task?.integration_source}
