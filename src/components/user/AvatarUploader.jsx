@@ -48,7 +48,8 @@ const AvatarUploader = () => {
 
                 // Update user profile with the new avatar URL
                 await updateUserProfile({
-                    avatar: `https://imagedelivery.net/6dk6421L53E1LLAitvCWCQ/${response.imageId}?t=${response.cacheBuster}`,
+                    avatar: `https://imagedelivery.net/6dk6421L53E1LLAitvCWCQ/${response.imageId}`,
+                    updatedAt: Date.now(),
                 });
                 toast.success('Avatar updated successfully!');
             } catch (error) {
@@ -69,7 +70,7 @@ const AvatarUploader = () => {
                 alt="User avatar"
                 showFallback
                 className="w-32 h-32"
-                src={`${userProfile?.avatar}/w=140`}
+                src={`${userProfile?.avatar}/w=140?t=${userProfile?.updatedAt}`}
             />
             <input
                 type="file"
