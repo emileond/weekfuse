@@ -6,7 +6,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 import Mention from '@tiptap/extension-mention';
 import { mergeAttributes } from '@tiptap/core';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import ky from 'ky';
 import toast from 'react-hot-toast';
@@ -75,6 +75,39 @@ const SimpleEditor = ({
         },
     });
 
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleWriteWithAI = async () => {
+        setIsLoading(true);
+        try {
+            const response = await ky
+                .post('/api/ai/write-description', {
+                    json: { taskName },
+                })
+                .json();
+
+            if (response.description) {
+                // Convert the plain text to the format expected by SimpleEditor
+                const formattedDescription = markdownToTipTap(response.description);
+
+                // Update the editor content
+                editor.commands.setContent(formattedDescription);
+
+                // Call onChange to update parent component state
+                if (onChange) {
+                    onChange(formattedDescription);
+                }
+
+                toast.success('Description generated with AI');
+            }
+        } catch (error) {
+            toast.error('Failed to generate description');
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
         // This check is still valid and important.
         if (!editor) {
@@ -99,37 +132,9 @@ const SimpleEditor = ({
                     <Button
                         size="sm"
                         variant="light"
-                        // className="bg-default-50 hover:bg-default-100"
+                        isLoading={isLoading}
                         startContent={<RiBardFill className="text-[1rem] text-indigo-500" />}
-                        onPress={async () => {
-                            try {
-                                const response = await ky
-                                    .post('/api/ai/write-description', {
-                                        json: { taskName },
-                                    })
-                                    .json();
-
-                                if (response.description) {
-                                    // Convert the plain text to the format expected by SimpleEditor
-                                    const formattedDescription = markdownToTipTap(
-                                        response.description,
-                                    );
-
-                                    // Update the editor content
-                                    editor.commands.setContent(formattedDescription);
-
-                                    // Call onChange to update parent component state
-                                    if (onChange) {
-                                        onChange(formattedDescription);
-                                    }
-
-                                    toast.success('Description generated with AI');
-                                }
-                            } catch (error) {
-                                toast.error('Failed to generate description');
-                                console.error(error);
-                            }
-                        }}
+                        onPress={handleWriteWithAI}
                     >
                         <span className="bg-gradient-to-r from-indigo-500 to-violet-500 text-transparent bg-clip-text font-medium">
                             Write with AI
