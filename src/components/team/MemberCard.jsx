@@ -158,7 +158,7 @@ function MemberCard({ member, onEditMember, columnKey }) {
                     return cellValue;
             }
         },
-        [member, isUpdating],
+        [member, onEditMember, isUpdating],
     );
 
     return (
