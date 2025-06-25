@@ -51,45 +51,29 @@ export async function onRequestPost(context) {
 
         // Try to delete existing image with the same custom ID
         try {
-            // First, we need to find the image by its custom ID
-            const listResponse = await fetch(
-                `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1?page=1&per_page=100`,
+            const deleteResponse = await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${customId}`,
                 {
-                    method: 'GET',
+                    method: 'DELETE',
                     headers: {
                         Authorization: `Bearer ${context.env.CLOUDFLARE_IMAGES_API_KEY}`,
                     },
-                }
+                },
             );
 
-            const listResult = await listResponse.json();
+            const deleteResult = await deleteResponse.json();
 
-            if (listResult.success) {
-                // Find the image with the matching custom ID
-                const existingImage = listResult.result.images.find(img => img.filename === customId);
-
-                if (existingImage) {
-                    // Delete the existing image
-                    const deleteResponse = await fetch(
-                        `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${existingImage.id}`,
-                        {
-                            method: 'DELETE',
-                            headers: {
-                                Authorization: `Bearer ${context.env.CLOUDFLARE_IMAGES_API_KEY}`,
-                            },
-                        }
-                    );
-
-                    const deleteResult = await deleteResponse.json();
-
-                    if (!deleteResult.success) {
-                        console.error('Failed to delete existing image:', deleteResult.errors);
-                    }
-                }
+            // Log the result for debugging, whether it succeeded or failed
+            if (deleteResult.success) {
+                console.log(`Successfully deleted existing image for custom ID: ${customId}`);
+            } else {
+                // This block will run if the image didn't exist, which is fine!
+                // The API returns an error if the ID is not found.
+                console.log(`No existing image found for ${customId}, proceeding to upload.`);
             }
-        } catch (deleteError) {
-            console.error('Error while trying to delete existing image:', deleteError);
-            // Continue with upload even if delete fails
+        } catch (e) {
+            console.error('An unexpected error occurred during the delete attempt:', e);
+            // Even if this fails, we can still try to upload. The upload will provide the final error.
         }
 
         // Create a new FormData object for the Cloudflare Images API
