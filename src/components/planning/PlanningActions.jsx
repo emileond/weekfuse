@@ -19,7 +19,7 @@ function PlanningActions({ lastPlanResponse, onAutoPlan, onRollback }) {
     return (
         <Button
             onPress={handleAction}
-            className="border-2 border-indigo-300 hover:border-indigo-400 bg-content1 hover:bg-content2 hover:!opacity-100"
+            className="border-2 border-indigo-300 hover:border-indigo-400 bg-transparent hover:bg-content2 hover:!opacity-100"
             startContent={
                 lastPlanResponse ? (
                     <RiArrowGoBackLine fontSize="1rem" />
