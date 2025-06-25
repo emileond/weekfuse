@@ -29,20 +29,15 @@ const UserSelect = ({
             .filter(
                 (member) =>
                     // Only include members with roles "owner", "admin", or "member"
-                    ["owner", "admin", "member"].includes(member.role) &&
+                    ['owner', 'admin', 'member'].includes(member.role) &&
                     // Only include members with status "active"
-                    member.status === "active"
+                    member.status === 'active',
             )
             .map((member) => ({
                 label: member.name || member.email,
                 value: member.user_id,
                 avatar: member.avatar,
-                startContent: (
-                    <Avatar
-                        src={`/cdn-cgi/image/width=60,quality=75/${member.avatar}`}
-                        className="w-6 h-6"
-                    />
-                ),
+                startContent: <Avatar src={`${member.avatar}/w=60`} className="w-6 h-6" />,
             }));
     }, [members]);
 
@@ -104,10 +99,7 @@ const UserSelect = ({
             icon={
                 // The icon is now correctly based on the derived selectedOptionObject
                 selectedOptionObject ? (
-                    <Avatar
-                        src={`/cdn-cgi/image/width=60,quality=75/${selectedOptionObject.avatar}`}
-                        className="w-6 h-6"
-                    />
+                    <Avatar src={`${selectedOptionObject.avatar}/w=60`} className="w-6 h-6" />
                 ) : (
                     <RiUserLine fontSize="1rem" />
                 )

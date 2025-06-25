@@ -78,7 +78,7 @@ function MemberCard({ member, onEditMember, columnKey }) {
                         name={member.name || member.email.split('@')[0]}
                         description={member.email}
                         avatarProps={{
-                            src: `/cdn-cgi/image/width=60,quality=75/${member?.avatar}`,
+                            src: `${member?.avatar}/w=60`,
                         }}
                     />
                 );

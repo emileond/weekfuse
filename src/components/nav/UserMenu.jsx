@@ -46,7 +46,7 @@ function UserMenu({ avatarOnly }) {
         await queryClient.invalidateQueries();
     }, [logoutUser, queryClient]);
 
-    const avatarUrl = `/cdn-cgi/image/width=60,quality=75/${userProfile?.avatar}`;
+    const avatarUrl = `${userProfile?.avatar}/w=60`;
 
     useEffect(() => {
         if (isReady && user && !chatOpened) {
