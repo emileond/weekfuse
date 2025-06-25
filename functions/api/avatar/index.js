@@ -3,13 +3,13 @@ export async function onRequestPost(context) {
         // Get the form data from the request
         const formData = await context.request.formData();
         const file = formData.get('file');
-        const userId = formData.get('userId');
+        const userEmail = formData.get('userEmail');
 
-        if (!file || !userId) {
+        if (!file || !userEmail) {
             return new Response(
                 JSON.stringify({
                     success: false,
-                    error: 'Missing required fields: file or userId',
+                    error: 'Missing required fields: file or userEmail',
                 }),
                 {
                     status: 400,
@@ -46,7 +46,7 @@ export async function onRequestPost(context) {
             );
         }
 
-        const customId = `avatar-${userId}`;
+        const customId = `avatar-${userEmail}-${Date.now()}`;
         const accountId = '606654cc2bf282f29537dc173f405984';
 
         // Try to delete existing image with the same custom ID

@@ -14,8 +14,6 @@ const AvatarUploader = () => {
     const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user, currentWorkspace);
     const [uploading, setUploading] = useState(false);
 
-    const cacheKey = new Date(userProfile?.updated_at).getTime();
-
     const handleFileChange = useCallback(
         async (event) => {
             const file = event.target.files[0];
@@ -37,7 +35,7 @@ const AvatarUploader = () => {
                 // Create form data for the API request
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('userId', user.id);
+                formData.append('userEmail', user.email);
 
                 // Upload to Cloudflare Images via our API route
                 const response = await ky
@@ -73,7 +71,7 @@ const AvatarUploader = () => {
                 alt="User avatar"
                 showFallback
                 className="w-32 h-32"
-                src={`${userProfile?.avatar}/w=140?t=${cacheKey}`}
+                src={`${userProfile?.avatar}/w=140`}
             />
             <input
                 type="file"

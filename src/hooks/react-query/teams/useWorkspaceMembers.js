@@ -21,7 +21,7 @@ const fetchWorkspaceMembers = async (workspace_id) => {
     // Fetch profiles for the corresponding user IDs
     const { data: profiles, error: profilesError } = await supabaseClient
         .from('profiles')
-        .select('user_id, email, avatar, name')
+        .select('user_id, email, avatar, name, profile_updated_at:updated_at')
         .in('user_id', userIds);
 
     if (profilesError) {
@@ -30,14 +30,17 @@ const fetchWorkspaceMembers = async (workspace_id) => {
     }
 
     // Merge workspace members with their corresponding profile emails
-    return members.map((member) => ({
-        ...member,
-        avatar: profiles.find((profile) => profile.user_id === member.user_id)?.avatar,
-        email:
-            profiles.find((profile) => profile.user_id === member.user_id)?.email ||
-            member.invite_email,
-        name: profiles.find((profile) => profile.user_id === member.user_id)?.name,
-    }));
+    return members.map((member) => {
+        const correspondingProfile = profiles.find((profile) => profile.user_id === member.user_id);
+
+        return {
+            ...member, // This keeps the original 'updated_at' from workspace_members
+            avatar: correspondingProfile?.avatar,
+            email: correspondingProfile?.email || member?.invite_email,
+            name: correspondingProfile?.name,
+            profile_updated_at: correspondingProfile?.profile_updated_at,
+        };
+    });
 };
 
 // Hook to fetch all workspace members

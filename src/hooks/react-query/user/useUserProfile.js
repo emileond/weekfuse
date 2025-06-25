@@ -41,13 +41,16 @@ const updateUserProfile = async (data, userId) => {
     }
 };
 
-// Hook to update invitation
+// Hook to update user profile
 export const useUpdateUserProfile = (user, currentWorkspace) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (data) => updateUserProfile(data, user.id),
         onSuccess: () => {
+            console.log('Attempting to invalidate with workspace object:', currentWorkspace);
+            console.log('Workspace ID for key:', currentWorkspace?.workspace_id);
+            
             // Invalidate and refetch
             queryClient.invalidateQueries(['userProfile', user?.id]);
             queryClient.invalidateQueries(['workspaceMembers', currentWorkspace?.workspace_id]);
