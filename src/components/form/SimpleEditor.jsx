@@ -22,6 +22,7 @@ const SimpleEditor = ({
     onChange,
     isEditable = true,
     taskName = '',
+    tags = [],
 }) => {
     const extensions = [
         StarterKit.configure(),
@@ -80,9 +81,19 @@ const SimpleEditor = ({
     const handleWriteWithAI = async () => {
         setIsLoading(true);
         try {
+            // Get current content if available
+            const currentContent = editor ? editor.getJSON() : null;
+
+            // Extract tag labels from the tags array
+            const tagLabels = tags.map(tag => tag.label).filter(Boolean);
+
             const response = await ky
                 .post('/api/ai/write-description', {
-                    json: { taskName },
+                    json: { 
+                        taskName,
+                        tags: tagLabels,
+                        currentContent
+                    },
                 })
                 .json();
 

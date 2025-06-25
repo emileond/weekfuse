@@ -226,6 +226,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         onChange={setDescription}
                                         isEditable={!isExternal}
                                         taskName={watch('name')}
+                                        tags={selectedTags}
                                     />
                                 </div>
                                 {task?.integration_source && (

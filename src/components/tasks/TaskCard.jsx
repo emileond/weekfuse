@@ -113,7 +113,7 @@ const TaskCard = ({ task, sm }) => {
                             {task.name}
                         </span>
                     </div>
-                    {isOverdue && (
+                    {isOverdue && !isCompleted && (
                         <span className="text-xs font-medium text-danger px-6 flex items-center gap-1">
                             <RiCalendarCloseLine fontSize="1rem" />
                             {Intl.DateTimeFormat(navigator.language, {

@@ -1,10 +1,9 @@
 import { useMemo, useState, useCallback, memo } from 'react';
-import { Spinner, useDisclosure } from '@heroui/react';
+import { Spinner, useDisclosure, Chip } from '@heroui/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import DataGrid from '../common/DataGrid';
 import EntityChip from '../common/EntityChip';
-import TaskCheckbox from './TaskCheckbox';
 import TaskDetailModal from './TaskDetailModal';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { useTasks } from '../../hooks/react-query/tasks/useTasks';
@@ -13,7 +12,7 @@ import { useTasks } from '../../hooks/react-query/tasks/useTasks';
 const EmptyCell = memo(() => <span className="text-default-400">—</span>);
 EmptyCell.displayName = 'EmptyCell';
 
-const DateCell = memo(({ date }) => {
+const DateCell = memo(({ date, isCompleted }) => {
     if (!date) return <EmptyCell />;
 
     const taskDate = dayjs(date);
@@ -21,7 +20,7 @@ const DateCell = memo(({ date }) => {
     const isOverdue = taskDate.isBefore(today);
 
     return (
-        <span className={isOverdue ? 'text-danger' : ''}>
+        <span className={isOverdue && !isCompleted ? 'text-danger' : ''}>
             {Intl.DateTimeFormat(navigator.language, {
                 dateStyle: 'medium',
             }).format(new Date(date))}
@@ -43,20 +42,12 @@ const TableView = ({ items }) => {
         pageIndex: 0,
         pageSize: 15,
     });
-    const [sorting, setSorting] = useState([{ id: 'date', desc: false }]);
+    const [sorting, setSorting] = useState([{ id: 'status', desc: false }]);
     const {
         isOpen: isDetailModalOpen,
         onOpen: onDetailModalOpen,
         onClose: onDetailModalClose,
     } = useDisclosure();
-
-    // Memoized status change handler
-    const handleStatusChange = useCallback((taskId, isCompleted) => {
-        setTaskStatus((prev) => ({
-            ...prev,
-            [taskId]: isCompleted,
-        }));
-    }, []);
 
     // Memoized row click handler
     const handleRowClick = useCallback(
@@ -83,43 +74,66 @@ const TableView = ({ items }) => {
     // Memoized columns with proper dependency array
     const columns = useMemo(
         () => [
-            columnHelper.accessor('status', {
-                header: 'Status',
-                cell: ({ row }) => {
-                    const task = row.original;
-                    const isCompleted =
-                        taskStatus[task.id] !== undefined
-                            ? taskStatus[task.id]
-                            : task.status === 'completed';
-
-                    return (
-                        <div onClick={(e) => e.stopPropagation()}>
-                            <TaskCheckbox
-                                task={task}
-                                isCompleted={isCompleted}
-                                onChange={(val) => handleStatusChange(task.id, val)}
-                                sm={true}
-                            />
-                        </div>
-                    );
-                },
-                size: 80,
-            }),
             columnHelper.accessor('name', {
                 header: 'Task',
                 cell: ({ row }) => {
                     const task = row.original;
-                    const isCompleted =
-                        taskStatus[task.id] !== undefined
-                            ? taskStatus[task.id]
-                            : task.status === 'completed';
+                    const status = taskStatus[task.id] !== undefined
+                        ? (taskStatus[task.id] ? 'completed' : 'pending')
+                        : task.status;
+                    const isCompleted = status === 'completed';
 
                     return <TaskNameCell name={task.name} isCompleted={isCompleted} />;
                 },
             }),
+            columnHelper.accessor('status', {
+                header: 'Status',
+                cell: ({ row }) => {
+                    const task = row.original;
+                    const status = taskStatus[task.id] !== undefined
+                        ? (taskStatus[task.id] ? 'completed' : 'pending')
+                        : task.status;
+
+                    // Determine color based on status
+                    let chipColor;
+                    let statusText;
+
+                    if (status === 'completed') {
+                        chipColor = 'success';
+                        statusText = 'Completed';
+                    } else if (status === 'in progress') {
+                        chipColor = 'primary';
+                        statusText = 'In Progress';
+                    } else {
+                        chipColor = 'default';
+                        statusText = 'Pending';
+                    }
+
+                    return (
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <Chip
+                                size="sm"
+                                variant="flat"
+                                color={chipColor}
+                            >
+                                {statusText}
+                            </Chip>
+                        </div>
+                    );
+                },
+                size: 120,
+            }),
             columnHelper.accessor('date', {
                 header: 'Date',
-                cell: ({ getValue }) => <DateCell date={getValue()} />,
+                cell: ({ getValue, row }) => {
+                    const task = row.original;
+                    const status = taskStatus[task.id] !== undefined
+                        ? (taskStatus[task.id] ? 'completed' : 'pending')
+                        : task.status;
+                    const isCompleted = status === 'completed';
+
+                    return <DateCell date={getValue()} isCompleted={isCompleted} />;
+                },
             }),
             columnHelper.accessor('project_id', {
                 header: 'Project',
@@ -173,7 +187,7 @@ const TableView = ({ items }) => {
                 },
             }),
         ],
-        [columnHelper, taskStatus, handleStatusChange],
+        [columnHelper, taskStatus],
     );
 
     // Handle pagination state changes
