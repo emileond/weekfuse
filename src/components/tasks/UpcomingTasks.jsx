@@ -247,7 +247,7 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                 </p>
                 <Button
                     size="sm"
-                    variant="flat"
+                    variant="light"
                     onPress={handleToggleCollapse}
                     startContent={
                         isBacklogCollapsed ? (

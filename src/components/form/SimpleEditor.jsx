@@ -133,6 +133,7 @@ const SimpleEditor = ({
                         size="sm"
                         variant="light"
                         isLoading={isLoading}
+                        className="hover:!bg-content3"
                         startContent={<RiBardFill className="text-[1rem] text-indigo-500" />}
                         onPress={handleWriteWithAI}
                     >

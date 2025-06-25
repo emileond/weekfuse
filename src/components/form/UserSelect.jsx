@@ -22,20 +22,28 @@ const UserSelect = ({
     const { data: members, isLoading } = useWorkspaceMembers(currentWorkspace);
     const { data: currentUser } = useUser();
 
-    // The useMemo for userOptions is correct and performant. No changes needed here.
+    // Filter members by role and status, then map to options
     const userOptions = useMemo(() => {
         if (!members) return [];
-        return members.map((member) => ({
-            label: member.name || member.email,
-            value: member.user_id,
-            avatar: member.avatar,
-            startContent: (
-                <Avatar
-                    src={`/cdn-cgi/image/width=60,quality=75/${member.avatar}`}
-                    className="w-6 h-6"
-                />
-            ),
-        }));
+        return members
+            .filter(
+                (member) =>
+                    // Only include members with roles "owner", "admin", or "member"
+                    ["owner", "admin", "member"].includes(member.role) &&
+                    // Only include members with status "active"
+                    member.status === "active"
+            )
+            .map((member) => ({
+                label: member.name || member.email,
+                value: member.user_id,
+                avatar: member.avatar,
+                startContent: (
+                    <Avatar
+                        src={`/cdn-cgi/image/width=60,quality=75/${member.avatar}`}
+                        className="w-6 h-6"
+                    />
+                ),
+            }));
     }, [members]);
 
     // 2. MODIFY THE useEffect to respect the new prop
