@@ -67,6 +67,8 @@ function MemberCard({ member, onEditMember, columnKey }) {
         member: 'text-default-600',
     };
 
+    const cacheKey = new Date(member.updated_at).getTime();
+
     const renderCell = useCallback(
         (member, columnKey) => {
             const cellValue = member[columnKey];
@@ -79,7 +81,7 @@ function MemberCard({ member, onEditMember, columnKey }) {
                             name={member.name || member.email.split('@')[0]}
                             description={member.email}
                             avatarProps={{
-                                src: `${member?.avatar}/w=60?t=${member?.updated_at}`,
+                                src: `${member?.avatar}/w=60?t=${cacheKey}`,
                             }}
                         />
                     );

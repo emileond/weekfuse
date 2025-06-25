@@ -105,7 +105,7 @@ const UserSelect = ({
                 // The icon is now correctly based on the derived selectedOptionObject
                 selectedOptionObject ? (
                     <Avatar
-                        src={`${selectedOptionObject.avatar}/w=60?t=${selectedOptionObject?.updated_at}`}
+                        src={`${selectedOptionObject.avatar}/w=60?t=${new Date(selectedOptionObject?.updated_at).getTime()}`}
                         className="w-6 h-6"
                     />
                 ) : (
