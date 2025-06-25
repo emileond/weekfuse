@@ -67,11 +67,10 @@ function MemberCard({ member, onEditMember, columnKey }) {
         member: 'text-default-600',
     };
 
-    const cacheKey = new Date(member?.updated_at).getTime();
-
     const renderCell = useCallback(
         (member, columnKey) => {
             const cellValue = member[columnKey];
+            const cacheKey = new Date(member?.updated_at).getTime();
 
             switch (columnKey) {
                 case 'name':
@@ -160,7 +159,7 @@ function MemberCard({ member, onEditMember, columnKey }) {
                     return cellValue;
             }
         },
-        [member, onEditMember, isUpdating],
+        [onEditMember, isUpdating, handleUpdate, handleOnEdit, onOpen],
     );
 
     return (
