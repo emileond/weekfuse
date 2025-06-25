@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Avatar, Button, Spinner } from '@heroui/react';
-import { supabaseClient } from '../../lib/supabase.js';
 import toast from 'react-hot-toast';
+import ky from 'ky';
 import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 import { useUpdateUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
@@ -28,21 +28,23 @@ const AvatarUploader = () => {
             }
 
             setUploading(true);
-            const filePath = `${user.id}/avatar.png`;
 
             try {
-                // Upload to Supabase Storage
-                const { error: uploadError } = await supabaseClient.storage
-                    .from('avatars')
-                    .upload(filePath, file, { upsert: true });
+                // Create form data for the API request
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('userId', user.id);
 
-                if (uploadError) throw new Error('Failed to upload avatar.');
+                // Upload to Cloudflare Images via our API route
+                const response = await ky.post('/api/avatar', {
+                    body: formData,
+                    timeout: 30000, // 30 seconds timeout
+                }).json();
 
-                // Get public URL with cache busting
-                const { data } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
-                if (!data.publicUrl) throw new Error('Failed to retrieve avatar URL.');
+                if (!response.success) throw new Error(response.error || 'Failed to upload avatar.');
 
-                await updateUserProfile({ avatar: `${data.publicUrl}?t=${Date.now()}` });
+                // Update user profile with the new avatar URL
+                await updateUserProfile({ avatar: response.imageUrl });
                 toast.success('Avatar updated successfully!');
             } catch (error) {
                 console.error(error);
