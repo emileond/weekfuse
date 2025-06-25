@@ -39,7 +39,7 @@ const UserSelect = ({
                 avatar: member.avatar,
                 startContent: (
                     <Avatar
-                        src={`${member.avatar}/w=60?t=${userProfile?.updated_at}`}
+                        src={`${member.avatar}/w=60?t=${member?.updated_at}`}
                         className="w-6 h-6"
                     />
                 ),
@@ -105,7 +105,7 @@ const UserSelect = ({
                 // The icon is now correctly based on the derived selectedOptionObject
                 selectedOptionObject ? (
                     <Avatar
-                        src={`${selectedOptionObject.avatar}/w=60?t=${userProfile?.updated_at}`}
+                        src={`${selectedOptionObject.avatar}/w=60?t=${member?.updated_at}`}
                         className="w-6 h-6"
                     />
                 ) : (
