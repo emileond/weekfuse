@@ -49,7 +49,6 @@ const AvatarUploader = () => {
                 // Update user profile with the new avatar URL
                 await updateUserProfile({
                     avatar: `https://imagedelivery.net/6dk6421L53E1LLAitvCWCQ/${response.imageId}`,
-                    updated_at: Date.now(),
                 });
                 toast.success('Avatar updated successfully!');
             } catch (error) {

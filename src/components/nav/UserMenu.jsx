@@ -46,7 +46,7 @@ function UserMenu({ avatarOnly }) {
         await queryClient.invalidateQueries();
     }, [logoutUser, queryClient]);
 
-    const avatarUrl = `${userProfile?.avatar}/w=60`;
+    const avatarUrl = `${userProfile?.avatar}/w=60?t=${userProfile?.updated_at}`;
 
     useEffect(() => {
         if (isReady && user && !chatOpened) {

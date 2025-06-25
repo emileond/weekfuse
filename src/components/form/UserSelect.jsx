@@ -37,7 +37,12 @@ const UserSelect = ({
                 label: member.name || member.email,
                 value: member.user_id,
                 avatar: member.avatar,
-                startContent: <Avatar src={`${member.avatar}/w=60`} className="w-6 h-6" />,
+                startContent: (
+                    <Avatar
+                        src={`${member.avatar}/w=60?t=${userProfile?.updated_at}`}
+                        className="w-6 h-6"
+                    />
+                ),
             }));
     }, [members]);
 
@@ -99,7 +104,10 @@ const UserSelect = ({
             icon={
                 // The icon is now correctly based on the derived selectedOptionObject
                 selectedOptionObject ? (
-                    <Avatar src={`${selectedOptionObject.avatar}/w=60`} className="w-6 h-6" />
+                    <Avatar
+                        src={`${selectedOptionObject.avatar}/w=60?t=${userProfile?.updated_at}`}
+                        className="w-6 h-6"
+                    />
                 ) : (
                     <RiUserLine fontSize="1rem" />
                 )
