@@ -14,7 +14,7 @@ const AvatarUploader = () => {
     const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user, currentWorkspace);
     const [uploading, setUploading] = useState(false);
 
-    const cacheKey = new Date(userProfile.updated_at).getTime();
+    const cacheKey = new Date(userProfile?.updated_at).getTime();
 
     const handleFileChange = useCallback(
         async (event) => {

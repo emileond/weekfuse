@@ -46,7 +46,7 @@ function UserMenu({ avatarOnly }) {
         await queryClient.invalidateQueries();
     }, [logoutUser, queryClient]);
 
-    const cacheKey = new Date(userProfile.updated_at).getTime();
+    const cacheKey = new Date(userProfile?.updated_at).getTime();
 
     const avatarUrl = `${userProfile?.avatar}/w=60?t=${cacheKey}`;
 

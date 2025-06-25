@@ -67,7 +67,7 @@ function MemberCard({ member, onEditMember, columnKey }) {
         member: 'text-default-600',
     };
 
-    const cacheKey = new Date(member.updated_at).getTime();
+    const cacheKey = new Date(member?.updated_at).getTime();
 
     const renderCell = useCallback(
         (member, columnKey) => {
