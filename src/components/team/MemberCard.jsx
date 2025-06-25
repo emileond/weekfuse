@@ -67,96 +67,99 @@ function MemberCard({ member, onEditMember, columnKey }) {
         member: 'text-default-600',
     };
 
-    const renderCell = useCallback((member, columnKey) => {
-        const cellValue = member[columnKey];
+    const renderCell = useCallback(
+        (member, columnKey) => {
+            const cellValue = member[columnKey];
 
-        switch (columnKey) {
-            case 'name':
-                return (
-                    <User
-                        className="align-middle"
-                        name={member.name || member.email.split('@')[0]}
-                        description={member.email}
-                        avatarProps={{
-                            src: `${member?.avatar}/w=60?t=${member?.updated_at}`,
-                        }}
-                    />
-                );
-            case 'role':
-                return (
-                    <div className="flex flex-col">
+            switch (columnKey) {
+                case 'name':
+                    return (
+                        <User
+                            className="align-middle"
+                            name={member.name || member.email.split('@')[0]}
+                            description={member.email}
+                            avatarProps={{
+                                src: `${member?.avatar}/w=60?t=${member?.updated_at}`,
+                            }}
+                        />
+                    );
+                case 'role':
+                    return (
+                        <div className="flex flex-col">
+                            <Chip
+                                className={`capitalize ${roleColorMap[cellValue]}`}
+                                size="sm"
+                                variant="light"
+                                // startContent={roleIconMap[cellValue]}
+                            >
+                                {cellValue}
+                            </Chip>
+                        </div>
+                    );
+                case 'status':
+                    return (
                         <Chip
-                            className={`capitalize ${roleColorMap[cellValue]}`}
+                            className="capitalize"
+                            color={cellValue === 'active' ? 'success' : 'primary'}
                             size="sm"
-                            variant="light"
-                            // startContent={roleIconMap[cellValue]}
+                            variant="flat"
                         >
                             {cellValue}
                         </Chip>
-                    </div>
-                );
-            case 'status':
-                return (
-                    <Chip
-                        className="capitalize"
-                        color={cellValue === 'active' ? 'success' : 'primary'}
-                        size="sm"
-                        variant="flat"
-                    >
-                        {cellValue}
-                    </Chip>
-                );
-            case 'actions':
-                return (
-                    <div
-                        className={`flex items-center justify-end gap-1 ${member.role === 'owner' && 'hidden'}`}
-                    >
-                        {member.status === 'pending' && (
-                            <Tooltip content="Resend invite">
+                    );
+                case 'actions':
+                    return (
+                        <div
+                            className={`flex items-center justify-end gap-1 ${member.role === 'owner' && 'hidden'}`}
+                        >
+                            {member.status === 'pending' && (
+                                <Tooltip content="Resend invite">
+                                    <Button
+                                        variant="light"
+                                        size="md"
+                                        isIconOnly
+                                        isDisabled={
+                                            new Date(member.updated_at).getTime() >
+                                            Date.now() - 24 * 60 * 60 * 1000
+                                        }
+                                        onPress={() => handleUpdate(member.email, true)}
+                                        isLoading={isUpdating}
+                                    >
+                                        <RiMailSendLine className="text-default-600 text-lg" />
+                                    </Button>
+                                </Tooltip>
+                            )}
+                            <Tooltip content="Edit user">
                                 <Button
+                                    variant="light"
+                                    size="sm"
+                                    isIconOnly
+                                    onPress={handleOnEdit}
+                                    isDisabled={member.role === 'owner'}
+                                >
+                                    <RiEditLine className="text-default-600 text-lg" />
+                                </Button>
+                            </Tooltip>
+                            <Tooltip content="Delete user">
+                                <Button
+                                    color="danger"
                                     variant="light"
                                     size="md"
                                     isIconOnly
-                                    isDisabled={
-                                        new Date(member.updated_at).getTime() >
-                                        Date.now() - 24 * 60 * 60 * 1000
-                                    }
-                                    onPress={() => handleUpdate(member.email, true)}
-                                    isLoading={isUpdating}
+                                    onPress={onOpen}
+                                    isDisabled={member.role === 'owner'}
                                 >
-                                    <RiMailSendLine className="text-default-600 text-lg" />
+                                    <RiDeleteBin6Line className="text-lg" />
                                 </Button>
                             </Tooltip>
-                        )}
-                        <Tooltip content="Edit user">
-                            <Button
-                                variant="light"
-                                size="sm"
-                                isIconOnly
-                                onPress={handleOnEdit}
-                                isDisabled={member.role === 'owner'}
-                            >
-                                <RiEditLine className="text-default-600 text-lg" />
-                            </Button>
-                        </Tooltip>
-                        <Tooltip content="Delete user">
-                            <Button
-                                color="danger"
-                                variant="light"
-                                size="md"
-                                isIconOnly
-                                onPress={onOpen}
-                                isDisabled={member.role === 'owner'}
-                            >
-                                <RiDeleteBin6Line className="text-lg" />
-                            </Button>
-                        </Tooltip>
-                    </div>
-                );
-            default:
-                return cellValue;
-        }
-    });
+                        </div>
+                    );
+                default:
+                    return cellValue;
+            }
+        },
+        [member, isUpdating],
+    );
 
     return (
         <>
