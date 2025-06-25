@@ -22,9 +22,9 @@ const AvatarUploader = () => {
                 return toast.error('Invalid file type. Please upload PNG or JPG.');
             }
 
-            // Validate file size (1MB max)
-            if (file.size > 1024 * 1024) {
-                return toast.error('File size exceeds 1MB. Please choose a smaller image.');
+            // Validate file size (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                return toast.error('File size exceeds 10MB. Please choose a smaller image.');
             }
 
             setUploading(true);
@@ -36,15 +36,20 @@ const AvatarUploader = () => {
                 formData.append('userId', user.id);
 
                 // Upload to Cloudflare Images via our API route
-                const response = await ky.post('/api/avatar', {
-                    body: formData,
-                    timeout: 30000, // 30 seconds timeout
-                }).json();
+                const response = await ky
+                    .post('/api/avatar', {
+                        body: formData,
+                        timeout: 30000, // 30 seconds timeout
+                    })
+                    .json();
 
-                if (!response.success) throw new Error(response.error || 'Failed to upload avatar.');
+                if (!response.success)
+                    throw new Error(response.error || 'Failed to upload avatar.');
 
                 // Update user profile with the new avatar URL
-                await updateUserProfile({ avatar: response.imageUrl });
+                await updateUserProfile({
+                    avatar: `https://imagedelivery.net/6dk6421L53E1LLAitvCWCQ/${response.imageId}`,
+                });
                 toast.success('Avatar updated successfully!');
             } catch (error) {
                 console.error(error);
@@ -64,7 +69,7 @@ const AvatarUploader = () => {
                 alt="User avatar"
                 showFallback
                 className="w-32 h-32"
-                src={`/cdn-cgi/image/width=140,quality=80/${userProfile?.avatar}`}
+                src={`${userProfile?.avatar}/w=140`}
             />
             <input
                 type="file"

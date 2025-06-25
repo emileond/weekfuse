@@ -32,12 +32,12 @@ export async function onRequestPost(context) {
             );
         }
 
-        // Validate file size (1MB max)
-        if (file.size > 1024 * 1024) {
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
             return new Response(
                 JSON.stringify({
                     success: false,
-                    error: 'File size exceeds 1MB. Please choose a smaller image.',
+                    error: 'File size exceeds 10MB. Please choose a smaller image.',
                 }),
                 {
                     status: 400,
@@ -46,12 +46,58 @@ export async function onRequestPost(context) {
             );
         }
 
+        const customId = `avatar-${userId}`;
+        const accountId = '606654cc2bf282f29537dc173f405984';
+
+        // Try to delete existing image with the same custom ID
+        try {
+            // First, we need to find the image by its custom ID
+            const listResponse = await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1?page=1&per_page=100`,
+                {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${context.env.CLOUDFLARE_IMAGES_API_KEY}`,
+                    },
+                }
+            );
+
+            const listResult = await listResponse.json();
+
+            if (listResult.success) {
+                // Find the image with the matching custom ID
+                const existingImage = listResult.result.images.find(img => img.filename === customId);
+
+                if (existingImage) {
+                    // Delete the existing image
+                    const deleteResponse = await fetch(
+                        `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${existingImage.id}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                Authorization: `Bearer ${context.env.CLOUDFLARE_IMAGES_API_KEY}`,
+                            },
+                        }
+                    );
+
+                    const deleteResult = await deleteResponse.json();
+
+                    if (!deleteResult.success) {
+                        console.error('Failed to delete existing image:', deleteResult.errors);
+                    }
+                }
+            }
+        } catch (deleteError) {
+            console.error('Error while trying to delete existing image:', deleteError);
+            // Continue with upload even if delete fails
+        }
+
         // Create a new FormData object for the Cloudflare Images API
         const cloudflareFormData = new FormData();
         cloudflareFormData.append('file', file);
 
         // Set the file name to the user ID
-        cloudflareFormData.append('id', `avatar-${userId}`);
+        cloudflareFormData.append('id', customId);
 
         // Add metadata tag
         cloudflareFormData.append(
