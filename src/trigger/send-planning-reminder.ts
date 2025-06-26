@@ -40,7 +40,7 @@ interface JobEnv {
 // --- Main Task Definition ---
 export const sendPlanningReminder = schedules.task({
     id: 'send-planning-reminder',
-    cron: '0 * * * *', // Run at the beginning of every hour
+    cron: '*/10 * * * *', // Every 10 minutes
     maxDuration: 300, // 5 minutes
     run: async (payload, io, ctx) => {
         logger.info('🚀 Starting weekly planning reminder task...');
@@ -162,7 +162,7 @@ async function processAndSendReminder(profile: Profile): Promise<void> {
         },
         json: {
             subscriber_email: profile.email,
-            template_id: 4,
+            template_id: 6,
             data: { user_id: profile.id, name: profile.name },
             content_type: 'html',
         },

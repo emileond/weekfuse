@@ -13,7 +13,7 @@ const supabase = createClient(
 
 export const updateTrialStatus = schedules.task({
     id: 'update-trial-status',
-    cron: '0 0,12 * * *', // Run daily at midnight
+    cron: '0 0,12 * * *', // Run twice a day
     maxDuration: 300, // 5 minutes max duration
     run: async () => {
         logger.log('Starting update trial status task');
