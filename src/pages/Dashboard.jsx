@@ -173,7 +173,7 @@ function DashboardPage() {
                     />
                 );
             case 'kanban':
-                return <KanbanView items={todayTasks} isToday />;
+                return <KanbanView items={todayTasks} />;
             case 'table':
                 return <TableView items={todayTasks} />;
             default:
@@ -300,8 +300,8 @@ function DashboardPage() {
                                             </span>
                                             <DatePicker
                                                 onChange={(val) => {
-                                                    rescheduleOverdueTasks(val),
-                                                        setIsRescheduling(true);
+                                                    (rescheduleOverdueTasks(val),
+                                                        setIsRescheduling(true));
                                                 }}
                                                 trigger={
                                                     <div className="flex gap-2 text-xs text-primary rounded-md border-2 border-default bg-primary-50 hover:text-primary-500 py-1.5 px-3">
