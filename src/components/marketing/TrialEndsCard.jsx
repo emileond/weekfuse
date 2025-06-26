@@ -13,6 +13,7 @@ function TrialEndsCard() {
 
     const trialEndDate = dayjs(currentWorkspace.trial_ends_at);
     const daysLeft = trialEndDate.diff(dayjs(), 'day');
+    const hoursLeft = trialEndDate.diff(dayjs(), 'hour');
 
     const handleClick = () => {
         if (currentWorkspace?.is_ltd) {
@@ -33,7 +34,15 @@ function TrialEndsCard() {
                 <CardBody className="text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                         <span className="font-medium text-sm text-default-700">
-                            Your trial ends in {daysLeft} days
+                            {daysLeft > 1 ? (
+                                `Your trial ends in ${daysLeft} days`
+                            ) : daysLeft === 1 ? (
+                                "Your trial ends in 1 day"
+                            ) : hoursLeft > 0 ? (
+                                `Your trial ends in less than a day`
+                            ) : (
+                                "Your trial ends today"
+                            )}
                         </span>
 
                         <Button
