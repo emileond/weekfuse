@@ -3,9 +3,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { Button, RadioGroup, Radio, Switch } from '@heroui/react';
 import { supabaseClient } from '../../lib/supabase';
 import { useUser } from '../../hooks/react-query/user/useUser';
-import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import ky from 'ky';
+import { useUpdateUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 
 // Helper objects to map UI-friendly selections to backend-friendly data
 const dayStringToNumber = {
@@ -17,7 +16,7 @@ const dayStringToNumber = {
 
 function PlanningStep({ goToNextStep, currentWorkspace }) {
     const { data: user } = useUser();
-    const queryClient = useQueryClient();
+    const { mutateAsync: updateUserProfile } = useUpdateUserProfile(user, currentWorkspace);
     const [isPending, setIsPending] = useState(false);
 
     const {
@@ -47,20 +46,9 @@ function PlanningStep({ goToNextStep, currentWorkspace }) {
                 planning_timezone: timezone,
             };
 
-            // 3. Send to your API
-            await ky
-                .post('/api/update-workspace', {
-                    json: {
-                        updateData,
-                        workspaceId: currentWorkspace.workspace_id,
-                        session: sessionData.session,
-                    },
-                })
-                .json();
-
+            // 3. Save data
+            await updateUserProfile(updateData);
             toast.success('Your planning routine has been saved!');
-            await queryClient.invalidateQueries({ queryKey: ['user', user?.id, 'preferences'] });
-
             goToNextStep();
         } catch (error) {
             console.error(error);

@@ -77,24 +77,6 @@ export const sendPlanningReminder = schedules.task({
             try {
                 const userLocalTime = dayjs().tz(profile.planning_timezone || 'UTC');
 
-                // ======================= VITAL DEBUGGING LOG =======================
-                logger.log('🕵️  DEBUGGING PROFILE CHECK', {
-                    profileId: profile.id,
-
-                    // Timezone Check
-                    timezoneFromDB: `'${profile.planning_timezone}'`, // Quotes help see whitespace
-
-                    // Day Check
-                    requiredDayFromDB: profile.planning_day_of_week,
-                    typeOfRequiredDay: typeof profile.planning_day_of_week, // "number" or "string"?
-                    calculatedLocalDay: userLocalTime.day(),
-
-                    // Hour Check
-                    requiredLocalHour: REMINDER_HOUR_LOCAL,
-                    calculatedLocalHour: userLocalTime.hour(),
-                });
-                // ===================================================================
-
                 // Check A: Is it the user's chosen planning day?
                 if (userLocalTime.day() !== profile.planning_day_of_week) {
                     skippedCount++;

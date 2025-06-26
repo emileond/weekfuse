@@ -5,7 +5,7 @@ import PlanningStep from './PlanningStep.jsx';
 import IntegrationsStep from './IntegrationsStep.jsx';
 import CompletionStep from './CompletionStep';
 import ThemeStep from './ThemeStep';
-import { Button, Card, CardBody, CardFooter, Progress } from '@heroui/react';
+import { Card, CardBody, CardFooter, Progress } from '@heroui/react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 function OnboardingSteps({ userProfile, currentWorkspace, setCurrentWorkspace }) {
