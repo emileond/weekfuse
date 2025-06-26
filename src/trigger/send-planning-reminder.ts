@@ -24,7 +24,7 @@ interface Profile {
     id: string;
     email: string;
     name?: string | null;
-    planning_timezone: string | null;
+    timezone: string | null;
     planning_day_of_week: number;
     planning_reminder_sent_at: string | null;
 }
@@ -50,9 +50,7 @@ export const sendPlanningReminder = schedules.task({
         // 2. Fetch all profiles that are due for a reminder.
         const { data: profiles, error: fetchError } = await supabase
             .from('profiles')
-            .select(
-                'id, email, name, planning_timezone, planning_day_of_week, planning_reminder_sent_at',
-            )
+            .select('id, email, name, timezone, planning_day_of_week, planning_reminder_sent_at')
             .eq('planning_reminder', true)
             .or(`planning_reminder_sent_at.is.null,planning_reminder_sent_at.lt.${oneWeekAgo}`)
             .limit(250);
@@ -75,7 +73,7 @@ export const sendPlanningReminder = schedules.task({
         // 3. Process each profile individually.
         for (const profile of profiles) {
             try {
-                const userLocalTime = dayjs().tz(profile.planning_timezone || 'UTC');
+                const userLocalTime = dayjs().tz(profile.timezone || 'UTC');
 
                 // Check A: Is it the user's chosen planning day?
                 if (userLocalTime.day() !== profile.planning_day_of_week) {

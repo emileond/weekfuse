@@ -43,7 +43,7 @@ function PlanningStep({ goToNextStep, currentWorkspace }) {
             const updateData = {
                 planning_reminder: formData.enableReminders,
                 planning_day_of_week: dayStringToNumber[formData.planningDay],
-                planning_timezone: timezone,
+                timezone: timezone,
             };
 
             // 3. Save data
