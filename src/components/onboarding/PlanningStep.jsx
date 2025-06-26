@@ -70,7 +70,7 @@ function PlanningStep({ goToNextStep, currentWorkspace }) {
                 render={({ field }) => (
                     <RadioGroup
                         {...field}
-                        label="When do you prefer to plan your week?"
+                        // label="When do you prefer to plan your week?"
                         className="gap-2"
                     >
                         <Radio value="friday">Fridays</Radio>
