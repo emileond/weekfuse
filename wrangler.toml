@@ -4,12 +4,12 @@ pages_build_output_dir = "dist"
 compatibility_date = "2024-11-06"
 compatibility_flags = [ "nodejs_compat" ]
 
-[[r2_buckets]]
-binding = "ATTACHMENTS_BUCKET"
-bucket_name = "weekfuse-attachments"
-
 [env.production]
 compatibility_flags = [ "nodejs_compat" ]
+
+[[env.production.r2_buckets]]
+binding = "ATTACHMENTS_BUCKET"
+bucket_name = "weekfuse-attachments"
 
 [env.production.vars]
 LEMONSQUEEZY_PRODUCT_ID = "451965"
