@@ -4,20 +4,22 @@ import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
-import { RiCheckboxCircleLine } from 'react-icons/ri';
+import { RiBardFill, RiCheckboxCircleLine, RiUpload2Line, RiFileLine, RiCloseLine, RiExternalLinkLine } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
 import TaskCheckbox from './TaskCheckbox.jsx';
 import { markdownToTipTap } from '../../utils/editorUtils.js';
 import UserSelect from '../form/UserSelect.jsx';
 import { useWorkspaceMembers } from '../../hooks/react-query/teams/useWorkspaceMembers.js';
+import DropzoneUpload from '../files/DropzoneUpload.jsx';
+import ky from 'ky';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -32,6 +34,9 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [selectedPriority, setSelectedPriority] = useState(null);
     const [isNameEditing, setIsNameEditing] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [attachments, setAttachments] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     // Memoize this value to avoid recalculation on every render
     const isExternal = useMemo(() => !!task?.integration_source, [task?.integration_source]);
@@ -111,6 +116,13 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             setSelectedTags(tagsData);
             setSelectedPriority(priorityData);
             setIsNameEditing(false);
+
+            // Load existing attachments if available
+            if (task.attachments && Array.isArray(task.attachments)) {
+                setAttachments(task.attachments);
+            } else {
+                setAttachments([]);
+            }
         }
     }, [isOpen, task, reset, members]);
 
@@ -128,6 +140,44 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         return sortedTags1.every((tag, index) => tag === sortedTags2[index]);
     }, []);
 
+    // Handle file selection and upload
+    const handleFileSelect = useCallback(async (event) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        const uploadPromises = Array.from(files).map(async (file) => {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await ky.post('/api/task/attachments', {
+                    body: formData,
+                }).json();
+
+                return response.file;
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                toast.error(`Failed to upload ${file.name}`);
+                return null;
+            }
+        });
+
+        const results = await Promise.all(uploadPromises);
+        const successfulUploads = results.filter(Boolean);
+
+        if (successfulUploads.length > 0) {
+            setAttachments(prev => [...prev, ...successfulUploads]);
+            toast.success(`${successfulUploads.length} file(s) uploaded successfully`);
+        }
+
+        setIsUploading(false);
+    }, []);
+
+    const handleAttachmentClick = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
     const onSubmit = async (data) => {
         try {
             // Create the updates object
@@ -140,11 +190,25 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 tags: selectedTags.length > 0 ? selectedTags : null,
                 priority: selectedPriority?.value ? parseInt(selectedPriority.value) : null,
                 assignee: selectedUser?.value || null,
+                attachments: attachments.length > 0 ? attachments : null,
             };
 
             // Check if the data has actually changed
             const hasDescriptionChanged =
                 (updates.description || null) !== (task.description || null);
+
+            // Helper function to compare attachments arrays
+            const areAttachmentsEqual = (attachments1, attachments2) => {
+                if (!attachments1 && !attachments2) return true;
+                if (!attachments1 || !attachments2) return false;
+                if (!Array.isArray(attachments1) || !Array.isArray(attachments2)) return false;
+                if (attachments1.length !== attachments2.length) return false;
+
+                // Compare each attachment by URL
+                return attachments1.every(attachment1 => 
+                    attachments2.some(attachment2 => attachment2.url === attachment1.url)
+                );
+            };
 
             const hasChanged =
                 updates.name !== (task.name || '') ||
@@ -158,7 +222,8 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 updates.milestone_id !== (task.milestone_id || null) ||
                 updates.priority !== task.priority ||
                 updates.assignee !== task.assignee ||
-                !areTagsEqual(updates.tags, task.tags);
+                !areTagsEqual(updates.tags, task.tags) ||
+                !areAttachmentsEqual(updates.attachments, task.attachments);
 
             // Only make the database call if the data has changed
             if (hasChanged) {
@@ -228,6 +293,50 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         taskName={watch('name')}
                                         tags={selectedTags}
                                     />
+                                </div>
+                                <div className="flex flex-col gap-2 mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm block font-medium text-foreground">
+                                            Attachments
+                                        </span>
+                                        <Button
+                                            size="sm"
+                                            color="primary"
+                                            variant="light"
+                                            startContent={<RiUpload2Line className="text-[1rem]" />}
+                                            onPress={handleAttachmentClick}
+                                            isLoading={isUploading}
+                                            isIconOnly
+                                        />
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileSelect}
+                                            style={{ display: 'none' }}
+                                            multiple
+                                        />
+                                    </div>
+                                    {attachments.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {attachments.map((file, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center gap-1 bg-content2 rounded-md px-2 py-1 text-xs"
+                                                >
+                                                    <RiFileLine className="text-primary" />
+                                                    <span className="max-w-[150px] truncate">{file.name}</span>
+                                                    <a
+                                                        href={file.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-default-500 hover:text-primary"
+                                                    >
+                                                        <RiExternalLinkLine />
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 {task?.integration_source && (
                                     <TaskIntegrationDescription

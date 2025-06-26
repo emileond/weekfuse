@@ -1,0 +1,100 @@
+function arrayBufferToHex(buffer) {
+    return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * This is the API endpoint for handling file uploads.
+ * It receives a `multipart/form-data` request with a single 'file' field.
+ */
+export async function onRequestPost(context) {
+    try {
+        const { request, env } = context;
+
+        // --- 1. Validate the R2 Bucket Binding ---
+        // This is a crucial check. If this fails, your `wrangler.toml` is wrong.
+        if (!env.ATTACHMENTS_BUCKET) {
+            throw new Error("R2 bucket binding 'ATTACHMENTS_BUCKET' not found.");
+        }
+
+        // --- 2. Parse the Incoming File ---
+        const formData = await request.formData();
+        const file = formData.get('file');
+
+        if (!file || !(file instanceof File)) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: "No file uploaded or the uploaded item wasn't a file.",
+                }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } },
+            );
+        }
+
+        // --- 3. Generate a Unique Filename ---
+        const timestamp = Date.now();
+        const fileBuffer = await file.arrayBuffer(); // Read file into memory
+        const hashBuffer = await crypto.subtle.digest('MD5', fileBuffer); // Hash the file contents
+        const hash = arrayBufferToHex(hashBuffer);
+        const fileExtension = file.name.split('.').pop() || 'bin';
+        const uniqueFilename = `${timestamp}-${hash}.${fileExtension}`;
+
+        // --- 4. Upload the File to R2 ---
+        // This is the core operation.
+        console.log(`Attempting to upload '${uniqueFilename}' to R2 bucket...`);
+
+        const uploadedObject = await env.ATTACHMENTS_BUCKET.put(uniqueFilename, fileBuffer, {
+            httpMetadata: {
+                contentType: file.type,
+                // Add a 'contentDisposition' to suggest a filename when the user downloads it.
+                contentDisposition: `inline; filename="${file.name}"`,
+            },
+            // You can add custom metadata for your application's logic
+            customMetadata: {
+                originalFilename: file.name,
+                uploadedBy: 'user-id-placeholder', // Replace with actual user info if available
+            },
+        });
+
+        console.log('R2 put operation completed.');
+
+        // Sanity check to ensure the object was created successfully.
+        if (uploadedObject.key !== uniqueFilename) {
+            throw new Error(
+                'R2 upload failed: the returned key does not match the generated filename.',
+            );
+        }
+
+        // --- 5. Return the Publicly Accessible URL ---
+        // IMPORTANT: This URL will only work if you have a custom domain
+        // connected to your R2 bucket.
+        const fileUrl = `https://attachments.weekfuse.com/${uniqueFilename}`;
+
+        console.log(`Successfully uploaded. File available at: ${fileUrl}`);
+
+        return new Response(
+            JSON.stringify({
+                success: true,
+                url: fileUrl,
+                name: file.name,
+                type: file.type,
+                size: file.size,
+            }),
+            { headers: { 'Content-Type': 'application/json' } },
+        );
+    } catch (error) {
+        // --- 6. Robust Error Handling ---
+        console.error('--- UPLOAD FAILED ---');
+        // Log the entire error object for maximum detail.
+        console.error(error);
+
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return new Response(
+            JSON.stringify({
+                success: false,
+                error: 'Failed to upload file.',
+                message: errorMessage,
+            }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } },
+        );
+    }
+}
