@@ -127,7 +127,6 @@ export const sendPlanningReminder = schedules.task({
     },
 });
 
-// --- Helper Functions ---
 /**
  * Handles the logic for a single user: upserts to Listmonk, sends email, and updates Supabase.
  */
@@ -162,7 +161,7 @@ async function processAndSendReminder(profile: Profile): Promise<void> {
         },
         json: {
             subscriber_email: profile.email,
-            template_id: 6,
+            template_id: 7,
             data: { user_id: profile.id, name: profile.name },
             content_type: 'html',
         },
