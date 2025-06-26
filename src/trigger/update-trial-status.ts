@@ -1,6 +1,9 @@
 import { logger, schedules } from '@trigger.dev/sdk/v3';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -16,7 +19,7 @@ export const updateTrialStatus = schedules.task({
         logger.log('Starting update trial status task');
 
         // Get current time in UTC
-        const currentTime = dayjs().utc().toISOString();
+        const currentTime = dayjs().utc();
 
         // Fetch workspaces with expired trials
         const { data: workspaces, error: fetchError } = await supabase
