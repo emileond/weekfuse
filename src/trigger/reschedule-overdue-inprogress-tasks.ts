@@ -71,7 +71,7 @@ export const rescheduleOverdueTasks = schedules.task({
                 const { data: overdueTasks, error: tasksError } = await supabase
                     .from('tasks')
                     .select('id')
-                    .in('user_id', userIds)
+                    .in('creator', userIds)
                     .eq('status', 'in progress')
                     .lt('date', todayForTimezone);
 
