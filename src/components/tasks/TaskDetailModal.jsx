@@ -11,7 +11,14 @@ import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
-import { RiBardFill, RiCheckboxCircleLine, RiUpload2Line, RiFileLine, RiCloseLine, RiExternalLinkLine } from 'react-icons/ri';
+import {
+    RiBardFill,
+    RiCheckboxCircleLine,
+    RiUpload2Line,
+    RiFileLine,
+    RiCloseLine,
+    RiExternalLinkLine,
+} from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
 import TaskCheckbox from './TaskCheckbox.jsx';
@@ -141,38 +148,43 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     }, []);
 
     // Handle file selection and upload
-    const handleFileSelect = useCallback(async (event) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
+    const handleFileSelect = useCallback(
+        async (event) => {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
 
-        setIsUploading(true);
-        const uploadPromises = Array.from(files).map(async (file) => {
-            try {
-                const formData = new FormData();
-                formData.append('file', file);
+            setIsUploading(true);
+            const uploadPromises = Array.from(files).map(async (file) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
 
-                const response = await ky.post('/api/task/attachments', {
-                    body: formData,
-                }).json();
+                    const response = await ky
+                        .post('/api/task/attachments', {
+                            body: formData,
+                        })
+                        .json();
 
-                return response.file;
-            } catch (error) {
-                console.error('Error uploading file:', error);
-                toast.error(`Failed to upload ${file.name}`);
-                return null;
+                    return response;
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    toast.error(`Failed to upload ${file.name}`);
+                    return null;
+                }
+            });
+
+            const results = await Promise.all(uploadPromises);
+            const successfulUploads = results.filter(Boolean);
+
+            if (successfulUploads.length > 0) {
+                setAttachments((prev) => [...prev, ...successfulUploads]);
+                toast.success(`${successfulUploads.length} file(s) uploaded successfully`);
             }
-        });
 
-        const results = await Promise.all(uploadPromises);
-        const successfulUploads = results.filter(Boolean);
-
-        if (successfulUploads.length > 0) {
-            setAttachments(prev => [...prev, ...successfulUploads]);
-            toast.success(`${successfulUploads.length} file(s) uploaded successfully`);
-        }
-
-        setIsUploading(false);
-    }, []);
+            setIsUploading(false);
+        },
+        [setAttachments],
+    );
 
     const handleAttachmentClick = useCallback(() => {
         fileInputRef.current?.click();
@@ -205,8 +217,8 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 if (attachments1.length !== attachments2.length) return false;
 
                 // Compare each attachment by URL
-                return attachments1.every(attachment1 => 
-                    attachments2.some(attachment2 => attachment2.url === attachment1.url)
+                return attachments1.every((attachment1) =>
+                    attachments2.some((attachment2) => attachment2.url === attachment1.url),
                 );
             };
 
@@ -324,7 +336,9 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                                     className="flex items-center gap-1 bg-content2 rounded-md px-2 py-1 text-xs"
                                                 >
                                                     <RiFileLine className="text-primary" />
-                                                    <span className="max-w-[150px] truncate">{file.name}</span>
+                                                    <span className="max-w-[150px] truncate">
+                                                        {file.name}
+                                                    </span>
                                                     <a
                                                         href={file.url}
                                                         target="_blank"
