@@ -13,19 +13,15 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SE
 
 /**
  * This job runs daily to find tasks that are still "in progress" but have a date in the past.
- * It updates these tasks' dates to the current day, respecting the user's timezone.
+ * It updates these tasks' dates to the current day, respecting the assignee's timezone.
  */
 export const rescheduleOverdueTasks = schedules.task({
-    // A unique ID for this job
     id: 'reschedule-overdue-inprogress-tasks',
-    // Runs once every day at 2:00 AM UTC.
-    // This time is chosen to ensure all timezones have passed midnight.
-    cron: '0 2 * * *',
+    cron: '0 * * * *', // Every hour
     maxDuration: 300, // 5 minutes max duration
     run: async () => {
         logger.log('Starting job: Reschedule Overdue "In Progress" Tasks.');
 
-        // 1. Fetch all unique timezones from user profiles to process users in batches.
         const { data: profiles, error: tzError } = await supabase
             .from('profiles')
             .select('timezone')
@@ -42,17 +38,17 @@ export const rescheduleOverdueTasks = schedules.task({
         let totalUpdatedCount = 0;
         let totalFailedCount = 0;
 
-        // 2. Process tasks for each timezone individually.
         for (const tz of uniqueTimezones) {
             try {
-                // Determine the current date string (e.g., "2024-10-27") for this timezone.
-                const todayForTimezone = dayjs().tz(tz).format('YYYY-MM-DD');
-                logger.log(`Processing timezone: ${tz}. Today's date is ${todayForTimezone}.`);
+                // This full timestamp represents the start of the current day in the user's timezone.
+                // It will be used for both finding overdue tasks and updating them.
+                const newDateForTimezone = dayjs().tz(tz).startOf('day').toISOString();
 
-                // Find all users who belong to the current timezone.
+                logger.log(`Processing timezone: ${tz}. Start of day is ${newDateForTimezone}`);
+
                 const { data: usersInTz, error: usersError } = await supabase
                     .from('profiles')
-                    .select('id')
+                    .select('user_id') // Using user_id as requested
                     .eq('timezone', tz);
 
                 if (usersError) {
@@ -60,20 +56,18 @@ export const rescheduleOverdueTasks = schedules.task({
                         `Failed to fetch users for timezone ${tz}: ${usersError.message}`,
                     );
                 }
-
                 if (!usersInTz || usersInTz.length === 0) {
                     logger.log(`No users found for timezone ${tz}.`);
                     continue;
                 }
-                const userIds = usersInTz.map((u) => u.id);
+                const userIds = usersInTz.map((u) => u.user_id); // Using user_id as requested
 
-                // Find all tasks for these users that are "in progress" and have a date before today.
                 const { data: overdueTasks, error: tasksError } = await supabase
                     .from('tasks')
                     .select('id')
-                    .in('creator', userIds)
+                    .in('assignee', userIds)
                     .eq('status', 'in progress')
-                    .lt('date', todayForTimezone);
+                    .lt('date', newDateForTimezone);
 
                 if (tasksError) {
                     throw new Error(
@@ -87,12 +81,14 @@ export const rescheduleOverdueTasks = schedules.task({
                 }
 
                 const overdueTaskIds = overdueTasks.map((t) => t.id);
-                logger.log(`Found ${overdueTaskIds.length} overdue tasks for timezone ${tz}.`);
+                logger.log(
+                    `Found ${overdueTaskIds.length} overdue tasks for timezone ${tz} to update.`,
+                );
 
-                // 3. Perform a batch update to move the tasks to the current date.
+                // Perform a batch update using the full, timezone-aware timestamp
                 const { error: updateError } = await supabase
                     .from('tasks')
-                    .update({ date: todayForTimezone })
+                    .update({ date: newDateForTimezone })
                     .in('id', overdueTaskIds);
 
                 if (updateError) {
@@ -107,7 +103,7 @@ export const rescheduleOverdueTasks = schedules.task({
                 );
             } catch (error) {
                 totalFailedCount++;
-                logger.error(`An error occurred while processing timezone ${tz}:`, error);
+                logger.error(`An error occurred while processing timezone ${tz}:`, error as any);
             }
         }
 
