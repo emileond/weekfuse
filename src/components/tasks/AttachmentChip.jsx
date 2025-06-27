@@ -33,7 +33,7 @@ import { useDeleteTaskAttachment } from '../../hooks/react-query/tasks/useTasksA
 const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     const { isOpen, onOpenChange } = useDisclosure();
     const [isLoading, setIsLoading] = useState(false);
-    const { mutate: deleteAttachment, isPending } = useDeleteTaskAttachment();
+    const { mutateAsync: deleteAttachment } = useDeleteTaskAttachment();
 
     const ICON_SIZE = '1.2rem';
 
@@ -102,8 +102,8 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     };
 
     const handleDelete = async () => {
+        setIsLoading(true);
         try {
-            setIsLoading(true);
             const filename = getFilenameFromUrl(url);
 
             if (!filename || !id) {
@@ -111,7 +111,7 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
                 return;
             }
 
-            deleteAttachment(
+            await deleteAttachment(
                 { attachmentId: id, taskId: task_id, filename },
                 {
                     // Close the confirmation modal on success
