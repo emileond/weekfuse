@@ -13,12 +13,7 @@ import MilestoneSelect from '../form/MilestoneSelect.jsx';
 import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
-import {
-    RiCheckboxCircleLine,
-    RiUpload2Line,
-    RiFileLine,
-    RiExternalLinkLine,
-} from 'react-icons/ri';
+import { RiCheckboxCircleLine, RiUpload2Line } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
 import TaskIntegrationDescription from './integrations/TaskIntegrationDescription.jsx';
 import TaskCheckbox from './TaskCheckbox.jsx';
@@ -26,6 +21,7 @@ import { markdownToTipTap } from '../../utils/editorUtils.js';
 import UserSelect from '../form/UserSelect.jsx';
 import { useWorkspaceMembers } from '../../hooks/react-query/teams/useWorkspaceMembers.js';
 import ky from 'ky';
+import AttachmentChip from './AttachmentChip.jsx';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -317,25 +313,15 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         />
                                     </div>
                                     {attachments.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-1">
+                                        <div className="flex flex-wrap gap-3">
                                             {attachments.map((file, index) => (
-                                                <div
+                                                <AttachmentChip
                                                     key={index}
-                                                    className="flex items-center gap-1 bg-content2 rounded-md px-2 py-1 text-xs"
-                                                >
-                                                    <RiFileLine className="text-primary" />
-                                                    <span className="max-w-[150px] truncate">
-                                                        {file.name}
-                                                    </span>
-                                                    <a
-                                                        href={file.url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-default-500 hover:text-primary"
-                                                    >
-                                                        <RiExternalLinkLine />
-                                                    </a>
-                                                </div>
+                                                    name={file?.name}
+                                                    url={file?.url}
+                                                    type={file?.type}
+                                                    size={file?.size}
+                                                />
                                             ))}
                                         </div>
                                     )}
