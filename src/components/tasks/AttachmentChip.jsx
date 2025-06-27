@@ -112,7 +112,11 @@ const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
         }
 
         deleteAttachment(
-            { attachmentId: id, taskId: task_id, filename },
+            {
+                attachmentId: id,
+                url: url,
+                taskId: task_id,
+            },
             {
                 // Close the confirmation modal on success
                 onSuccess: () => {
