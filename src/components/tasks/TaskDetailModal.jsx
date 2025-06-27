@@ -2,7 +2,7 @@ import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } f
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
-import { useTasksAttachments } from '../../hooks/react-query/tasks/useTasksAttachments.js';
+import { useTasksAttachments, useDeleteTaskAttachment } from '../../hooks/react-query/tasks/useTasksAttachments.js';
 import { useQueryClient } from '@tanstack/react-query';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
@@ -28,6 +28,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const { data: members } = useWorkspaceMembers(currentWorkspace);
     const { data: attachments = [] } = useTasksAttachments(task?.id);
+    const { mutateAsync: deleteAttachment } = useDeleteTaskAttachment();
     const queryClient = useQueryClient();
     const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
@@ -186,6 +187,20 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         fileInputRef.current?.click();
     }, []);
 
+    const handleDeleteAttachment = useCallback(async (attachmentId, url) => {
+        try {
+            await deleteAttachment({ 
+                attachmentId, 
+                url,
+                task_id: task.id 
+            });
+            toast.success('Attachment deleted successfully');
+        } catch (error) {
+            console.error('Error deleting attachment:', error);
+            toast.error('Failed to delete attachment');
+        }
+    }, [deleteAttachment, task.id]);
+
     const onSubmit = async (data) => {
         try {
             // Create the updates object
@@ -314,13 +329,16 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                     </div>
                                     {attachments.length > 0 && (
                                         <div className="flex flex-wrap gap-3">
-                                            {attachments.map((file, index) => (
+                                            {attachments.map((file) => (
                                                 <AttachmentChip
-                                                    key={index}
+                                                    key={file.id}
+                                                    id={file.id}
+                                                    task_id={task.id}
                                                     name={file?.name}
                                                     url={file?.url}
                                                     type={file?.type}
                                                     size={file?.size}
+                                                    onDelete={() => handleDeleteAttachment(file.id, file.url)}
                                                 />
                                             ))}
                                         </div>

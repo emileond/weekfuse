@@ -10,6 +10,7 @@ import {
     Divider,
     Alert,
     Tooltip,
+    useToast,
 } from '@heroui/react';
 import {
     RiFileExcel2Line,
@@ -25,11 +26,21 @@ import {
     RiFileZipLine,
     RiCloseCircleFill,
 } from 'react-icons/ri';
+import { useState } from 'react';
+import ky from 'ky';
 
-const AttachmentChip = ({ name, url, type, size, onDelete }) => {
+const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     const { isOpen, onOpenChange } = useDisclosure();
+    const toast = useToast();
+    const [isLoading, setIsLoading] = useState(false);
 
     const ICON_SIZE = '1.2rem';
+
+    // Extract filename from URL
+    const getFilenameFromUrl = (url) => {
+        if (!url) return '';
+        return url.split('/').pop();
+    };
 
     const getFileIcon = () => {
         switch (true) {
@@ -61,17 +72,86 @@ const AttachmentChip = ({ name, url, type, size, onDelete }) => {
         }
     };
 
-    const handleOpenFile = () => {
-        if (url) {
-            window.open(url, '_blank');
+    const handleOpenFile = async () => {
+        try {
+            setIsLoading(true);
+            const filename = getFilenameFromUrl(url);
+
+            if (!filename) {
+                toast({
+                    title: 'Error',
+                    description: 'Could not determine filename from URL',
+                    status: 'error',
+                    duration: 3000,
+                });
+                return;
+            }
+
+            // Create a blob URL from the response and open it
+            const response = await ky.get(`/api/task/attachments?filename=${filename}`, {
+                timeout: 30000, // 30 seconds timeout
+            }).blob();
+
+            const blobUrl = URL.createObjectURL(response);
+            window.open(blobUrl, '_blank');
+
+            // Clean up the blob URL after opening
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to download the file',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleDelete = () => {
-        if (onDelete) {
-            onDelete();
+    const handleDelete = async () => {
+        try {
+            setIsLoading(true);
+            const filename = getFilenameFromUrl(url);
+
+            if (!filename || !id) {
+                toast({
+                    title: 'Error',
+                    description: 'Missing required information to delete the file',
+                    status: 'error',
+                    duration: 3000,
+                });
+                return;
+            }
+
+            await ky.delete(`/api/task/attachments?filename=${filename}&id=${id}`, {
+                timeout: 30000, // 30 seconds timeout
+            });
+
+            toast({
+                title: 'Success',
+                description: 'File deleted successfully',
+                status: 'success',
+                duration: 3000,
+            });
+
+            if (onDelete) {
+                onDelete();
+            }
+
+            onOpenChange(false);
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to delete the file',
+                status: 'error',
+                duration: 3000,
+            });
+        } finally {
+            setIsLoading(false);
         }
-        onOpenChange(false);
     };
 
     return (
@@ -87,8 +167,11 @@ const AttachmentChip = ({ name, url, type, size, onDelete }) => {
                 }
                 onClick={handleOpenFile}
                 className="cursor-pointer hover:bg-content2/50 hover:border-primary-200"
+                isDisabled={isLoading}
             >
-                <span className="max-w-[150px] truncate mr-1">{name}</span>
+                <span className="max-w-[150px] truncate mr-1">
+                    {isLoading ? 'Processing...' : name}
+                </span>
             </Chip>
 
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
@@ -109,10 +192,10 @@ const AttachmentChip = ({ name, url, type, size, onDelete }) => {
                     </ModalBody>
                     <Divider />
                     <ModalFooter>
-                        <Button variant="light" onPress={() => onOpenChange(false)}>
+                        <Button variant="light" onPress={() => onOpenChange(false)} isDisabled={isLoading}>
                             Cancel
                         </Button>
-                        <Button color="danger" onPress={handleDelete}>
+                        <Button color="danger" onPress={handleDelete} isLoading={isLoading}>
                             Delete
                         </Button>
                     </ModalFooter>

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseClient } from '../../../lib/supabase';
+import ky from 'ky';
 
 // Fetch attachments for a specific task
 const fetchTaskAttachments = async ({ task_id }) => {
@@ -31,10 +32,21 @@ export const useTasksAttachments = (task_id) => {
 };
 
 // Function to delete an attachment
-const deleteAttachment = async ({ attachmentId }) => {
-    const { error } = await supabaseClient.from('attachments').delete().eq('id', attachmentId);
+const deleteAttachment = async ({ attachmentId, url }) => {
+    try {
+        // Extract filename from URL
+        const filename = url ? url.split('/').pop() : null;
 
-    if (error) {
+        if (!filename) {
+            throw new Error('Could not determine filename from URL');
+        }
+
+        // Use the API endpoint to delete the file from R2 and Supabase
+        await ky.delete(`/api/task/attachments?filename=${filename}&id=${attachmentId}`, {
+            timeout: 30000, // 30 seconds timeout
+        });
+    } catch (error) {
+        console.error('Error deleting attachment:', error);
         throw new Error('Failed to delete attachment');
     }
 };
