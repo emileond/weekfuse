@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 function arrayBufferToHex(buffer) {
     return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
@@ -16,15 +18,27 @@ export async function onRequestPost(context) {
             throw new Error("R2 bucket binding 'ATTACHMENTS_BUCKET' not found.");
         }
 
-        // --- 2. Parse the Incoming File ---
+        // --- 2. Parse the Incoming File and Parameters ---
         const formData = await request.formData();
         const file = formData.get('file');
+        const task_id = formData.get('task_id');
+        const workspace_id = formData.get('workspace_id');
 
         if (!file || !(file instanceof File)) {
             return new Response(
                 JSON.stringify({
                     success: false,
                     error: "No file uploaded or the uploaded item wasn't a file.",
+                }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } },
+            );
+        }
+
+        if (!task_id || !workspace_id) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: "Missing required parameters: task_id and workspace_id are required.",
                 }),
                 { status: 400, headers: { 'Content-Type': 'application/json' } },
             );
@@ -70,6 +84,35 @@ export async function onRequestPost(context) {
         const fileUrl = `https://attachments.weekfuse.com/${uniqueFilename}`;
 
         console.log(`Successfully uploaded. File available at: ${fileUrl}`);
+
+        // --- 6. Save attachment details to the database ---
+        try {
+            const supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+
+            const attachmentData = {
+                task_id,
+                url: fileUrl,
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                workspace_id
+            };
+
+            const { data, error } = await supabaseClient
+                .from('attachments')
+                .insert(attachmentData)
+                .select();
+
+            if (error) {
+                console.error('Error saving attachment to database:', error);
+                // We continue even if there's a database error, as the file was uploaded successfully
+            } else {
+                console.log('Attachment saved to database:', data);
+            }
+        } catch (dbError) {
+            console.error('Database operation failed:', dbError);
+            // We continue even if there's a database error, as the file was uploaded successfully
+        }
 
         return new Response(
             JSON.stringify({

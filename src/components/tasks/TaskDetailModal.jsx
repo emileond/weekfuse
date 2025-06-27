@@ -2,6 +2,7 @@ import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } f
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
+import { useTasksAttachments } from '../../hooks/react-query/tasks/useTasksAttachments.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -12,11 +13,9 @@ import TagSelect from '../form/TagSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 import SimpleEditor from '../form/SimpleEditor.jsx';
 import {
-    RiBardFill,
     RiCheckboxCircleLine,
     RiUpload2Line,
     RiFileLine,
-    RiCloseLine,
     RiExternalLinkLine,
 } from 'react-icons/ri';
 import TaskIntegrationPanel from './integrations/TaskIntegrationPanel.jsx';
@@ -25,13 +24,13 @@ import TaskCheckbox from './TaskCheckbox.jsx';
 import { markdownToTipTap } from '../../utils/editorUtils.js';
 import UserSelect from '../form/UserSelect.jsx';
 import { useWorkspaceMembers } from '../../hooks/react-query/teams/useWorkspaceMembers.js';
-import DropzoneUpload from '../files/DropzoneUpload.jsx';
 import ky from 'ky';
 
 const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const { data: members } = useWorkspaceMembers(currentWorkspace);
+    const { data: attachments = [] } = useTasksAttachments(task?.id);
     const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
     const [description, setDescription] = useState(null);
@@ -41,7 +40,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const [selectedPriority, setSelectedPriority] = useState(null);
     const [isNameEditing, setIsNameEditing] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [attachments, setAttachments] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -124,12 +122,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             setSelectedPriority(priorityData);
             setIsNameEditing(false);
 
-            // Load existing attachments if available
-            if (task.attachments && Array.isArray(task.attachments)) {
-                setAttachments(task.attachments);
-            } else {
-                setAttachments([]);
-            }
+            // Attachments are now loaded using the useTasksAttachments hook
         }
     }, [isOpen, task, reset, members]);
 
@@ -158,6 +151,8 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 try {
                     const formData = new FormData();
                     formData.append('file', file);
+                    formData.append('task_id', task.id);
+                    formData.append('workspace_id', currentWorkspace?.workspace_id);
 
                     const response = await ky
                         .post('/api/task/attachments', {
@@ -177,13 +172,14 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             const successfulUploads = results.filter(Boolean);
 
             if (successfulUploads.length > 0) {
-                setAttachments((prev) => [...prev, ...successfulUploads]);
+                // The attachment details are now saved by the API endpoint
+                // No need to add them to the database here
                 toast.success(`${successfulUploads.length} file(s) uploaded successfully`);
             }
 
             setIsUploading(false);
         },
-        [setAttachments],
+        [task.id, currentWorkspace?.workspace_id],
     );
 
     const handleAttachmentClick = useCallback(() => {
@@ -202,25 +198,14 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 tags: selectedTags.length > 0 ? selectedTags : null,
                 priority: selectedPriority?.value ? parseInt(selectedPriority.value) : null,
                 assignee: selectedUser?.value || null,
-                attachments: attachments.length > 0 ? attachments : null,
+                // Attachments are now managed separately through the useTasksAttachments hook
             };
 
             // Check if the data has actually changed
             const hasDescriptionChanged =
                 (updates.description || null) !== (task.description || null);
 
-            // Helper function to compare attachments arrays
-            const areAttachmentsEqual = (attachments1, attachments2) => {
-                if (!attachments1 && !attachments2) return true;
-                if (!attachments1 || !attachments2) return false;
-                if (!Array.isArray(attachments1) || !Array.isArray(attachments2)) return false;
-                if (attachments1.length !== attachments2.length) return false;
-
-                // Compare each attachment by URL
-                return attachments1.every((attachment1) =>
-                    attachments2.some((attachment2) => attachment2.url === attachment1.url),
-                );
-            };
+            // Attachments are now managed separately through the useTasksAttachments hook
 
             const hasChanged =
                 updates.name !== (task.name || '') ||
@@ -234,8 +219,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                 updates.milestone_id !== (task.milestone_id || null) ||
                 updates.priority !== task.priority ||
                 updates.assignee !== task.assignee ||
-                !areTagsEqual(updates.tags, task.tags) ||
-                !areAttachmentsEqual(updates.attachments, task.attachments);
+                !areTagsEqual(updates.tags, task.tags);
 
             // Only make the database call if the data has changed
             if (hasChanged) {
