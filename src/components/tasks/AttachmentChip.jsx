@@ -119,7 +119,7 @@ const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
                 // Close the confirmation modal on success
                 onSuccess: () => {
                     onOpenChange(false);
-                    toast('Attachment deleted!');
+                    toast('Attachment deleted');
                 },
                 onError: () => {
                     onOpenChange(false);
