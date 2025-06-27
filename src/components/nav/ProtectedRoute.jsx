@@ -66,7 +66,7 @@ function ProtectedRoute({ children }) {
         const trialHasEnded = currentWorkspace.subscription_status === 'trial ended';
         const isCancelled = currentWorkspace.subscription_status === 'cancelled';
 
-        if ((isTrialing && trialHasEnded) || isCancelled) {
+        if (trialHasEnded || isCancelled) {
             // If their trial is over, the only page they can see is the paywall.
             if (location.pathname !== '/paywall') {
                 navigate('/paywall');
