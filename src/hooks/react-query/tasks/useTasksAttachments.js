@@ -33,13 +33,12 @@ export const useTasksAttachments = (task_id) => {
 
 // Function to delete an attachment
 const deleteAttachment = async ({ attachmentId, url }) => {
+    if (!attachmentId || !url) {
+        throw new Error('Attachment ID and Task ID are required for deletion.');
+    }
     try {
         // Extract filename from URL
         const filename = url ? url.split('/').pop() : null;
-
-        if (!filename) {
-            throw new Error('Could not determine filename from URL');
-        }
 
         // Use the API endpoint to delete the file from R2 and Supabase
         await ky.delete(`/api/task/attachments?filename=${filename}&id=${attachmentId}`, {

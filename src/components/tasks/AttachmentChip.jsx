@@ -28,10 +28,12 @@ import {
 import { useState } from 'react';
 import ky from 'ky';
 import toast from 'react-hot-toast';
+import { useDeleteTaskAttachment } from '../../hooks/react-query/tasks/useTasksAttachments.js';
 
 const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     const { isOpen, onOpenChange } = useDisclosure();
     const [isLoading, setIsLoading] = useState(false);
+    const { mutate: deleteAttachment, isPending } = useDeleteTaskAttachment();
 
     const ICON_SIZE = '1.2rem';
 
@@ -72,12 +74,16 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     };
 
     const handleOpenFile = async () => {
+        setIsLoading(true);
         try {
-            setIsLoading(true);
+            const uniqueFilename = getFilenameFromUrl(url);
+            if (!uniqueFilename) {
+                throw new Error('File URL is invalid.');
+            }
 
             // Create a blob URL from the response and open it
             const response = await ky
-                .get(`/api/task/attachments?filename=${name}`, {
+                .get(`/api/task/attachments?filename=${uniqueFilename}`, {
                     timeout: 30000, // 30 seconds timeout
                 })
                 .blob();
@@ -89,12 +95,7 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
             setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
         } catch (error) {
             console.error('Error downloading file:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to download the file',
-                status: 'error',
-                duration: 3000,
-            });
+            toast.error('Failed to download the file.');
         } finally {
             setIsLoading(false);
         }
@@ -106,39 +107,24 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
             const filename = getFilenameFromUrl(url);
 
             if (!filename || !id) {
-                toast({
-                    title: 'Error',
-                    description: 'Missing required information to delete the file',
-                    status: 'error',
-                    duration: 3000,
-                });
+                toast.error('Cannot delete file: missing required info.');
                 return;
             }
 
-            await ky.delete(`/api/task/attachments?filename=${filename}&id=${id}`, {
-                timeout: 30000, // 30 seconds timeout
-            });
+            deleteAttachment(
+                { attachmentId: id, taskId: task_id, filename },
+                {
+                    // Close the confirmation modal on success
+                    onSuccess: () => {
+                        onOpenChange(false);
+                    },
+                },
+            );
 
-            toast({
-                title: 'Success',
-                description: 'File deleted successfully',
-                status: 'success',
-                duration: 3000,
-            });
-
-            if (onDelete) {
-                onDelete();
-            }
-
-            onOpenChange(false);
+            toast('Attachment deleted!');
         } catch (error) {
             console.error('Error deleting file:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to delete the file',
-                status: 'error',
-                duration: 3000,
-            });
+            toast.error(error.message || 'Failed to delete attachment.');
         } finally {
             setIsLoading(false);
         }

@@ -2,7 +2,10 @@ import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } f
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
-import { useTasksAttachments, useDeleteTaskAttachment } from '../../hooks/react-query/tasks/useTasksAttachments.js';
+import {
+    useTasksAttachments,
+    useDeleteTaskAttachment,
+} from '../../hooks/react-query/tasks/useTasksAttachments.js';
 import { useQueryClient } from '@tanstack/react-query';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
@@ -187,20 +190,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
         fileInputRef.current?.click();
     }, []);
 
-    const handleDeleteAttachment = useCallback(async (attachmentId, url) => {
-        try {
-            await deleteAttachment({ 
-                attachmentId, 
-                url,
-                task_id: task.id 
-            });
-            toast.success('Attachment deleted successfully');
-        } catch (error) {
-            console.error('Error deleting attachment:', error);
-            toast.error('Failed to delete attachment');
-        }
-    }, [deleteAttachment, task.id]);
-
     const onSubmit = async (data) => {
         try {
             // Create the updates object
@@ -338,7 +327,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                                     url={file?.url}
                                                     type={file?.type}
                                                     size={file?.size}
-                                                    onDelete={() => handleDeleteAttachment(file.id, file.url)}
                                                 />
                                             ))}
                                         </div>
