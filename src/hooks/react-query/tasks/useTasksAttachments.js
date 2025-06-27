@@ -32,7 +32,7 @@ export const useTasksAttachments = (task_id) => {
 };
 
 // Function to delete an attachment
-const deleteAttachment = async ({ attachmentId, url }) => {
+const deleteAttachment = async ({ attachmentId, url, taskId }) => {
     if (!attachmentId || !url) {
         throw new Error('Attachment ID and Task ID are required for deletion.');
     }
@@ -45,8 +45,8 @@ const deleteAttachment = async ({ attachmentId, url }) => {
             timeout: 30000, // 30 seconds timeout
         });
     } catch (error) {
-        console.error('Error deleting attachment:', error);
-        throw new Error('Failed to delete attachment');
+        console.error('Error in deleteAttachment API call:', error);
+        throw new Error('Failed to delete attachment from the server.');
     }
 };
 

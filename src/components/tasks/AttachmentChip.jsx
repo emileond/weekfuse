@@ -30,10 +30,10 @@ import ky from 'ky';
 import toast from 'react-hot-toast';
 import { useDeleteTaskAttachment } from '../../hooks/react-query/tasks/useTasksAttachments.js';
 
-const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
+const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
     const { isOpen, onOpenChange } = useDisclosure();
     const [isLoading, setIsLoading] = useState(false);
-    const { mutateAsync: deleteAttachment } = useDeleteTaskAttachment();
+    const { mutate: deleteAttachment } = useDeleteTaskAttachment();
 
     const ICON_SIZE = '1.2rem';
 
@@ -103,31 +103,29 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
 
     const handleDelete = async () => {
         setIsLoading(true);
-        try {
-            const filename = getFilenameFromUrl(url);
 
-            if (!filename || !id) {
-                toast.error('Cannot delete file: missing required info.');
-                return;
-            }
+        const filename = getFilenameFromUrl(url);
 
-            await deleteAttachment(
-                { attachmentId: id, taskId: task_id, filename },
-                {
-                    // Close the confirmation modal on success
-                    onSuccess: () => {
-                        onOpenChange(false);
-                    },
-                },
-            );
-
-            toast('Attachment deleted!');
-        } catch (error) {
-            console.error('Error deleting file:', error);
-            toast.error(error.message || 'Failed to delete attachment.');
-        } finally {
-            setIsLoading(false);
+        if (!filename || !id) {
+            toast.error('Cannot delete file: missing required info.');
+            return;
         }
+
+        deleteAttachment(
+            { attachmentId: id, taskId: task_id, filename },
+            {
+                // Close the confirmation modal on success
+                onSuccess: () => {
+                    onOpenChange(false);
+                    toast('Attachment deleted!');
+                },
+                onError: () => {
+                    onOpenChange(false);
+                    toast.error('Failed to delete attachment, try again.');
+                },
+            },
+        );
+        setIsLoading(false);
     };
 
     return (
