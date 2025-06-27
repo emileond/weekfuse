@@ -63,10 +63,7 @@ function ProtectedRoute({ children }) {
         // 6. Trial Expiration Check (Second Priority)
         // This logic now ONLY runs if the user is already onboarded.
         const isTrialing = currentWorkspace.subscription_status === 'trial';
-        const trialHasEnded =
-            currentWorkspace.trial_ends_at &&
-            new Date(currentWorkspace.trial_ends_at) < new Date() &&
-            currentWorkspace.subscription_status === 'trial ended';
+        const trialHasEnded = currentWorkspace.subscription_status === 'trial ended';
         const isCancelled = currentWorkspace.subscription_status === 'cancelled';
 
         if ((isTrialing && trialHasEnded) || isCancelled) {
