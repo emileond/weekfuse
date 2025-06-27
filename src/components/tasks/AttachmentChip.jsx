@@ -10,14 +10,13 @@ import {
     Divider,
     Alert,
     Tooltip,
-    useToast,
 } from '@heroui/react';
 import {
     RiFileExcel2Line,
     RiFileGifLine,
     RiFileImageLine,
     RiFileLine,
-    RiFileMusicFill,
+    RiFileMusicLine,
     RiFilePdf2Line,
     RiFilePpt2Fill,
     RiFileTextLine,
@@ -28,10 +27,10 @@ import {
 } from 'react-icons/ri';
 import { useState } from 'react';
 import ky from 'ky';
+import toast from 'react-hot-toast';
 
 const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     const { isOpen, onOpenChange } = useDisclosure();
-    const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
     const ICON_SIZE = '1.2rem';
@@ -39,7 +38,7 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
     // Extract filename from URL
     const getFilenameFromUrl = (url) => {
         if (!url) return '';
-        return url.split('/').pop();
+        return url?.split('/').pop();
     };
 
     const getFileIcon = () => {
@@ -60,37 +59,28 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
             case type?.includes('video'):
                 return <RiFileVideoLine fontSize={ICON_SIZE} className="text-danger" />;
             case type?.includes('audio') || type?.includes('music'):
-                return <RiFileMusicFill fontSize={ICON_SIZE} className="text-info" />;
+                return <RiFileMusicLine fontSize={ICON_SIZE} className="text-primary" />;
             case type?.includes('zip') || type?.includes('archive') || type?.includes('compressed'):
                 return <RiFileZipLine fontSize={ICON_SIZE} className="text-default" />;
             case type?.includes('gif'):
                 return <RiFileGifLine fontSize={ICON_SIZE} className="text-violet" />;
             case type?.includes('text'):
-                return <RiFileTextLine fontSize={ICON_SIZE} className="text-default" />;
+                return <RiFileTextLine fontSize={ICON_SIZE} className="text-primary" />;
             default:
-                return <RiFileLine fontSize={ICON_SIZE} className="text-default" />;
+                return <RiFileLine fontSize={ICON_SIZE} className="text-primary" />;
         }
     };
 
     const handleOpenFile = async () => {
         try {
             setIsLoading(true);
-            const filename = getFilenameFromUrl(url);
-
-            if (!filename) {
-                toast({
-                    title: 'Error',
-                    description: 'Could not determine filename from URL',
-                    status: 'error',
-                    duration: 3000,
-                });
-                return;
-            }
 
             // Create a blob URL from the response and open it
-            const response = await ky.get(`/api/task/attachments?filename=${filename}`, {
-                timeout: 30000, // 30 seconds timeout
-            }).blob();
+            const response = await ky
+                .get(`/api/task/attachments?filename=${name}`, {
+                    timeout: 30000, // 30 seconds timeout
+                })
+                .blob();
 
             const blobUrl = URL.createObjectURL(response);
             window.open(blobUrl, '_blank');
@@ -192,7 +182,11 @@ const AttachmentChip = ({ id, name, url, type, size, onDelete, task_id }) => {
                     </ModalBody>
                     <Divider />
                     <ModalFooter>
-                        <Button variant="light" onPress={() => onOpenChange(false)} isDisabled={isLoading}>
+                        <Button
+                            variant="light"
+                            onPress={() => onOpenChange(false)}
+                            isDisabled={isLoading}
+                        >
                             Cancel
                         </Button>
                         <Button color="danger" onPress={handleDelete} isLoading={isLoading}>
