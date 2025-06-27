@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import { useTasksAttachments } from '../../hooks/react-query/tasks/useTasksAttachments.js';
+import { useQueryClient } from '@tanstack/react-query';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -31,6 +32,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const { data: members } = useWorkspaceMembers(currentWorkspace);
     const { data: attachments = [] } = useTasksAttachments(task?.id);
+    const queryClient = useQueryClient();
     const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
     const [selectedDate, setSelectedDate] = useState(task?.date ? new Date(task.date) : null);
     const [description, setDescription] = useState(null);
@@ -165,6 +167,8 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                     console.error('Error uploading file:', error);
                     toast.error(`Failed to upload ${file.name}`);
                     return null;
+                } finally {
+                    queryClient.invalidateQueries({ queryKey: ['taskAttachments', task.id] });
                 }
             });
 

@@ -30,33 +30,6 @@ export const useTasksAttachments = (task_id) => {
     });
 };
 
-// Function to add an attachment
-const addAttachment = async ({ attachment }) => {
-    const { data, error } = await supabaseClient.from('attachments').insert(attachment).select();
-
-    if (error) {
-        throw new Error('Failed to add attachment');
-    }
-
-    return data[0];
-};
-
-// Hook to add an attachment
-export const useAddTaskAttachment = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: addAttachment,
-        onSuccess: (data) => {
-            // Invalidate the specific task's attachments query
-            queryClient.invalidateQueries({
-                queryKey: ['taskAttachments', data.task_id],
-                refetchType: 'all',
-            });
-        },
-    });
-};
-
 // Function to delete an attachment
 const deleteAttachment = async ({ attachmentId }) => {
     const { error } = await supabaseClient.from('attachments').delete().eq('id', attachmentId);
