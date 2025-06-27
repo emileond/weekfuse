@@ -62,12 +62,11 @@ export const useDeleteTaskAttachment = () => {
         onSuccess: (_, variables) => {
             // Get the task_id from the cache to invalidate the correct query
             const taskId = variables.task_id;
-            if (taskId) {
-                queryClient.invalidateQueries({
-                    queryKey: ['taskAttachments', taskId],
-                    refetchType: 'all',
-                });
-            }
+
+            queryClient.invalidateQueries({
+                queryKey: ['taskAttachments', taskId],
+                refetchType: 'all',
+            });
         },
     });
 };

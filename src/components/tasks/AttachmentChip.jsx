@@ -33,7 +33,7 @@ import { useDeleteTaskAttachment } from '../../hooks/react-query/tasks/useTasksA
 const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
     const { isOpen, onOpenChange } = useDisclosure();
     const [isLoading, setIsLoading] = useState(false);
-    const { mutate: deleteAttachment } = useDeleteTaskAttachment();
+    const { mutate: deleteAttachment, isPending } = useDeleteTaskAttachment();
 
     const ICON_SIZE = '1.2rem';
 
@@ -102,8 +102,6 @@ const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
     };
 
     const handleDelete = async () => {
-        setIsLoading(true);
-
         const filename = getFilenameFromUrl(url);
 
         if (!filename || !id) {
@@ -129,7 +127,6 @@ const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
                 },
             },
         );
-        setIsLoading(false);
     };
 
     return (
@@ -173,11 +170,11 @@ const AttachmentChip = ({ id, name, url, type, size, task_id }) => {
                         <Button
                             variant="light"
                             onPress={() => onOpenChange(false)}
-                            isDisabled={isLoading}
+                            isDisabled={isPending}
                         >
                             Cancel
                         </Button>
-                        <Button color="danger" onPress={handleDelete} isLoading={isLoading}>
+                        <Button color="danger" onPress={handleDelete} isLoading={isPending}>
                             Delete
                         </Button>
                     </ModalFooter>
