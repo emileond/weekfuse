@@ -65,7 +65,7 @@ const SimpleEditor = ({
         editable: isEditable,
         editorProps: {
             attributes: {
-                class: `prose prose-sm dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full max-h-[50vh] overflow-y-auto rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
+                class: `prose prose-sm dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
             },
         },
         onUpdate: ({ editor }) => {
@@ -85,14 +85,14 @@ const SimpleEditor = ({
             const currentContent = editor ? editor.getJSON() : null;
 
             // Extract tag labels from the tags array
-            const tagLabels = tags.map(tag => tag.label).filter(Boolean);
+            const tagLabels = tags.map((tag) => tag.label).filter(Boolean);
 
             const response = await ky
                 .post('/api/ai/write-description', {
-                    json: { 
+                    json: {
                         taskName,
                         tags: tagLabels,
-                        currentContent
+                        currentContent,
                     },
                 })
                 .json();

@@ -245,12 +245,16 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size={isExternal ? '5xl' : '4xl'}
-            className="max-h-[85vh]"
+            scrollBehavior="inside"
+            className="p-3"
         >
             <ModalContent>
                 <div className="flex gap-6">
-                    <form onSubmit={handleSubmit(onSubmit)} className="basis-2/3 grow">
-                        <ModalBody className="pt-6">
+                    <form
+                        onSubmit={handleSubmit(onSubmit)}
+                        className="basis-2/3 grow overflow-y-auto"
+                    >
+                        <ModalBody className="pt-6 overflow-y-auto max-h-[75vh]">
                             <div className="flex flex-col gap-6 ">
                                 <div className="flex">
                                     <TaskCheckbox
@@ -294,7 +298,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                         tags={selectedTags}
                                     />
                                 </div>
-                                <div className="flex flex-col gap-2 mb-2">
+                                <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm block font-medium text-foreground">
                                             Attachments
