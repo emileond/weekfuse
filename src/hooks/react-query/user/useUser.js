@@ -40,7 +40,7 @@ const registerUser = async ({ email, password, inviteToken }) => {
 
     // If an invitation token exists, append it to the URL
     if (inviteToken) {
-        redirectURL += `?token=${inviteToken}`;
+        redirectURL += `?invitation_token=${inviteToken}`;
     }
 
     const { data, error } = await supabaseClient.auth.signUp({

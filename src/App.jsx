@@ -53,6 +53,10 @@ function App() {
             element: <BlogPost />,
         },
         {
+            path: '/auth',
+            element: <AuthPage authMode="login" />,
+        },
+        {
             path: '/login',
             element: <AuthPage authMode="login" />,
         },
