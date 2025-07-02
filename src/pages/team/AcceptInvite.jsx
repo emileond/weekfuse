@@ -11,7 +11,7 @@ function AcceptInvitePage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
-    const token = searchParams.get('token');
+    const token = searchParams.get('invitation_token');
 
     useEffect(() => {
         const acceptInvitation = async (invitationToken) => {
