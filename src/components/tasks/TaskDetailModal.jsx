@@ -1,7 +1,16 @@
-import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } from '@heroui/react';
+import {
+    Modal,
+    ModalContent,
+    ModalBody,
+    ModalFooter,
+    Button,
+    Input,
+    Divider,
+    useDisclosure,
+} from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
-import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
+import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
 import {
     useTasksAttachments,
     useDeleteTaskAttachment,
@@ -25,8 +34,9 @@ import UserSelect from '../form/UserSelect.jsx';
 import { useWorkspaceMembers } from '../../hooks/react-query/teams/useWorkspaceMembers.js';
 import ky from 'ky';
 import AttachmentChip from './AttachmentChip.jsx';
+import TaskOptionsDropdown from './TaskOptionsDropdown.jsx';
 
-const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
+const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateTask, isPending } = useUpdateTask(currentWorkspace);
     const { data: members } = useWorkspaceMembers(currentWorkspace);
@@ -287,6 +297,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                                             <h4 className="text-xl font-medium">{watch('name')}</h4>
                                         </div>
                                     )}
+                                    <TaskOptionsDropdown onAction={onAction} />
                                 </div>
                                 <div>
                                     <SimpleEditor
@@ -392,20 +403,23 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task }) => {
                             </div>
                         </ModalBody>
                         <Divider />
-                        <ModalFooter>
-                            <Button
-                                variant="light"
-                                onPress={() => {
-                                    onOpenChange(false);
-                                    reset();
-                                }}
-                                isDisabled={isPending}
-                            >
-                                Cancel
-                            </Button>
-                            <Button color="primary" type="submit" isLoading={isPending}>
-                                Save Changes
-                            </Button>
+                        <ModalFooter className="flex justify-between">
+                            <div></div>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="light"
+                                    onPress={() => {
+                                        onOpenChange(false);
+                                        reset();
+                                    }}
+                                    isDisabled={isPending}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button color="primary" type="submit" isLoading={isPending}>
+                                    Save Changes
+                                </Button>
+                            </div>
                         </ModalFooter>
                     </form>
                     {task?.integration_source && (

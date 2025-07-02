@@ -4,7 +4,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import DataGrid from '../common/DataGrid';
 import EntityChip from '../common/EntityChip';
-import TaskDetailModal from './TaskDetailModal';
+import TaskDetailModalWrapper from './TaskDetailModalWrapper';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { useTasks } from '../../hooks/react-query/tasks/useTasks';
 
@@ -221,7 +221,7 @@ const TableView = ({ items }) => {
     return (
         <div className="border-1 border-content3 rounded-xl bg-content1">
             {selectedTask && (
-                <TaskDetailModal
+                <TaskDetailModalWrapper
                     isOpen={isDetailModalOpen}
                     onOpenChange={handleModalOpenChange}
                     task={selectedTask}

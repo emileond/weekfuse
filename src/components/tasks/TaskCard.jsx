@@ -1,8 +1,4 @@
 import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownMenu,
-    DropdownItem,
     useDisclosure,
     Modal,
     ModalContent,
@@ -11,9 +7,10 @@ import {
     ModalFooter,
     Button,
 } from '@heroui/react';
-import { RiCalendarCloseLine, RiMoreLine } from 'react-icons/ri';
+import { RiCalendarCloseLine } from 'react-icons/ri';
+import TaskOptionsDropdown from './TaskOptionsDropdown';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
-import TaskDetailModal from './TaskDetailModal';
+import TaskDetailModalWrapper from './TaskDetailModalWrapper';
 import { useState, useEffect } from 'react';
 import EntityChip from '../common/EntityChip.jsx';
 import dayjs from 'dayjs';
@@ -27,7 +24,6 @@ const TaskCard = ({ task, sm }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: deleteTask } = useDeleteTask(currentWorkspace);
     const { isOpen, onOpenChange } = useDisclosure();
-    const { isOpen: isMenuOpen, onOpenChange: onMenuOpenChange } = useDisclosure();
     const {
         isOpen: isDeleteModalOpen,
         onOpen: onDeleteModalOpen,
@@ -68,7 +64,7 @@ const TaskCard = ({ task, sm }) => {
 
     return (
         <>
-            <TaskDetailModal isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
+            <TaskDetailModalWrapper isOpen={isOpen} onOpenChange={onOpenChange} task={task} />
 
             {/* Delete Confirmation Modal */}
             <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
@@ -121,27 +117,7 @@ const TaskCard = ({ task, sm }) => {
                             }).format(new Date(task?.date))}
                         </span>
                     )}
-                    <Dropdown isOpen={isMenuOpen} onOpenChange={onMenuOpenChange}>
-                        <DropdownTrigger>
-                            <div
-                                onClick={onMenuOpenChange}
-                                className={`${sm ? 'p-1' : 'p-2'} hover:bg-default-200 rounded-lg`}
-                            >
-                                <RiMoreLine fontSize="1.2rem" />
-                            </div>
-                        </DropdownTrigger>
-                        <DropdownMenu onAction={(key) => handleAction(key)}>
-                            <DropdownItem key="move">Move...</DropdownItem>
-                            <DropdownItem
-                                key="delete"
-                                className="text-danger"
-                                variant="flat"
-                                color="danger"
-                            >
-                                Delete
-                            </DropdownItem>
-                        </DropdownMenu>
-                    </Dropdown>
+                    <TaskOptionsDropdown onAction={handleAction} sm={sm} />
                 </div>
                 {(task.project_id ||
                     task.milestone_id ||
