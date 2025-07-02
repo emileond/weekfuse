@@ -27,10 +27,11 @@ function AuthPage({ authMode = 'login' }) {
 
             // --- Step 1: Handle any pending invitation from the URL ---
             const pendingToken =
-                searchParams.get('token') || localStorage.getItem('pendingInvitationToken');
+                searchParams.get('invitation_token') ||
+                localStorage.getItem('pendingInvitationToken');
             if (pendingToken) {
                 localStorage.removeItem('pendingInvitationToken');
-                if (searchParams.get('token')) navigate('/auth', { replace: true });
+                if (searchParams.get('invitation_token')) navigate('/auth', { replace: true });
 
                 try {
                     await supabaseClient.rpc('accept_workspace_invitation', {
