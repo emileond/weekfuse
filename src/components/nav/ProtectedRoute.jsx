@@ -13,22 +13,29 @@ const FullScreenLoader = () => (
 
 function ProtectedRoute({ children }) {
     const { data: user, isPending: isUserLoading } = useUser();
-    const { data: workspaces, isPending: isWorkspacesLoading } = useWorkspaces(user);
+    // Pass an `enabled` flag to the useWorkspaces hook based on the user's existence
+    const { data: workspaces, isPending: isWorkspacesLoading } = useWorkspaces(user, {
+        enabled: !!user, // This is a common pattern with libraries like React Query
+    });
     const [currentWorkspace, setCurrentWorkspace] = useCurrentWorkspace();
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        // 1. Wait until all data is loaded
-        if (isUserLoading || isWorkspacesLoading) {
-            return;
-        }
-
-        // 2. Redirect unauthenticated users
-        if (!user) {
+        // 1. If the user fetch is done and there's NO user, redirect immediately.
+        // This is the highest priority and doesn't depend on workspaces.
+        if (!isUserLoading && !user) {
             navigate('/login');
             return;
         }
+
+        // 2. If we have a user but are waiting for their workspaces, do nothing yet.
+        if (isWorkspacesLoading) {
+            return;
+        }
+
+        // At this point, we know 'user' exists and 'workspaces' are loaded.
+        if (!user) return; // Safeguard, though the above check should handle it.
 
         // 3. Set a default workspace if none is set
         if (workspaces && workspaces.length > 0 && !currentWorkspace) {
@@ -43,31 +50,19 @@ function ProtectedRoute({ children }) {
             return;
         }
 
-        // --- At this point, we have a user and a currentWorkspace ---
         if (!currentWorkspace) return;
 
-        // --- REVISED LOGIC TO FIX REDIRECT LOOP ---
-
-        // 5. Onboarding Check (Highest Priority)
-        // If a user is not onboarded, this is the only state that matters.
-        const isOnboarded = currentWorkspace.onboarded;
-        if (!isOnboarded) {
-            // If they are not already on the onboarding page, send them there.
+        // 5. Onboarding Check
+        if (!currentWorkspace.onboarded) {
             if (location.pathname !== '/onboarding') {
                 navigate('/onboarding');
             }
-            // IMPORTANT: Return here to prevent any other checks (like the paywall) from running.
             return;
         }
 
-        // 6. Trial Expiration Check (Second Priority)
-        // This logic now ONLY runs if the user is already onboarded.
-        const isTrialing = currentWorkspace.subscription_status === 'trial';
-        const trialHasEnded = currentWorkspace.subscription_status === 'trial ended';
-        const isCancelled = currentWorkspace.subscription_status === 'cancelled';
-
-        if (trialHasEnded || isCancelled) {
-            // If their trial is over, the only page they can see is the paywall.
+        // 6. Trial Expiration Check
+        const { subscription_status } = currentWorkspace;
+        if (subscription_status === 'trial ended' || subscription_status === 'cancelled') {
             if (location.pathname !== '/paywall') {
                 navigate('/paywall');
             }
@@ -83,20 +78,20 @@ function ProtectedRoute({ children }) {
         location.pathname,
     ]);
 
-    // --- Render logic ---
-    const isLoading =
-        isUserLoading ||
-        isWorkspacesLoading ||
-        (user && workspaces && workspaces.length > 0 && !currentWorkspace);
+    // --- Revised Render logic ---
+    // Show loader only while fetching the user, or if we have a user but are still fetching their workspaces.
+    const isLoading = isUserLoading || (user && isWorkspacesLoading);
 
     if (isLoading) {
         return <FullScreenLoader />;
     }
 
+    // Only render children if we have a user and their current workspace is set.
     if (user && currentWorkspace) {
         return children;
     }
 
+    // In all other cases (e.g., during the brief moment before a redirect), render nothing.
     return null;
 }
 
