@@ -77,7 +77,7 @@ export async function onRequestPost(context) {
 
         const sendEmailUrl = `${context.env.LISTMONK_URL}/api/tx`;
 
-        const invitation_link = `${context.env.VITE_PUBLIC_URL}/accept-invite?invitation_token=${invitationId}`;
+        const invitation_link = `${context.env.VITE_PUBLIC_URL}/signup/accept-invite?invitation_token=${invitationId}`;
 
         const response = await ky.post(sendEmailUrl, {
             headers: {
