@@ -186,7 +186,7 @@ const JiraIntegrationCard = ({ isCompact }) => {
                                                     isSelected={field.value}
                                                     onValueChange={field.onChange}
                                                 />
-                                                <span>Ask to update in ClickUp</span>
+                                                <span>Ask to update in Jira</span>
                                             </div>
                                         )}
                                     />
