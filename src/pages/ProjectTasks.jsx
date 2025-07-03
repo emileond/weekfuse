@@ -17,6 +17,7 @@ import TaskViewToggle from '../components/nav/TaskViewToggle.jsx';
 import KanbanView from '../components/tasks/KanbanView.jsx';
 import TableView from '../components/tasks/TableView.jsx';
 import DraggableList from '../components/tasks/DraggableList.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 function ProjectTasksPage() {
     const { projectId, milestoneId } = useParams();
@@ -24,7 +25,7 @@ function ProjectTasksPage() {
     const { isOpen, onOpenChange } = useDisclosure();
     const [pageTitle, setPageTitle] = useState('Tasks');
     const [pageDescription, setPageDescription] = useState('');
-    const [pageView, setPageView] = useState();
+    const [pageView, setPageView] = useState('table');
     const [filters, setFilters] = useState({});
 
     const { data: tasks, isPending } = useTasks(currentWorkspace, filters);
@@ -79,7 +80,7 @@ function ProjectTasksPage() {
             setPageDescription(`Tasks for project: ${project.name}`);
         }
     }, [project, milestone]);
-    
+
     const renderTasksView = () => {
         switch (pageView) {
             case 'list':
@@ -179,6 +180,13 @@ function ProjectTasksPage() {
                         <div className="w-full flex items-center justify-center basis-[50vh] grow">
                             <Spinner size="lg" />
                         </div>
+                    ) : tasks?.length === 0 ? (
+                        <EmptyState
+                            title="No tasks found"
+                            description="Create your first task for this project"
+                            primaryAction="Add a task"
+                            onClick={onOpenChange}
+                        />
                     ) : (
                         renderTasksView()
                     )}

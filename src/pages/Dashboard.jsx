@@ -321,17 +321,15 @@ function DashboardPage() {
                                 </AccordionItem>
                             </Accordion>
                         )}
-                        {todayTasks?.length === 0 && (
+                        {todayTasks?.length === 0 ? (
                             <EmptyState
                                 title="Nothing here yet"
                                 description="Let’s get you rolling, start by creating your first to-do"
                                 primaryAction="Add a task"
                                 onClick={onOpenChange}
                             />
-                        )}
-
-                        {!hideTasks ? (
-                            todayTasks && renderTasksView()
+                        ) : !hideTasks ? (
+                            renderTasksView()
                         ) : (
                             <div>
                                 <div className="flex flex-col items-center gap-3 px-12">

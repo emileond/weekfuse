@@ -7,6 +7,7 @@ import { useProjects } from '../hooks/react-query/projects/useProjects.js';
 import { useState } from 'react';
 import Paywall from '../components/marketing/Paywall';
 import ProjectCard from '../components/projects/ProjectCard.jsx';
+import EmptyState from '../components/EmptyState';
 
 function ProjectsPage() {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -41,9 +42,18 @@ function ProjectsPage() {
                 onClick={() => onNewProjectModalOpen()}
             >
                 <div className="flex flex-col gap-6 mt-3">
-                    {projects?.map((project) => (
-                        <ProjectCard key={project.id} project={project} />
-                    ))}
+                    {projects?.length ? (
+                        projects.map((project) => (
+                            <ProjectCard key={project.id} project={project} />
+                        ))
+                    ) : (
+                        <EmptyState
+                            title="No projects found"
+                            description="Create a new project to get started"
+                            primaryAction="New project"
+                            onClick={() => onNewProjectModalOpen()}
+                        />
+                    )}
                 </div>
             </PageLayout>
         </AppLayout>
