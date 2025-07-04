@@ -30,6 +30,17 @@ const loginUser = async ({ email, password }) => {
     return data.user;
 };
 
+const signInWithOAuth = async ({ provider }) => {
+    let { data, error } = await supabaseClient.auth.signInWithOAuth({
+        provider,
+    });
+
+    if (error) {
+        throw new Error(error.message);
+    }
+    return data.user;
+};
+
 const logoutUser = async () => {
     await supabaseClient.auth.signOut();
 };
@@ -64,6 +75,17 @@ export const useLoginUser = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: loginUser,
+        onSuccess: async (data) => {
+            await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            await queryClient.setQueryData('currentUser', data);
+        },
+    });
+};
+
+export const useSignInWithOAuth = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: signInWithOAuth,
         onSuccess: async (data) => {
             await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
             await queryClient.setQueryData('currentUser', data);

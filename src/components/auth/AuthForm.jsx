@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Input, Link } from '@heroui/react';
+import { Button, Divider, Input, Link } from '@heroui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { PiWarningBold } from 'react-icons/pi';
 import { useLoginUser, useRegisterUser } from '../../hooks/react-query/user/useUser';
 import Logo from '../Logo';
 import ky from 'ky';
+import GoogleAuthButton from './GoogleAuthButton.jsx';
 
 function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
     const { mutateAsync: registerUser } = useRegisterUser();
@@ -51,7 +52,7 @@ function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
                 const inviteToken = localStorage.getItem('pendingInvitationToken');
 
                 await registerUser({ email, password, inviteToken });
-                
+
                 setView('signup-success');
             } catch (error) {
                 setError(error.message);
@@ -86,23 +87,23 @@ function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
         );
     }
     return (
-        <div>
+        <div className="flex flex-col items-center gap-1">
             {(!hideHeader || !hideLogo) && (
                 <RouterLink to="/">
                     <Logo />
                 </RouterLink>
             )}
-            <form onSubmit={handleSubmit(onSubmit)} className="min-w-96 flex flex-col gap-4 py-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="min-w-96 flex flex-col gap-3 py-8">
                 {!hideHeader && (
-                    <>
-                        <h2 className="text-3xl font-bold">
-                            {view === 'signup' ? 'Create an account' : 'Login'}
+                    <div className="flex flex-col items-center mb-3">
+                        <h2 className="text-2xl font-bold">
+                            {view === 'signup' ? 'Create an account' : 'Welcome back'}
                         </h2>
                         <Link
                             className="hover:cursor-pointer hover:text-primary-600 p-2"
                             color="primary"
                             variant="light"
-                            onClick={
+                            onPress={
                                 view === 'signup' ? () => setView('login') : () => setView('signup')
                             }
                         >
@@ -110,7 +111,7 @@ function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
                                 ? 'Already have an account? Login'
                                 : "Don't have an account? Sign up"}
                         </Link>
-                    </>
+                    </div>
                 )}
                 {error && (
                     <div className="flex items-center gap-2 bg-danger-50 p-3 rounded-xl border border-danger-100 font-bold text-default-900 text-sm">
@@ -118,6 +119,12 @@ function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
                         <p>{error}</p>
                     </div>
                 )}
+                <GoogleAuthButton />
+                <div className="w-full flex gap-3 items-center py-3">
+                    <Divider className="shrink" />
+                    <span>or</span>
+                    <Divider className="shrink" />
+                </div>
                 <Input
                     {...register('email', {
                         required: 'Email is required',
@@ -166,6 +173,7 @@ function AuthForm({ viewMode = 'signup', hideHeader, hideLogo, onSuccess }) {
                     type="submit"
                     size="lg"
                     isLoading={isLoading}
+                    className="mt-3"
                 >
                     {view === 'signup' ? 'Create account' : 'Login'}
                 </Button>
