@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import DashboardPage from './pages/Dashboard.jsx';
 import ProtectedRoute from './components/nav/ProtectedRoute.jsx';
@@ -237,6 +238,25 @@ function App() {
             element: <NotFoundPage />,
         },
     ]);
+
+    useEffect(() => {
+        // Create a script element
+        const script = document.createElement('script');
+
+        // Set the source and attributes for the GetTerms widget
+        script.src =
+            'https://app.getterms.io/cookie-consent/embed/5c9ed1f0-0857-4dd3-b024-e2c534327f04/en-us';
+        script.type = 'text/javascript';
+        script.async = true; // Load the script asynchronously
+
+        // Append the script to the body
+        document.body.appendChild(script);
+
+        // Cleanup function to remove the script when the component unmounts
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
 
     return (
         <main className={`text-foreground bg-background`}>

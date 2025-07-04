@@ -56,7 +56,7 @@ function TOSPage() {
             <PageLayout title="">
                 <div
                     className="w-full getterms-document-embed"
-                    data-getterms="CUkTN"
+                    data-getterms="WSLqX"
                     data-getterms-document="tos"
                     data-getterms-lang="en-us"
                     data-getterms-mode="direct"
