@@ -58,11 +58,11 @@ function App() {
         },
         {
             path: '/login',
-            element: <AuthPage authMode="login" />,
+            element: <AuthPage viewMode="login" />,
         },
         {
             path: '/signup',
-            element: <AuthPage authMode="signup" />,
+            element: <AuthPage viewMode="signup" />,
         },
         {
             path: '/accept-invite',

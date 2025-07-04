@@ -70,7 +70,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
     }, [onOpenChange]);
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
             <ModalContent>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <ModalBody className="pt-4">

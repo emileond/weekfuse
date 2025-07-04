@@ -232,7 +232,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                 updates.project_id !== (task.project_id || null) ||
                 updates.milestone_id !== (task.milestone_id || null) ||
                 updates.priority !== task.priority ||
-                updates.assignee !== task.assignee ||
+                updates.assignee !== (task.assignee || null) ||
                 !areTagsEqual(updates.tags, task.tags);
 
             // Only make the database call if the data has changed

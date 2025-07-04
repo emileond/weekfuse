@@ -48,7 +48,7 @@ const FinalizingInvite = ({ token }) => {
 };
 
 // This is the main controller component for the `/auth` route.
-function AuthPage() {
+function AuthPage({ viewMode }) {
     const { data: user, isLoading: isUserLoading } = useUser();
     const [searchParams] = useSearchParams();
     const invitationToken = searchParams.get('invitation_token');
@@ -70,7 +70,11 @@ function AuthPage() {
     // SCENARIO 2: Standard case. No user is logged in.
     // Show the form to allow login or signup.
     if (!user) {
-        return <AuthForm />;
+        return (
+            <div className="w-screen h-screen flex justify-center items-center">
+                <AuthForm viewMode={viewMode} />
+            </div>
+        );
     }
 
     // SCENARIO 3: Fallback. A logged-in user somehow landed here.

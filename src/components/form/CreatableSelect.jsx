@@ -147,12 +147,12 @@ const CreatableSelect = ({
                     <Button
                         size="sm"
                         variant="light"
-                        className={`text-default-600 ${triggerClassName}`}
+                        className={`text-default-600 ${triggerClassName} max-w-56`}
                         startContent={selectedOption?.startContent || icon}
                         disabled={disabled}
                         onPress={() => setIsOpen(true)}
                     >
-                        {getDisplayText()}
+                        <span className="truncate">{getDisplayText()}</span>
                     </Button>
                 </div>
             </PopoverTrigger>
