@@ -35,9 +35,9 @@ function BlogPost() {
     }
 
     return (
-        <div className="w-screen min-h-screen bg-content1 py-16">
+        <div className="w-screen min-h-screen bg-content1">
             <NavBar />
-            <div className="w-full max-w-3xl mx-auto px-6 py-12 text-md sm:text-lg">
+            <div className="w-full max-w-3xl mx-auto px-6 py-28 text-md sm:text-lg">
                 <Image
                     width="100%"
                     alt="Cover"
