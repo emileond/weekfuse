@@ -7,7 +7,7 @@ import { Avatar, Spinner } from '@heroui/react';
 import { useUser } from '../../hooks/react-query/user/useUser';
 
 const UserSelect = ({
-    label = 'Assignee',
+    label = 'Unassigned',
     placeholder = 'Search users...',
     defaultValue = null,
     onChange,
