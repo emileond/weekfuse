@@ -1,89 +1,81 @@
-import { useEffect, useState } from 'react';
-import { useUser } from '../hooks/react-query/user/useUser';
-import { useWorkspaces } from '../hooks/react-query/teams/useWorkspaces';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import useCurrentWorkspace from '../hooks/useCurrentWorkspace.js';
-import AuthForm from '../components/auth/AuthForm';
-import toast from 'react-hot-toast';
-import { supabaseClient } from '../lib/supabase';
+// src/pages/AuthPage.jsx
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 
-function AuthPage({ authMode = 'login' }) {
-    const { data: user } = useUser();
-    const [currentWorkspace, setCurrentWorkspace] = useCurrentWorkspace();
-    const { data: workspaces, isPending: isLoadingWorkspaces } = useWorkspaces(user);
+import { useUser } from '../hooks/react-query/user/useUser.js';
+import { supabaseClient } from '../lib/supabase.js';
+import AuthForm from '../components/auth/AuthForm'; // Your existing form
+import { Spinner } from '@heroui/react'; // Or your preferred loader
+
+// A simple component to show while the invitation is processed.
+const FinalizingInvite = ({ token }) => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [searchParams] = useSearchParams();
-    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        if (!user || isLoadingWorkspaces || isProcessing) {
-            return;
-        }
+        const accept = async () => {
+            try {
+                // Call the exact same RPC from your AcceptInvitePage
+                const { error } = await supabaseClient.rpc('accept_workspace_invitation', {
+                    invitation_id: token,
+                });
+                if (error) throw error;
 
-        const handlePostLogin = async () => {
-            setIsProcessing(true);
+                toast.success('Welcome aboard! You have joined the workspace.');
 
-            // --- Step 1: Handle any pending invitation from the URL ---
-            const pendingToken =
-                searchParams.get('invitation_token') ||
-                localStorage.getItem('pendingInvitationToken');
-            if (pendingToken) {
+                // Crucial cleanup and refresh
                 localStorage.removeItem('pendingInvitationToken');
-                if (searchParams.get('invitation_token')) navigate('/auth', { replace: true });
+                await queryClient.invalidateQueries({ queryKey: ['workspaces'] });
 
-                try {
-                    await supabaseClient.rpc('accept_workspace_invitation', {
-                        invitation_id: pendingToken,
-                    });
-                    toast.success('Invitation accepted!');
-                    await queryClient.invalidateQueries({ queryKey: ['workspaces', user.id] });
-                    // Let the effect re-run with the new data
-                    setIsProcessing(false);
-                    return;
-                } catch (error) {
-                    toast.error(`Failed to accept invitation: ${error.message}`);
-                }
-            }
-
-            // --- Step 2: If there are workspaces, set the current one and navigate ---
-            if (workspaces && workspaces.length > 0) {
                 navigate('/dashboard');
-                return;
+            } catch (error) {
+                toast.error(`Failed to accept invitation: ${error.message}`);
+                navigate('/'); // Redirect to a safe page on error
             }
-
-            // --- Step 3: If no workspaces, create one for the new user ---
-            if (workspaces && workspaces.length === 0) {
-                try {
-                    await supabaseClient.rpc('create_new_workspace_and_start_trial');
-                    await queryClient.invalidateQueries({ queryKey: ['workspaces', user.id] });
-                } catch (error) {
-                    console.error('Failed to create workspace:', error);
-                }
-            }
-
-            setIsProcessing(false);
         };
 
-        handlePostLogin();
-    }, [
-        user,
-        workspaces,
-        isLoadingWorkspaces,
-        currentWorkspace,
-        navigate,
-        setCurrentWorkspace,
-        queryClient,
-        searchParams,
-        isProcessing,
-    ]);
+        accept();
+    }, [token, navigate, queryClient]);
 
     return (
         <div className="w-screen h-screen flex justify-center items-center">
-            <AuthForm viewMode={authMode} />
+            <Spinner />
+            <p>Finalizing your invitation...</p>
         </div>
     );
+};
+
+// This is the main controller component for the `/auth` route.
+function AuthPage() {
+    const { data: user, isLoading: isUserLoading } = useUser();
+    const [searchParams] = useSearchParams();
+    const invitationToken = searchParams.get('invitation_token');
+
+    if (isUserLoading) {
+        return (
+            <div className="w-screen h-screen flex justify-center items-center">
+                <Spinner />
+            </div>
+        );
+    }
+
+    // SCENARIO 1: The invited user has just verified their email.
+    // They are now logged in and have the token in the URL.
+    if (user && invitationToken) {
+        return <FinalizingInvite token={invitationToken} />;
+    }
+
+    // SCENARIO 2: Standard case. No user is logged in.
+    // Show the form to allow login or signup.
+    if (!user) {
+        return <AuthForm />;
+    }
+
+    // SCENARIO 3: Fallback. A logged-in user somehow landed here.
+    // The ProtectedRoute should prevent this, but as a safeguard, send them away.
+    return <Navigate to="/dashboard" replace />;
 }
 
 export default AuthPage;
