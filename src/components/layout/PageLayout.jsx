@@ -13,6 +13,7 @@ function PageLayout({
     backBtn,
     startElements,
     customElements,
+    isLanding = false,
 }) {
     const navigate = useNavigate();
 
@@ -56,7 +57,7 @@ function PageLayout({
                         <p className="font-medium text-sm text-default-500 mt-2">{description}</p>
                     )}
                 </div>
-                <div>{children}</div>
+                <div className={isLanding && 'py-16'}>{children}</div>
             </div>
         </div>
     );

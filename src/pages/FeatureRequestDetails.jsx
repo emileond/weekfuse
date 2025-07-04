@@ -90,7 +90,7 @@ function FeatureRequestDetails() {
                     </ModalBody>
                 </ModalContent>
             </Modal>
-            <div className="container mx-auto max-w-[860px] px-6">
+            <div className="container mx-auto max-w-[860px] px-6 py-16">
                 <div className="flex flex-wrap md:flex-nowrap gap-6 pt-12 pb-32">
                     <div className="bg-content1 p-6 rounded-xl border-1 border-content3 basis-2/3 grow min-h-[30vh]">
                         <div className="space-y-3 h-full">

@@ -53,7 +53,7 @@ function TOSPage() {
     return (
         <div className="w-screen">
             <NavBar />
-            <PageLayout title="">
+            <PageLayout title="" isLanding>
                 <div
                     className="w-full getterms-document-embed"
                     data-getterms="WSLqX"

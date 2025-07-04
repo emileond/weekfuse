@@ -7,10 +7,10 @@ const posts = import.meta.glob('../../blog/*.mdx', { eager: true });
 
 function BlogPage() {
     return (
-        <div className="w-screen min-h-screen bg-content1">
+        <div className="w-screen min-h-screen bg-content1 py-16">
             <NavBar />
             <h1 className="text-center text-4xl font-bold py-12">Blog</h1>
-            <div className="max-w-6xl min-h-[60vh] mx-auto grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 py-12 px-6 ">
+            <div className="max-w-6xl min-h-[60vh] mx-auto grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 py-12 px-6">
                 {Object.entries(posts).map(([path, post]) => {
                     const slug = path.replace('../../blog/', '').replace('.mdx', '');
                     return (

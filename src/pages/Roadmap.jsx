@@ -18,7 +18,7 @@ function RoadmapPage() {
     return (
         <div className="w-screen min-h-screen bg-content2/50">
             <NavBar />
-            <div className="container mx-auto max-w-[1280px] px-6">
+            <div className="container mx-auto max-w-[1280px] px-6 py-16">
                 <h1 className="text-left text-4xl font-bold pt-12 pb-6">Roadmap</h1>
                 <p className="font-medium">
                     What’s on the horizon for {import.meta.env.VITE_APP_NAME}

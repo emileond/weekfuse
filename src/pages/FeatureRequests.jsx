@@ -125,7 +125,7 @@ function FeatureRequestsPage() {
                     </ModalBody>
                 </ModalContent>
             </Modal>
-            <div className="container mx-auto max-w-[1280px] px-6">
+            <div className="container mx-auto max-w-[1280px] px-6 py-16">
                 <h1 className="text-left text-4xl font-bold pt-12 pb-6">Suggest a feature</h1>
                 <p className="font-medium">
                     Tell us what you’d like to see on {import.meta.env.VITE_APP_NAME}
