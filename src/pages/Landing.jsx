@@ -28,7 +28,7 @@ function LandingPage() {
 
             <Feature
                 reverse
-                imageUrl="/codeimage.png"
+                imageUrl="/planner.svg"
                 chip="Weekly Planning"
                 heading="Plan Smarter, Not Harder."
                 description="Take control of your week with our intuitive planning tools. Weekfuse AI can suggest a weekly plan for you, considering your tasks and priorities."

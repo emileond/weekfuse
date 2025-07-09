@@ -1,12 +1,14 @@
 import { Button, Card, CardBody, Chip, Image } from '@heroui/react';
 import { Link } from 'react-router-dom';
-import { OrbitingCircles } from './OrbitCircles.jsx';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 function Feature({
     heading,
     description,
     ctaText,
     imageUrl,
+    lottie,
+    loop,
     reverse = false,
     id,
     childComponent,
@@ -31,6 +33,7 @@ function Feature({
                             />
                         </div>
                     )}
+                    {lottie && <DotLottieReact src={`/lottie/${lottie}`} autoplay loop={true} />}
 
                     {childComponent && childComponent}
 

@@ -9,6 +9,8 @@ import {
     RiQuillPenAiLine,
 } from 'react-icons/ri';
 import { BentoGrid, BentoCard } from './BentoGrid.jsx';
+import { Image } from '@heroui/react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 function FeaturesGrid() {
     const bentoFeatures = [
@@ -40,7 +42,7 @@ function FeaturesGrid() {
             href: '#',
             cta: 'Learn more',
             className: 'col-span-3 lg:col-span-1',
-            background: <></>,
+            background: <Image src="/collab.svg" alt="Collab UI" />,
         },
         {
             Icon: RiKanbanView,
@@ -59,7 +61,7 @@ function FeaturesGrid() {
             href: '#',
             cta: 'Learn more',
             className: 'col-span-3 lg:col-span-2',
-            background: <></>,
+            background: <Image src="/planner.svg" alt="Planner" />,
         },
         {
             Icon: RiPaintBrushLine,
@@ -83,6 +85,25 @@ function FeaturesGrid() {
             Icon: RiQuillPenAiLine,
             name: 'Guided reflections',
             description: 'Reflect on your progress, learn and grow with weekly prompts.',
+            href: '#',
+            cta: 'Learn more',
+            className: 'col-span-3 lg:col-span-1',
+            background: <></>,
+        },
+        {
+            Icon: RiQuillPenAiLine,
+            name: 'Productivity tools',
+            description:
+                'Productivity tools that help you get the most out of your day and avoid burnout.',
+            href: '#',
+            cta: 'Learn more',
+            className: 'col-span-3 lg:col-span-2',
+            background: <></>,
+        },
+        {
+            Icon: RiQuillPenAiLine,
+            name: 'File storage',
+            description: 'Save files to your tasks.',
             href: '#',
             cta: 'Learn more',
             className: 'col-span-3 lg:col-span-1',

@@ -44,9 +44,11 @@ const subscriptionPlans = [
 const ltdPlans = [
     {
         name: 'Personal Lifetime',
-        price: 59, // One-time price
+        price: 69, // One-time price
         features: [
-            '1 User & 3 guests',
+            '1 User',
+            '3 Guests',
+            '2Gb Storage',
             'Smart planning',
             'AI-guided reflections',
             'Integrations',
@@ -56,10 +58,11 @@ const ltdPlans = [
     },
     {
         name: 'Team Lifetime',
-        price: 199, // One-time price
+        price: 219, // One-time price
         features: [
-            'All features in the Personal Plan',
-            '50 Users & Guests',
+            '20 Users',
+            'Unlimited Guests',
+            '200Gb Storage',
             'Assign tasks to team members',
             'API access',
             'All Future Updates',

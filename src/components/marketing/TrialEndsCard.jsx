@@ -47,7 +47,7 @@ function TrialEndsCard() {
                             className="text-secondary-900 opacity-90 font-medium"
                             endContent={<RiArrowRightLine fontSize="1rem" />}
                         >
-                            Get the LTD Plan
+                            Get lifetime access
                         </Button>
                     </div>
                 </CardBody>
