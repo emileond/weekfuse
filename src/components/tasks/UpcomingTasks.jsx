@@ -51,7 +51,7 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
         return () => {
             if (messageInterval) clearInterval(messageInterval);
         };
-    }, [isLoadingOpen]);
+    }, [isLoadingOpen, loadingMessages]);
 
     // Calculate the date range to display
     const days = useMemo(() => {
@@ -89,27 +89,22 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
         setIsBacklogCollapsed((prevState) => !prevState);
     }, []);
 
-    const handleRollback = async () => {
+    const handleRollback = useCallback(async () => {
         if (!lastPlanResponse || !Array.isArray(lastPlanResponse)) {
             console.error('No plan response to rollback');
             return;
         }
 
-        // Show loading modal
         onLoadingOpen();
         setLoadingMessage('Rolling back changes...');
 
-        // Prepare tasks for rollback (set date to null)
         const tasksToUpdate = lastPlanResponse.map((task) => ({
             taskId: task.id,
             updates: { date: null },
         }));
 
         try {
-            // Update tasks using the hook
             await updateMultipleTasks({ tasks: tasksToUpdate });
-
-            // Clear the last plan response
             setLastPlanResponse(null);
             toast.success('Changes reverted');
 
@@ -125,15 +120,21 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
         } finally {
             onLoadingClose();
         }
-    };
+    }, [
+        lastPlanResponse,
+        updateMultipleTasks,
+        setLastPlanResponse,
+        queryClient,
+        currentWorkspace,
+        onLoadingOpen,
+        onLoadingClose,
+    ]);
 
-    const autoPlan = async () => {
+    const autoPlan = useCallback(async () => {
         setIsBacklogCollapsed(true);
-        // Show loading modal
         onLoadingOpen();
         setLoadingMessage('Optimizing plan...');
 
-        // Generate all dates in the range
         const availableDates = [];
         const start = dayjs(startDate);
         const end = dayjs(endDate);
@@ -144,35 +145,27 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
             p_end_date: dayjs(endDate).endOf('day').toISOString(),
         });
 
-        // 1) Turn it into a lookup you can query by calendar date
-        //    (so we never care about offsets or time-of-day)
         const countsByDay = data.reduce((map, { day, count }) => {
-            // normalize `day` to a YYYY-MM-DD key
             const key = dayjs.utc(day).format('YYYY-MM-DD');
             map[key] = count;
             return map;
         }, {});
 
-        // 2) In your loop, compare on `'day'` only
         let current = start;
         while (current.isBefore(end) || current.isSame(end, 'day')) {
-            // build the same YYYY-MM-DD key for this `current` date
             const key = current.format('YYYY-MM-DD');
-
             const weekday = current.day();
             const weekdayName = current.format('dddd');
 
             if (weekday >= 1 && weekday <= 5) {
                 const taskCount = countsByDay[key] || 0;
-
                 if (taskCount < 2) {
                     availableDates.push({
-                        date: current.startOf('day').toISOString(), // or however you want to emit it
+                        date: current.startOf('day').toISOString(),
                         weekday: weekdayName,
                     });
                 }
             }
-
             current = current.add(1, 'day');
         }
 
@@ -189,10 +182,8 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                 })
                 .json();
 
-            // Store the response for potential rollback
             setLastPlanResponse(response);
 
-            // Refetch the tasks query after successful response
             if (response) {
                 await queryClient.cancelQueries({
                     queryKey: ['tasks', currentWorkspace?.workspace_id],
@@ -204,27 +195,28 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
         } catch (error) {
             console.error('Error in auto plan:', error);
         } finally {
-            // Hide loading modal
             onLoadingClose();
         }
-    };
+    }, [
+        startDate,
+        endDate,
+        currentWorkspace,
+        setLastPlanResponse,
+        queryClient,
+        onLoadingOpen,
+        onLoadingClose,
+    ]);
 
-    // These functions are now called by the parent component through refs
+    // ✅ CORRECTED: This effect now correctly depends on the memoized
+    // `autoPlan` and `handleRollback` functions.
     useEffect(() => {
-        // Set up the onAutoPlan function to be called from the parent
         if (onAutoPlan && currentWorkspace) {
-            onAutoPlan.current = () => {
-                return autoPlan();
-            };
+            onAutoPlan.current = autoPlan;
         }
-
-        // Set up the onRollback function to be called from the parent
         if (onRollback && currentWorkspace) {
-            onRollback.current = () => {
-                return handleRollback();
-            };
+            onRollback.current = handleRollback;
         }
-    }, [onAutoPlan, onRollback, currentWorkspace]);
+    }, [onAutoPlan, onRollback, currentWorkspace, autoPlan, handleRollback]);
 
     return (
         <>
@@ -264,8 +256,7 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
             <div className="flex gap-3 h-[calc(100vh-140px)]">
                 <div className="basis-2/3 grow flex gap-4 overflow-x-auto snap-x">
                     {days.map((day) => {
-                        const dateStr = day.format('YYYY-MM-DD'); // Column date
-
+                        const dateStr = day.format('YYYY-MM-DD');
                         return <DayColumn key={dateStr} day={day} />;
                     })}
                 </div>
