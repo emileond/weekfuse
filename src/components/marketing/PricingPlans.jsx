@@ -58,7 +58,7 @@ const ltdPlans = [
     },
     {
         name: 'Team Lifetime',
-        price: 219, // One-time price
+        price: 199, // One-time price
         features: [
             '20 Users',
             'Unlimited Guests',
