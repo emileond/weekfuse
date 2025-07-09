@@ -18,6 +18,7 @@ import {
 } from '../../hooks/react-query/teams/useWorkspaceMembers.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { useCallback } from 'react';
+import BoringAvatar from 'boring-avatars';
 
 function MemberCard({ member, onEditMember, columnKey }) {
     const [currentWorkspace] = useCurrentWorkspace();
@@ -67,21 +68,38 @@ function MemberCard({ member, onEditMember, columnKey }) {
         member: 'text-default-600',
     };
 
+    const avatarUrl = member?.avatar ? `${member?.avatar}/w=60` : null;
+
     const renderCell = useCallback(
         (member, columnKey) => {
             const cellValue = member[columnKey];
 
             switch (columnKey) {
                 case 'name':
-                    return (
+                    return avatarUrl ? (
                         <User
                             className="align-middle"
-                            name={member.name || member.email.split('@')[0]}
-                            description={member.email}
+                            name={member?.name || member?.email.split('@')[0]}
+                            description={member?.email}
                             avatarProps={{
-                                src: `${member?.avatar}/w=60`,
+                                src: avatarUrl,
                             }}
                         />
+                    ) : (
+                        <div className="flex items-center justify-start gap-2">
+                            <BoringAvatar
+                                name={member?.name || member?.email}
+                                size={40}
+                                variant="beam"
+                                colors={['#fbbf24', '#735587', '#5bc0be', '#6366f1']}
+                            />
+                            <div className="flex flex-col">
+                                <span className="text-sm">
+                                    {member?.name || member?.email.split('@')[0]}
+                                </span>
+                                <span className="text-default-700 text-xs">{member?.email}</span>
+                            </div>
+                        </div>
                     );
                 case 'role':
                     return (

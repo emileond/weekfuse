@@ -6,6 +6,7 @@ import { useUser } from '../../hooks/react-query/user/useUser.js';
 import { useUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 import { useUpdateUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace.js';
+import BoringAvatar from 'boring-avatars';
 
 const AvatarUploader = () => {
     const { data: user } = useUser();
@@ -65,14 +66,21 @@ const AvatarUploader = () => {
 
     if (!userProfile) return null; // Prevents rendering when data isn't ready
 
+    const avatarUrl = userProfile?.avatar ? `${userProfile?.avatar}/w=128` : null;
+
     return (
         <div className="flex flex-col items-center gap-6">
-            <Avatar
-                alt="User avatar"
-                showFallback
-                className="w-32 h-32"
-                src={`${userProfile?.avatar}/w=140`}
-            />
+            {avatarUrl ? (
+                <Avatar alt="User avatar" showFallback className="w-32 h-32" src={avatarUrl} />
+            ) : (
+                <BoringAvatar
+                    name={userProfile?.name || userProfile?.email}
+                    size={128}
+                    variant="beam"
+                    colors={['#fbbf24', '#735587', '#5bc0be', '#6366f1']}
+                />
+            )}
+
             <input
                 type="file"
                 accept="image/png, image/jpeg, image/jpg"

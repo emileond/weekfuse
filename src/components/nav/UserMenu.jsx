@@ -28,6 +28,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 import { useCallback, useEffect, useState } from 'react';
 import ThemeSwitcher from '../theme/ThemeSwitcher.jsx';
+import BoringAvatar from 'boring-avatars';
 
 function UserMenu({ avatarOnly }) {
     const queryClient = useQueryClient();
@@ -46,7 +47,7 @@ function UserMenu({ avatarOnly }) {
         await queryClient.invalidateQueries();
     }, [logoutUser, queryClient]);
 
-    const avatarUrl = `${userProfile?.avatar}/w=60`;
+    const avatarUrl = userProfile?.avatar ? `${userProfile?.avatar}/w=60` : null;
 
     useEffect(() => {
         if (isReady && user && !chatOpened) {
@@ -104,12 +105,23 @@ function UserMenu({ avatarOnly }) {
                             variant="bordered"
                             size="lg"
                             className="justify-between px-3 border"
+                            startContent={
+                                !avatarUrl && (
+                                    <BoringAvatar
+                                        name={userProfile?.name || userProfile?.email}
+                                        size={ICON_SIZE + 10}
+                                        variant="beam"
+                                        colors={['#fbbf24', '#735587', '#5bc0be', '#6366f1']}
+                                    />
+                                )
+                            }
                             endContent={<RiExpandUpDownLine fontSize={ICON_SIZE - 6} />}
                             name={userProfile?.name || 'User'}
                             description={user?.email || 'email'}
                             avatarProps={{
                                 size: 'sm',
                                 src: avatarUrl,
+                                className: !avatarUrl && 'hidden',
                             }}
                         />
                     )}
