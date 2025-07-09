@@ -31,8 +31,8 @@ function PricingCard({
     }
 
     // Conditional styling for LTD and highlighted plans
-    const cardClasses = `flex-1 min-w-[300px] flex flex-col transition-transform duration-300 hover:shadow-xl ${
-        highlight && !isLTD ? 'border-2 border-primary-400/60' : ''
+    const cardClasses = `grow basis-1/2 max-w-[340px]  flex flex-col ${
+        highlight && !isLTD ? 'border-2 border-primary-400/60 ' : ''
     } ${
         isLTD || highlight
             ? 'bg-gradient-to-br from-content1 to-primary-50/50 border-2 border-primary-400/60 shadow-lg shadow-primary/20'

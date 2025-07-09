@@ -65,6 +65,7 @@ const ltdPlans = [
             '200Gb Storage',
             'Assign tasks to team members',
             'API access',
+            'All Features in Personal',
             'All Future Updates',
         ],
         highlight: true,
@@ -140,7 +141,7 @@ function PricingPlans({ showLTD = true }) {
     );
 
     const renderLTDPlans = () => (
-        <div className="w-full flex flex-wrap gap-6">
+        <div className="w-full flex flex-wrap justify-center gap-6">
             {ltdPlans.map((plan, index) => {
                 const checkoutUrl = constructCheckoutUrl(
                     plan.variantId,
