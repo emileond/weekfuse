@@ -46,7 +46,10 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                     project_id: selectedProject?.value || null,
                     milestone_id: selectedMilestone?.value || null,
                     tags: selectedTags.length > 0 ? selectedTags : null,
-                    priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
+                    priority:
+                        selectedPriority?.value !== null && selectedPriority?.value !== undefined
+                            ? parseInt(selectedPriority.value)
+                            : null,
                     status: 'pending',
                     assignee: selectedUser?.value || null,
                     creator: user?.id,

@@ -201,7 +201,10 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                 project_id: selectedProject?.value || null,
                 milestone_id: selectedMilestone?.value || null,
                 tags: selectedTags.length > 0 ? selectedTags : null,
-                priority: selectedPriority?.value ? parseInt(selectedPriority.value) : null,
+                priority:
+                    selectedPriority?.value !== null && selectedPriority?.value !== undefined
+                        ? parseInt(selectedPriority.value)
+                        : null,
                 assignee: selectedUser?.value || null,
                 // Attachments are now managed separately through the useTasksAttachments hook
             };
