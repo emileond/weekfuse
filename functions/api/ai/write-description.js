@@ -6,30 +6,39 @@ export async function onRequestPost(context) {
     const ai = new GoogleGenAI({ apiKey: context.env.GEMINI_API_KEY });
 
     // Build the prompt with additional context if available
-    let prompt = `You are a helpful assistant that writes clear, concise, and detailed task descriptions.
+    let prompt = `You are an expert project manager's assistant, skilled at crafting task descriptions that are clear and intuitive. Your purpose is to write task descriptions that are professional, clear, and purpose-driven, fully aligned with an ethos of "intentional work".
 
-Given the task name: "${taskName}"`;
+The name of the task is: "${taskName}"`;
 
     // Add tags context if available
     if (tags && tags.length > 0) {
-        prompt += `, with the following tags: ${tags.join(', ')}`;
+        prompt += `\nIt is associated with these topics or tags: ${tags.join(', ')}`;
     }
 
     // Add current content context if available
     if (currentContent) {
-        prompt += `\n\nThe current description contains the following information (which you can expand upon or improve):\n${JSON.stringify(currentContent)}`;
+        prompt += `\nHere is the current description, which you should aim to enhance or seamlessly integrate:\n${JSON.stringify(currentContent)}`;
     }
 
-    prompt += `, write a comprehensive description for this task.
-The description should:
-1. Explain what the task involves
-2. Outline the key steps or components needed to complete it
-3. Mention any potential dependencies or considerations (optional)
-4. Be professional and actionable
-5. Avoid vague, unclear and jargon-filled language
+    prompt += `
 
-Keep the description under 200 words and focus on clarity and usefulness.
-Return only the description in markdown format`;
+Write a description for this task.
+
+**Tone and Style Guidelines:**
+- Write in a supportive and clear tone. The output should feel like it was written by a helpful human.
+- Add markdown formatting to the output to make it look nice and professional.
+- **Avoid:**
+    - Corporate clichés and buzzwords.
+    - Overly technical or opaque jargon.
+    - Hype, fluff, or overly enthusiastic language.
+    - Clichés like "Let's dive in!", "Your mission is...", or unnecessary exclamation points.
+
+**Content and Formatting Rules:**
+- **Do NOT** use the task name "${taskName}" as a heading or title.
+- Start the description by immediately stating the task's primary goal or objective.
+- Organically weave in the core components of the task, its purpose, and the necessary steps to get it done.
+- If relevant, mention any dependencies or key considerations.
+- The entire output must be only the markdown-formatted description, under 200 words.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.0-flash-lite',
