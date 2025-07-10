@@ -109,7 +109,7 @@ function ProjectTasksPage() {
             case 'kanban':
                 return <KanbanView items={tasks} />;
             case 'table':
-                return <TableView items={tasks} />;
+                return <TableView pageKey={milestone ? 'milestone' : 'project'} items={tasks} />;
         }
     };
 

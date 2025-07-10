@@ -114,7 +114,7 @@ function PricingPlans({ showLTD = true }) {
                     Monthly
                 </Button>
             </ButtonGroup>
-            <div className="w-full flex flex-wrap gap-6">
+            <div className="w-full flex flex-wrap gap-4">
                 {subscriptionPlans.map((plan, index) => {
                     const variantId = isYearly ? plan.variants.yearly : plan.variants.monthly;
                     const checkoutUrl = constructCheckoutUrl(
@@ -141,7 +141,7 @@ function PricingPlans({ showLTD = true }) {
     );
 
     const renderLTDPlans = () => (
-        <div className="w-full flex flex-wrap justify-center gap-6">
+        <div className="w-full flex flex-wrap justify-center gap-4">
             {ltdPlans.map((plan, index) => {
                 const checkoutUrl = constructCheckoutUrl(
                     plan.variantId,

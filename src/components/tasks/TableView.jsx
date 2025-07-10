@@ -1,20 +1,17 @@
-import { useMemo, useState, useCallback, memo } from 'react';
+import { useMemo, useState, useCallback, memo, useEffect } from 'react'; // 1. Import useEffect
 import { Spinner, useDisclosure, Chip } from '@heroui/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import DataGrid from '../common/DataGrid';
 import EntityChip from '../common/EntityChip';
 import TaskDetailModalWrapper from './TaskDetailModalWrapper';
-import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
-import { useTasks } from '../../hooks/react-query/tasks/useTasks';
 
-// Memoized cell components for better performance
+// Memoized cell components (No changes needed here)
 const EmptyCell = memo(() => <span className="text-default-400">—</span>);
 EmptyCell.displayName = 'EmptyCell';
 
 const DateCell = memo(({ date, isCompleted }) => {
     if (!date) return <EmptyCell />;
-
     const taskDate = dayjs(date);
     const today = dayjs().startOf('day');
     const isOverdue = taskDate.isBefore(today);
@@ -35,19 +32,49 @@ const TaskNameCell = memo(({ name, isCompleted }) => (
 TaskNameCell.displayName = 'TaskNameCell';
 
 // Main TableView component
-const TableView = ({ items }) => {
+const TableView = ({ items, pageKey = 'global' }) => {
+    // 2. Accept a pageKey prop
     const [taskStatus, setTaskStatus] = useState({});
     const [selectedTask, setSelectedTask] = useState(null);
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 15,
     });
-    const [sorting, setSorting] = useState([{ id: 'status', desc: false }]);
     const {
         isOpen: isDetailModalOpen,
         onOpen: onDetailModalOpen,
         onClose: onDetailModalClose,
     } = useDisclosure();
+
+    // 3. Create a dynamic storage key for sorting preferences
+    const sortingStorageKey = useMemo(() => `taskTableSort_${pageKey}`, [pageKey]);
+
+    // 4. Initialize sorting state from localStorage
+    const [sorting, setSorting] = useState(() => {
+        // Ensure localStorage is available (for SSR safety)
+        if (typeof window === 'undefined') {
+            return [{ id: 'status', desc: false }];
+        }
+        try {
+            const savedSort = window.localStorage.getItem(sortingStorageKey);
+            // If a saved state exists, parse and return it
+            if (savedSort) {
+                return JSON.parse(savedSort);
+            }
+        } catch (error) {
+            console.error('Failed to parse sorting state from localStorage:', error);
+            // Fallback to default if parsing fails
+        }
+        // Default sorting state if nothing is saved
+        return [{ id: 'status', desc: false }];
+    });
+
+    // 5. Use an effect to save the sorting state whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(sortingStorageKey, JSON.stringify(sorting));
+        }
+    }, [sorting, sortingStorageKey]); // Re-run this effect when sorting or the key changes
 
     // Memoized row click handler
     const handleRowClick = useCallback(
@@ -71,16 +98,19 @@ const TableView = ({ items }) => {
     // Memoized column helper
     const columnHelper = useMemo(() => createColumnHelper(), []);
 
-    // Memoized columns with proper dependency array
+    // Memoized columns (No changes needed here)
     const columns = useMemo(
         () => [
             columnHelper.accessor('name', {
                 header: 'Task',
                 cell: ({ row }) => {
                     const task = row.original;
-                    const status = taskStatus[task.id] !== undefined
-                        ? (taskStatus[task.id] ? 'completed' : 'pending')
-                        : task.status;
+                    const status =
+                        taskStatus[task.id] !== undefined
+                            ? taskStatus[task.id]
+                                ? 'completed'
+                                : 'pending'
+                            : task.status;
                     const isCompleted = status === 'completed';
 
                     return <TaskNameCell name={task.name} isCompleted={isCompleted} />;
@@ -90,11 +120,13 @@ const TableView = ({ items }) => {
                 header: 'Status',
                 cell: ({ row }) => {
                     const task = row.original;
-                    const status = taskStatus[task.id] !== undefined
-                        ? (taskStatus[task.id] ? 'completed' : 'pending')
-                        : task.status;
+                    const status =
+                        taskStatus[task.id] !== undefined
+                            ? taskStatus[task.id]
+                                ? 'completed'
+                                : 'pending'
+                            : task.status;
 
-                    // Determine color based on status
                     let chipColor;
                     let statusText;
 
@@ -111,11 +143,7 @@ const TableView = ({ items }) => {
 
                     return (
                         <div onClick={(e) => e.stopPropagation()}>
-                            <Chip
-                                size="sm"
-                                variant="flat"
-                                color={chipColor}
-                            >
+                            <Chip size="sm" variant="flat" color={chipColor}>
                                 {statusText}
                             </Chip>
                         </div>
@@ -127,9 +155,12 @@ const TableView = ({ items }) => {
                 header: 'Date',
                 cell: ({ getValue, row }) => {
                     const task = row.original;
-                    const status = taskStatus[task.id] !== undefined
-                        ? (taskStatus[task.id] ? 'completed' : 'pending')
-                        : task.status;
+                    const status =
+                        taskStatus[task.id] !== undefined
+                            ? taskStatus[task.id]
+                                ? 'completed'
+                                : 'pending'
+                            : task.status;
                     const isCompleted = status === 'completed';
 
                     return <DateCell date={getValue()} isCompleted={isCompleted} />;
@@ -195,31 +226,28 @@ const TableView = ({ items }) => {
         setPagination(updatedPagination);
     }, []);
 
-    // Handle sorting state changes
+    // The sorting handler now just updates the state. The `useEffect` hook will handle persistence.
     const handleSortingChange = useCallback((updatedSorting) => {
         setSorting(updatedSorting);
     }, []);
 
-    // Memoized options for DataGrid - moved above conditional returns to maintain hook order
+    // Memoized options for DataGrid
     const gridOptions = useMemo(
         () => ({
-            initialState: {
-                sorting: sorting,
-                pagination: pagination,
-            },
+            // Remove initialState, as the `state` prop now fully controls it
             state: {
                 sorting: sorting,
                 pagination: pagination,
             },
             onSortingChange: handleSortingChange,
             onPaginationChange: handlePaginationChange,
-            manualPagination: false, // Let the table handle pagination internally
+            manualPagination: false,
         }),
         [sorting, pagination, handleSortingChange, handlePaginationChange],
     );
 
     return (
-        <div className="border-1 border-content3 rounded-xl bg-content1">
+        <div className="border-1 border-content3 rounded-xl bg-content1 mb-16">
             {selectedTask && (
                 <TaskDetailModalWrapper
                     isOpen={isDetailModalOpen}
@@ -238,7 +266,6 @@ const TableView = ({ items }) => {
     );
 };
 
-// Add displayName for better debugging
 TableView.displayName = 'TableView';
 
 export default TableView;

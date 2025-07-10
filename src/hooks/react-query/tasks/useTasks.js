@@ -343,6 +343,11 @@ export const useUpdateTask = (currentWorkspace) => {
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
                 refetchType: 'all',
             });
+            // Reset fuzzy search tasks queries
+            queryClient.invalidateQueries({
+                queryKey: ['fuzzySearchTasks', currentWorkspace?.workspace_id],
+                refetchType: 'all',
+            });
 
             const previousTask = context.previousTask;
 
@@ -479,6 +484,11 @@ export const useDeleteTask = (currentWorkspace) => {
             });
             queryClient.invalidateQueries({
                 queryKey: ['backlogTasks', currentWorkspace?.workspace_id],
+                refetchType: 'all',
+            });
+            // Reset fuzzy search tasks queries
+            queryClient.invalidateQueries({
+                queryKey: ['fuzzySearchTasks', currentWorkspace?.workspace_id],
                 refetchType: 'all',
             });
 

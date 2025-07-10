@@ -31,7 +31,7 @@ function PricingCard({
     }
 
     // Conditional styling for LTD and highlighted plans
-    const cardClasses = `grow basis-1/2 max-w-[340px]  flex flex-col ${
+    const cardClasses = `grow basis-[200px] max-w-[320px]  flex flex-col ${
         highlight && !isLTD ? 'border-2 border-primary-400/60 ' : ''
     } ${
         isLTD || highlight

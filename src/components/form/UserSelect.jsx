@@ -5,6 +5,7 @@ import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { RiUserLine } from 'react-icons/ri';
 import { Avatar, Spinner } from '@heroui/react';
 import { useUser } from '../../hooks/react-query/user/useUser';
+import BoringAvatar from 'boring-avatars';
 
 const UserSelect = ({
     label = 'Unassigned',
@@ -37,10 +38,17 @@ const UserSelect = ({
                 label: member.name || member.email,
                 value: member.user_id,
                 avatar: member.avatar,
-                startContent: (
+                startContent: member?.avatar ? (
                     <Avatar
-                        src={`${member.avatar}/w=60?t=${member?.updated_at}`}
+                        src={`${member.avatar}/w=24?t=${member?.updated_at}`}
                         className="w-6 h-6"
+                    />
+                ) : (
+                    <BoringAvatar
+                        name={member.name || member.email}
+                        size={24}
+                        variant="beam"
+                        colors={['#fbbf24', '#735587', '#5bc0be', '#6366f1']}
                     />
                 ),
             }));
@@ -68,6 +76,8 @@ const UserSelect = ({
         if (defaultValue === null) return null;
         return userOptions.find((opt) => opt.value === defaultValue);
     }, [defaultValue, userOptions]);
+
+    console.log(selectedOptionObject);
 
     if (members?.length < 2) {
         return null;
@@ -103,8 +113,8 @@ const UserSelect = ({
             disabled={disabled}
             icon={
                 // The icon is now correctly based on the derived selectedOptionObject
-                selectedOptionObject ? (
-                    <Avatar src={`${selectedOptionObject.avatar}/w=60`} className="w-6 h-6" />
+                label !== 'Unassigned' ? (
+                    selectedOptionObject.startContent
                 ) : (
                     <RiUserLine fontSize="1rem" />
                 )

@@ -175,7 +175,7 @@ function DashboardPage() {
             case 'kanban':
                 return <KanbanView items={todayTasks} />;
             case 'table':
-                return <TableView items={todayTasks} />;
+                return <TableView pageKey="today" items={todayTasks} />;
             default:
                 // Fallback for an unrecognized pageView or a default view
                 return <p>Select a valid view mode.</p>;
