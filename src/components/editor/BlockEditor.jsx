@@ -71,7 +71,7 @@ const BlockEditor = ({
         editable: isEditable,
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-[10vh] p-3 max-w-full',
+                class: 'prose dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-[10vh] p-3 max-w-full text-foreground',
             },
         },
         onBlur: ({ editor }) => {

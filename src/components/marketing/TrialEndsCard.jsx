@@ -27,7 +27,7 @@ function TrialEndsCard() {
             <Card
                 shadow="none"
                 isPressable
-                className="bg-content3 border-1 border-default-300 shadow-none hover:scale-105 cursor-pointer"
+                className={`bg-gradient-to-b from-secondary-50 to-content2 border-1 border-default-300 shadow-none hover:scale-105 cursor-pointer`}
                 onPress={handleClick}
             >
                 <CardBody className="text-center">
@@ -44,7 +44,8 @@ function TrialEndsCard() {
                             isDisabled
                             size="sm"
                             color="secondary"
-                            className="text-secondary-900 opacity-90 font-medium"
+                            className="opacity-100 font-medium"
+                            variant="shadow"
                             endContent={<RiArrowRightLine fontSize="1rem" />}
                         >
                             Get lifetime access

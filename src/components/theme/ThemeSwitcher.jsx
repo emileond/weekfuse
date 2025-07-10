@@ -16,43 +16,43 @@ const ThemePreviewCard = ({ themeInfo, isSelected, onSelect }) => {
             border: isSelected ? 'border-primary' : 'border-default-200',
         },
         latte: {
-            bg: 'bg-white',
-            primary: 'bg-[#31a2a9]',
-            secondary: 'bg-[#ca6a9e]',
-            default400: 'bg-[#ac9b8b]',
-            default300: 'bg-[#c8beb2]',
+            bg: 'bg-[#fdfaf9]',
+            primary: 'bg-[#725cad]',
+            secondary: 'bg-[#ef7d8e]',
+            default400: 'bg-[#a8a29e]',
+            default300: 'bg-[#d6d3d1]',
             border: isSelected ? 'border-primary' : 'border-default-200',
         },
-        forest: {
-            bg: 'bg-[#f8fbf8]',
-            primary: 'bg-[#4a6d6f]',
-            secondary: 'bg-[#735587]',
-            default400: 'bg-[#b6b0a7]',
-            default300: 'bg-[#d4d0cb]',
+        nord: {
+            bg: 'bg-[#f2f4f8]',
+            primary: 'bg-[#725cad]',
+            secondary: 'bg-[#90b1ca]',
+            default400: 'bg-[#94a3b8]',
+            default300: 'bg-[#cbd5e1]',
             border: isSelected ? 'border-primary' : 'border-default-200',
         },
         dark: {
-            bg: 'bg-[#141210]',
-            primary: 'bg-[#735587]',
+            bg: 'bg-[#030712]',
+            primary: 'bg-[#725cad]',
             secondary: 'bg-[#5bc0be]',
-            default400: 'bg-[#d7d3d0]', // 600 for dark themes
-            default300: 'bg-[#b4afa8]', // 500 for dark themes
-            border: isSelected ? 'border-primary' : 'border-default-700',
-        },
-        'slate-dark': {
-            bg: 'bg-slate-500',
-            primary: 'bg-[#3b82f6]',
-            secondary: 'bg-[#06b6d4]',
-            default400: 'bg-[#cbd5e1]',
-            default300: 'bg-[#94a3b8]',
+            default400: 'bg-[#1f2937]', // 600 for dark themes
+            default300: 'bg-[#374151]', // 500 for dark themes
             border: isSelected ? 'border-rose-500' : 'border-slate-700',
         },
-        'midnight-dark': {
-            bg: 'bg-[#111119]',
-            primary: 'bg-[#6366f1]',
-            secondary: 'bg-[#0ea5e9]',
-            default400: 'bg-[#c4b5fd]',
-            default300: 'bg-[#ddd6fe]',
+        'synth-dark': {
+            bg: 'bg-[#09002f]',
+            primary: 'bg-[#795ace]',
+            secondary: 'bg-[#5bc0be]',
+            default400: 'bg-[#475569]',
+            default300: 'bg-[#334155]',
+            border: isSelected ? 'border-rose-500' : 'border-slate-700',
+        },
+        'sunset-dark': {
+            bg: 'bg-[#182026]',
+            primary: 'bg-[#ef7d8e]',
+            secondary: 'bg-[#725cad]',
+            default400: 'bg-[#454c5c]',
+            default300: 'bg-[#2f3540]',
             border: isSelected ? 'border-rose-500' : 'border-slate-700',
         },
     };
@@ -95,10 +95,10 @@ export default function ThemeSwitcher({ isOnboarding }) {
         () => [
             { key: 'light', label: 'Classic Light' },
             { key: 'latte', label: 'Latte' },
-            { key: 'forest', label: 'Forest' },
+            { key: 'nord', label: 'Nord' },
             { key: 'dark', label: 'Classic Dark' },
-            { key: 'slate-dark', label: 'Slate' },
-            { key: 'midnight-dark', label: 'Midnight' },
+            { key: 'synth-dark', label: 'Synthwave' },
+            { key: 'sunset-dark', label: 'Midnight' },
         ],
         [],
     );

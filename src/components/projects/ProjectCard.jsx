@@ -59,8 +59,8 @@ const ProjectCard = ({ project }) => {
                 onOpenChange={onDeleteConfirmationOpenChange}
                 project={project}
             />
-            <div key={project.id} className="border rounded-lg overflow-hidden">
-                <div className="w-full flex items-center gap-3 justify-between p-3 bg-default-50">
+            <div key={project.id} className="border rounded-lg overflow-hidden border-content2">
+                <div className="w-full flex items-center gap-3 justify-between p-3 bg-background">
                     <div className="flex items-center gap-2">
                         <Link
                             to={`/projects/${project.id}/tasks`}

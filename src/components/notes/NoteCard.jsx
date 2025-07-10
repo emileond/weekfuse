@@ -158,7 +158,7 @@ const NoteCard = ({ note, currentWorkspace }) => {
                                             updates: { is_pinned: !note.is_pinned },
                                         });
                                     }}
-                                    className={`${note.is_pinned ? 'text-orange-500' : 'text-default-500 hover:text-default-700'}`}
+                                    className={`${note.is_pinned ? 'text-orange-500' : 'text-default-600 hover:text-default-700'}`}
                                 >
                                     {note.is_pinned ? (
                                         <RiPushpinFill fontSize="1rem" />
@@ -173,7 +173,7 @@ const NoteCard = ({ note, currentWorkspace }) => {
                                     size="sm"
                                     isIconOnly
                                     onPress={handleEdit}
-                                    className="text-default-500 hover:text-default-700"
+                                    className="text-default-600 hover:text-default-700"
                                 >
                                     <RiEdit2Line fontSize="1rem" />
                                 </Button>
@@ -200,7 +200,7 @@ const NoteCard = ({ note, currentWorkspace }) => {
                 >
                     {hasOverflow && !isEditable && (
                         <div
-                            className="flex items-center justify-center absolute bottom-0 left-0 z-10 w-full text-sm text-center text-default-500 bg-content1 hover:bg-content2 h-8 cursor-pointer transition-opacity duration-300 ease-in-out"
+                            className="flex items-center justify-center absolute bottom-0 left-0 z-10 w-full text-sm text-center text-default-600 bg-content1 hover:bg-content2 h-8 cursor-pointer transition-opacity duration-300 ease-in-out"
                             onClick={handleCardClick}
                         >
                             {isExpanded ? 'See less' : 'See more'}
@@ -243,7 +243,7 @@ const NoteCard = ({ note, currentWorkspace }) => {
                             </Button>
                         </>
                     ) : (
-                        <p className="text-sm text-default-500 py-2">
+                        <p className="text-sm text-default-600 py-2">
                             {formatDate(note.updated_at, { dateStyle: 'long' })}
                         </p>
                     )}

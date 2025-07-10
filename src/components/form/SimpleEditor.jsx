@@ -65,7 +65,7 @@ const SimpleEditor = ({
         editable: isEditable,
         editorProps: {
             attributes: {
-                class: `prose prose-sm dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
+                class: `text-foreground prose prose-sm dark:prose-invert prose-a:text-blue-500 focus:outline-none min-h-48 p-3 max-w-full rounded-lg border-2 border-default-200 ${isEditable && 'hover:border-default-300'}`,
             },
         },
         onUpdate: ({ editor }) => {

@@ -137,7 +137,10 @@ function TeamPage() {
                         </TableHeader>
                         <TableBody items={workspaceMembers || []}>
                             {(member) => (
-                                <TableRow key={member.id} className="border-b-1 last:border-b-0">
+                                <TableRow
+                                    key={member.id}
+                                    className="border-b-1 last:border-b-0 border-default-300"
+                                >
                                     {(columnKey) => (
                                         <TableCell>
                                             <MemberCard
@@ -183,12 +186,8 @@ function TeamPage() {
                                             editMember ? [editMember.role] : ['member']
                                         }
                                     >
-                                        <SelectItem key="admin">
-                                            Admin
-                                        </SelectItem>
-                                        <SelectItem key="member">
-                                            Member
-                                        </SelectItem>
+                                        <SelectItem key="admin">Admin</SelectItem>
+                                        <SelectItem key="member">Member</SelectItem>
                                     </Select>
                                 </div>
                             </ModalBody>
