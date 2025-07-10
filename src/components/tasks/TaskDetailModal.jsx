@@ -1,16 +1,7 @@
-import {
-    Modal,
-    ModalContent,
-    ModalBody,
-    ModalFooter,
-    Button,
-    Input,
-    Divider,
-    useDisclosure,
-} from '@heroui/react';
+import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
-import { useUpdateTask, useDeleteTask } from '../../hooks/react-query/tasks/useTasks.js';
+import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import {
     useTasksAttachments,
     useDeleteTaskAttachment,
@@ -297,7 +288,6 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                                             <h4 className="text-xl font-medium">{watch('name')}</h4>
                                         </div>
                                     )}
-                                    <TaskOptionsDropdown onAction={onAction} />
                                 </div>
                                 <div>
                                     <SimpleEditor
@@ -390,22 +380,23 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                                             disabled={isExternal}
                                         />
                                     </div>
-                                    {task.status === 'completed' && task.completed_at && (
-                                        <div className="flex gap-1 text-xs text-default-500 font-medium">
-                                            <RiCheckboxCircleLine fontSize="1rem" />
-                                            Completed on{' '}
-                                            {Intl.DateTimeFormat(navigator.language, {
-                                                dateStyle: 'medium',
-                                            }).format(new Date(task.completed_at))}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </ModalBody>
                         <Divider />
                         <ModalFooter className="flex justify-between">
-                            <div></div>
-                            <div className="flex gap-2">
+                            <div>
+                                {task.status === 'completed' && task.completed_at && (
+                                    <div className="flex gap-1 text-xs text-default-500 font-medium">
+                                        <RiCheckboxCircleLine fontSize="1rem" />
+                                        Completed on{' '}
+                                        {Intl.DateTimeFormat(navigator.language, {
+                                            dateStyle: 'medium',
+                                        }).format(new Date(task.completed_at))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <Button
                                     variant="light"
                                     onPress={() => {
@@ -419,6 +410,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                                 <Button color="primary" type="submit" isLoading={isPending}>
                                     Save Changes
                                 </Button>
+                                <TaskOptionsDropdown onAction={onAction} />
                             </div>
                         </ModalFooter>
                     </form>
