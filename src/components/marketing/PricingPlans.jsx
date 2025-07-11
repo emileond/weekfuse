@@ -43,7 +43,7 @@ const subscriptionPlans = [
 
 const ltdPlans = [
     {
-        name: 'Personal Lifetime',
+        name: 'Personal Plan',
         price: 69, // One-time price
         features: [
             '1 User',
@@ -57,7 +57,7 @@ const ltdPlans = [
         variantId: ltdVariantIds.personal,
     },
     {
-        name: 'Team Lifetime',
+        name: 'Team Plan',
         price: 199, // One-time price
         features: [
             '20 Users',

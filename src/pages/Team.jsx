@@ -173,6 +173,7 @@ function TeamPage() {
                                         {...register('email', { required: true })}
                                         label="Email"
                                         type="email"
+                                        autoComplete="off"
                                         isInvalid={errors.email}
                                         isDisabled={editMember}
                                         errorMessage="Email is required"

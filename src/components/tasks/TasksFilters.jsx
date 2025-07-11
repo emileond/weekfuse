@@ -7,6 +7,7 @@ import IntegrationSourceSelect from '../form/IntegrationSourceSelect.jsx';
 import PrioritySelect from '../form/PrioritySelect.jsx';
 import StatusSelect from '../form/StatusSelect.jsx';
 import { RiFilterOffLine } from 'react-icons/ri';
+import UserSelect from '../form/UserSelect.jsx';
 
 function TasksFilters({
     onFiltersChange,
@@ -17,6 +18,7 @@ function TasksFilters({
     showMilestoneFilter = true,
     preserveProjectFilter = false,
     preserveMilestoneFilter = false,
+    defaultToAllUsers,
 }) {
     // Filter state variables
     const [selectedProject, setSelectedProject] = useState(initialFilters.project_id || null);
@@ -29,6 +31,7 @@ function TasksFilters({
         initialFilters.priority ? { key: initialFilters.priority.toString() } : null,
     );
     const [selectedStatuses, setSelectedStatuses] = useState(initialFilters.statuses || null);
+    const [selectedAssignees, setSelectedAssignees] = useState(initialFilters.statuses || []);
     const [resetKey, setResetKey] = useState(0); // Add a key to force re-render of filter components
 
     // Set initial filters visibility (always visible now)
@@ -48,7 +51,9 @@ function TasksFilters({
                 integration_source: selectedIntegrationSource,
                 priority: selectedPriority?.key ? parseInt(selectedPriority.key) : null,
                 statusList: selectedStatuses,
+                assignees: selectedAssignees.length > 0 ? selectedAssignees : null,
             };
+            console.log(filters);
             onFiltersChange(filters);
         }
     }, [
@@ -58,6 +63,7 @@ function TasksFilters({
         selectedIntegrationSource,
         selectedPriority,
         selectedStatuses,
+        selectedAssignees,
         onFiltersChange,
     ]);
 
@@ -78,6 +84,7 @@ function TasksFilters({
         setSelectedIntegrationSource(null);
         setSelectedPriority(null);
         setSelectedStatuses(null);
+        setSelectedAssignees([]);
 
         setResetKey((prevKey) => prevKey + 1); // Increment reset key to force re-render
     };
@@ -89,7 +96,8 @@ function TasksFilters({
         selectedTags.length > 0 ||
         selectedIntegrationSource ||
         selectedPriority ||
-        selectedStatuses;
+        selectedStatuses ||
+        selectedAssignees.length > 0;
 
     return (
         <div>
@@ -159,6 +167,12 @@ function TasksFilters({
                         selectedPriority &&
                         'text-default-800 bg-default-100 border-1 border-default-300'
                     }
+                />
+                <UserSelect
+                    defaultToCurrentUser
+                    multiSelect
+                    onChange={setSelectedAssignees}
+                    defaultToAllUsers={defaultToAllUsers}
                 />
                 {hasActiveFilters && (
                     <Button

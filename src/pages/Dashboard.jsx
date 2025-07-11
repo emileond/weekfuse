@@ -10,7 +10,7 @@ import {
 import useCurrentWorkspace from '../hooks/useCurrentWorkspace';
 import { useTasks, useUpdateMultipleTasks } from '../hooks/react-query/tasks/useTasks.js';
 import TasksFilters from '../components/tasks/TasksFilters.jsx';
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import Paywall from '../components/marketing/Paywall';
 import NewTaskModal from '../components/tasks/NewTaskModal.jsx';
 import dayjs from 'dayjs';
@@ -51,6 +51,7 @@ function DashboardPage() {
         tags: null,
         integration_source: null,
         priority: null,
+        assignees: null,
     });
     const queryClient = useQueryClient();
     const { data: todayTasks, refetch: refetchToday } = useTasks(currentWorkspace, {
@@ -93,6 +94,11 @@ function DashboardPage() {
         }
         return taskOverloadMessageRef.current;
     };
+
+    const handleFiltersChange = useCallback((newFilters) => {
+        setFilters(newFilters);
+        // Any other logic you have...
+    }, []);
 
     // Handle dismissing the task overload alert
     const handleDismiss = () => {
@@ -245,7 +251,7 @@ function DashboardPage() {
                 <TasksFilters
                     showFilters={showFilters}
                     onShowFiltersChange={setShowFilters}
-                    onFiltersChange={setFilters}
+                    onFiltersChange={handleFiltersChange}
                     initialFilters={filters}
                 />
                 <div className="flex flex-col gap-3 mb-9">

@@ -14,10 +14,11 @@ const fetchTasks = async ({
     tags,
     integration_source,
     priority,
-    includeInProgress, // <-- Add this new parameter
+    assignees,
+    includeInProgress,
 }) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
-
+    console.log(assignees);
     if (id) {
         query = query.eq('id', id).single(); // Fetch single item
     } else {
@@ -54,6 +55,12 @@ const fetchTasks = async ({
 
         if (typeof priority === 'number') {
             query = query.eq('priority', priority);
+        }
+        if (assignees) {
+            query = query.in('assignee', assignees);
+        }
+        if (!assignees) {
+            query = query.is('assignee', null);
         }
 
         query = query.order('order');

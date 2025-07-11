@@ -1,11 +1,5 @@
 import { Button, Card, CardBody, CardFooter, CardHeader, Chip, Divider } from '@heroui/react';
-import {
-    RiRocket2Fill,
-    RiCheckFill,
-    RiFireFill,
-    RiPriceTag2Fill,
-    RiPriceTag3Fill,
-} from 'react-icons/ri';
+import { RiCheckFill, RiFireFill } from 'react-icons/ri';
 import { Link } from 'react-router-dom';
 
 function PricingCard({
@@ -50,7 +44,8 @@ function PricingCard({
                         size="sm"
                         color="secondary"
                         variant="flat"
-                        startContent={<RiPriceTag3Fill fontSize="0.9rem" className="mr-1" />}
+                        className="bg-[#fef2f3] text-[#e44f6a]"
+                        startContent={<RiFireFill fontSize="0.9rem" className="mr-1" />}
                     >
                         Lifetime deal
                     </Chip>

@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CreatableSelect from './CreatableSelect';
 import { useWorkspaceMembers } from '../../hooks/react-query/teams/useWorkspaceMembers';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import { RiUserLine } from 'react-icons/ri';
-import { Avatar, Spinner } from '@heroui/react';
+import { Avatar, AvatarGroup, Spinner } from '@heroui/react';
 import { useUser } from '../../hooks/react-query/user/useUser';
 import BoringAvatar from 'boring-avatars';
 
@@ -18,10 +18,12 @@ const UserSelect = ({
     disabled = false,
     multiSelect = false,
     defaultToCurrentUser = false,
+    defaultToAllUsers = false,
 }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { data: members, isLoading } = useWorkspaceMembers(currentWorkspace);
     const { data: currentUser } = useUser();
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     // Filter members by role and status, then map to options
     const userOptions = useMemo(() => {
@@ -56,7 +58,12 @@ const UserSelect = ({
 
     // 2. MODIFY THE useEffect to respect the new prop
     useEffect(() => {
-        // This logic now ONLY runs if the prop is explicitly true
+        if (defaultToAllUsers && multiSelect && userOptions.length > 0 && defaultValue === null) {
+            const allValues = userOptions.map((opt) => opt.value);
+            setSelectedUsers(allValues);
+            onChange(allValues);
+        }
+
         if (
             defaultToCurrentUser &&
             userOptions.length > 0 &&
@@ -65,19 +72,28 @@ const UserSelect = ({
         ) {
             const currentUserOption = userOptions.find((opt) => opt.value === currentUser.id);
             if (currentUserOption) {
-                // We don't need internal state. Just call the parent's onChange.
-                onChange(currentUserOption);
+                const defaultVal = multiSelect
+                    ? [currentUserOption.value]
+                    : currentUserOption.value;
+                setSelectedUsers(defaultVal); // Only store the value(s)
+                onChange(defaultVal); // Only pass value(s)
             }
         }
-    }, [userOptions, currentUser, defaultValue, onChange, defaultToCurrentUser]);
+    }, [
+        userOptions,
+        currentUser,
+        defaultValue,
+        onChange,
+        defaultToCurrentUser,
+        multiSelect,
+        defaultToAllUsers,
+    ]);
 
     // DERIVE the option object to display from the defaultValue prop
     const selectedOptionObject = useMemo(() => {
         if (defaultValue === null) return null;
         return userOptions.find((opt) => opt.value === defaultValue);
     }, [defaultValue, userOptions]);
-
-    console.log(selectedOptionObject);
 
     if (members?.length < 2) {
         return null;
@@ -87,34 +103,47 @@ const UserSelect = ({
         <Spinner color="default" variant="wave" size="sm" />
     ) : (
         <CreatableSelect
-            label={label}
+            label={selectedUsers?.length > 0 ? 'user' : label}
             placeholder={placeholder}
             options={userOptions}
             // 3. MODIFY THE defaultValue prop to respect the new prop
             defaultValue={
                 defaultValue
-                    ? selectedOptionObject
-                    : defaultToCurrentUser
-                      ? userOptions?.find((opt) => opt.value === currentUser?.id)
-                      : null // If no defaultValue and not defaulting to current user, it's null.
+                    ? multiSelect
+                        ? userOptions.filter((opt) => defaultValue.includes(opt.value))
+                        : userOptions.find((opt) => opt.value === defaultValue)
+                    : defaultToAllUsers && multiSelect
+                      ? userOptions
+                      : defaultToCurrentUser
+                        ? multiSelect
+                            ? userOptions.filter((opt) => opt.value === currentUser?.id)
+                            : userOptions.find((opt) => opt.value === currentUser?.id)
+                        : null
             }
             onChange={(value) => {
-                // 'value' from CreatableSelect is just the user ID
-                if (multiSelect) {
-                    // Multi-select logic here...
-                } else {
-                    const option = userOptions.find((opt) => opt.value === value) || null;
-                    onChange(option); // Pass the full option object or null to the parent
-                }
+                console.log(value);
+                setSelectedUsers(value);
+                onChange(value);
             }}
             placement={placement}
             className={className}
             triggerClassName={triggerClassName}
             disabled={disabled}
             icon={
-                // The icon is now correctly based on the derived selectedOptionObject
-                label !== 'Unassigned' ? (
-                    selectedOptionObject.startContent
+                selectedUsers?.length > 0 ? (
+                    <AvatarGroup max={3}>
+                        {Array.isArray(selectedUsers) &&
+                            selectedUsers
+                                .map((selected) =>
+                                    userOptions.find((opt) =>
+                                        typeof selected === 'object'
+                                            ? opt.value === selected.value
+                                            : opt.value === selected,
+                                    ),
+                                )
+                                .filter(Boolean)
+                                .map((user) => <div key={user.value}>{user.startContent}</div>)}
+                    </AvatarGroup>
                 ) : (
                     <RiUserLine fontSize="1rem" />
                 )

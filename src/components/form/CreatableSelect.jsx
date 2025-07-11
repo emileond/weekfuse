@@ -148,7 +148,11 @@ const CreatableSelect = ({
                         size="sm"
                         variant="light"
                         className={`text-default-600 ${triggerClassName} max-w-56`}
-                        startContent={selectedOption?.startContent || icon}
+                        startContent={
+                            multiple
+                                ? icon // let the parent control multi-select avatars via prop
+                                : selectedOption?.startContent || icon
+                        }
                         disabled={disabled}
                         onPress={() => setIsOpen(true)}
                     >

@@ -148,6 +148,7 @@ function ProjectTasksPage() {
                             project_id: effectiveProjectId,
                             milestone_id: milestoneId,
                         }}
+                        defaultToAllUsers
                     />
                 )}
 
