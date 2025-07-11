@@ -59,7 +59,7 @@ const ProjectCard = ({ project }) => {
                 onOpenChange={onDeleteConfirmationOpenChange}
                 project={project}
             />
-            <div key={project.id} className="border rounded-lg overflow-hidden border-content2">
+            <div key={project.id} className="border rounded-lg overflow-hidden border-content4">
                 <div className="w-full flex items-center gap-3 justify-between p-3 bg-background">
                     <div className="flex items-center gap-2">
                         <Link

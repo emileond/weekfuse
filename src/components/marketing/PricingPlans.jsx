@@ -63,7 +63,7 @@ const ltdPlans = [
             '20 Users',
             'Unlimited Guests',
             '200Gb Storage',
-            'Assign tasks to team members',
+            'Collaboration features',
             'API access',
             'All Features in Personal',
             'All Future Updates',
