@@ -1,15 +1,15 @@
-import { Modal, ModalContent, ModalBody, ModalFooter, Button, Input, Divider } from '@heroui/react';
+import { Button, Divider, Input, Modal, ModalBody, ModalContent, ModalFooter } from '@heroui/react';
 import dayjs from 'dayjs';
 import { useForm } from 'react-hook-form';
 import { useUpdateTask } from '../../hooks/react-query/tasks/useTasks.js';
 import {
-    useTasksAttachments,
     useDeleteTaskAttachment,
+    useTasksAttachments,
 } from '../../hooks/react-query/tasks/useTasksAttachments.js';
 import { useQueryClient } from '@tanstack/react-query';
 import useCurrentWorkspace from '../../hooks/useCurrentWorkspace';
 import toast from 'react-hot-toast';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DatePicker from '../../components/form/DatePicker';
 import ProjectSelect from '../form/ProjectSelect.jsx';
 import MilestoneSelect from '../form/MilestoneSelect.jsx';
@@ -157,13 +157,11 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                     formData.append('task_id', task.id);
                     formData.append('workspace_id', currentWorkspace?.workspace_id);
 
-                    const response = await ky
+                    return await ky
                         .post('/api/task/attachments', {
                             body: formData,
                         })
                         .json();
-
-                    return response;
                 } catch (error) {
                     console.error('Error uploading file:', error);
                     toast.error(`Failed to upload ${file.name}`);

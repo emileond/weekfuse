@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Modal,
     ModalContent,
@@ -27,27 +27,31 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import UFuzzy from '@leeoniya/ufuzzy';
 import TaskCard from './tasks/TaskCard.jsx';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { handleHelpClick } from '../utils/charla/handleHelpClick.js';
+import { useNavigate } from 'react-router-dom';
 
 const CommandPalette = () => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const { isOpen: isNewTaskModalOpen, onOpenChange: onNewTaskModalOpenChange } = useDisclosure();
-    const { isOpen: isThemeSwitcherOpen, onOpenChange: onThemeSwitcherOpenChange } = useDisclosure();
+    const { isOpen: isThemeSwitcherOpen, onOpenChange: onThemeSwitcherOpenChange } =
+        useDisclosure();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [activeSection, setActiveSection] = useState('commands'); // 'commands' or 'tasks'
     const searchInputRef = useRef(null);
     const [parent] = useAutoAnimate();
+    const navigate = useNavigate();
 
     // Commands list
     const ICON_SIZE = '1.2rem';
     const commands = [
-        {
-            id: 'ask-ai',
-            name: 'Ask AI',
-            leftIcon: <RiRobot2Line fontSize={ICON_SIZE} className="text-default-500" />,
-        },
+        // {
+        //     id: 'ask-ai',
+        //     name: 'Ask AI',
+        //     leftIcon: <RiRobot2Line fontSize={ICON_SIZE} className="text-default-500" />,
+        // },
         {
             id: 'new-task',
             name: 'New task',
@@ -185,10 +189,10 @@ const CommandPalette = () => {
                 onThemeSwitcherOpenChange();
                 break;
             case 'suggest-feature':
-                console.log('Suggest feature');
+                window.open('https://weekfuse.com/feature-requests', '_blank');
                 break;
             case 'help':
-                console.log('Help');
+                handleHelpClick();
                 break;
             default:
                 break;

@@ -29,14 +29,16 @@ import { useUserProfile } from '../../hooks/react-query/user/useUserProfile.js';
 import { useCallback, useEffect, useState } from 'react';
 import ThemeSwitcher from '../theme/ThemeSwitcher.jsx';
 import BoringAvatar from 'boring-avatars';
+import { handleHelpClick } from '../../utils/charla/handleHelpClick.js'; // Make sure this path is correct
 
 function UserMenu({ avatarOnly }) {
     const queryClient = useQueryClient();
     const { data: user } = useUser();
     const { data: userProfile, isPending: isUserProfilePending } = useUserProfile(user);
     const { mutateAsync: logoutUser } = useLogout();
-    const [isReady, setIsReady] = useState(false);
-    const [chatOpened, setChatOpened] = useState(false);
+
+    const [isReady, setIsReady] = useState(false); // This will be set by the 'charla:widgetLoaded' event
+    const [chatOpened, setChatOpened] = useState(false); // Track if chat has been opened for the current session
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
     const USER_ICON_SIZE = 20;
@@ -49,7 +51,25 @@ function UserMenu({ avatarOnly }) {
 
     const avatarUrl = userProfile?.avatar ? `${userProfile?.avatar}/w=60` : null;
 
+    // useEffect to manage the 'charla:widgetLoaded' event listener
     useEffect(() => {
+        const handleCharlaWidgetLoaded = () => {
+            console.log('Charla widget loaded!');
+            setIsReady(true); // Set isReady to true when the widget confirms loading
+        };
+
+        // Add the event listener when the component mounts
+        document.addEventListener('charla:widgetLoaded', handleCharlaWidgetLoaded);
+
+        // Cleanup function: Remove the event listener when the component unmounts
+        return () => {
+            document.removeEventListener('charla:widgetLoaded', handleCharlaWidgetLoaded);
+        };
+    }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+
+    // useEffect to open chat and update visitor attributes when isReady changes
+    useEffect(() => {
+        // Only proceed if widget is ready, user data is available, and chat hasn't been opened yet
         if (isReady && user && !chatOpened) {
             try {
                 const addUserProfile = new CustomEvent('charla:updateVisitorAttributes', {
@@ -63,26 +83,12 @@ function UserMenu({ avatarOnly }) {
                 const charlaOpenWidgetEvent = new Event('charla:openWidget');
                 document.dispatchEvent(charlaOpenWidgetEvent);
 
-                setChatOpened(true);
+                setChatOpened(true); // Mark chat as opened to prevent re-triggering
             } catch (error) {
                 console.error('Failed to initialize chat widget:', error);
             }
         }
-    }, [isReady, user, chatOpened]);
-
-    const handleHelpClick = () => {
-        let widgetElement = document.createElement('charla-widget');
-        widgetElement.setAttribute('p', '7fb0b19a-18a6-41e2-8209-a022a6d4c4d9');
-        document.body.appendChild(widgetElement);
-
-        let widgetCode = document.createElement('script');
-        widgetCode.src = 'https://app.getcharla.com/widget/widget.js';
-        document.body.appendChild(widgetCode);
-
-        document.addEventListener('charla:widgetLoaded', () => {
-            setIsReady(true);
-        });
-    };
+    }, [isReady, user, chatOpened]); // Dependencies: re-run if isReady, user, or chatOpened changes
 
     if (!user || isUserProfilePending) return null;
 
@@ -149,7 +155,10 @@ function UserMenu({ avatarOnly }) {
                         </DropdownItem>
                         <DropdownItem
                             startContent={<RiQuestionLine fontSize={USER_ICON_SIZE} />}
-                            onPress={handleHelpClick}
+                            onPress={() => {
+                                handleHelpClick();
+                                setChatOpened(false);
+                            }}
                         >
                             Help
                         </DropdownItem>
