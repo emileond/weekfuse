@@ -98,7 +98,7 @@ export default function ThemeSwitcher({ isOnboarding }) {
             { key: 'nord', label: 'Nord' },
             { key: 'dark', label: 'Classic Dark' },
             { key: 'synth-dark', label: 'Synthwave' },
-            { key: 'sunset-dark', label: 'Midnight' },
+            { key: 'sunset-dark', label: 'Sunset' },
         ],
         [],
     );

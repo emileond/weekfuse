@@ -121,7 +121,6 @@ const UserSelect = ({
                         : null
             }
             onChange={(value) => {
-                console.log(value);
                 setSelectedUsers(value);
                 onChange(value);
             }}

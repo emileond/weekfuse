@@ -53,7 +53,6 @@ function TasksFilters({
                 statusList: selectedStatuses,
                 assignees: selectedAssignees.length > 0 ? selectedAssignees : null,
             };
-            console.log(filters);
             onFiltersChange(filters);
         }
     }, [

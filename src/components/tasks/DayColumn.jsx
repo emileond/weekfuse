@@ -13,7 +13,7 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const DayColumn = ({ day }) => {
+const DayColumn = ({ day, filters }) => {
     const [currentWorkspace] = useCurrentWorkspace();
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
 
@@ -21,6 +21,7 @@ const DayColumn = ({ day }) => {
     const endDate = dayjs(day)?.endOf('day').toISOString();
 
     const { data: tasks } = useTasks(currentWorkspace, {
+        ...filters,
         startDate,
         endDate,
     });

@@ -18,7 +18,6 @@ const fetchTasks = async ({
     includeInProgress,
 }) => {
     let query = supabaseClient.from('tasks').select('*').eq('workspace_id', workspace_id);
-    console.log(assignees);
     if (id) {
         query = query.eq('id', id).single(); // Fetch single item
     } else {
@@ -225,8 +224,6 @@ async function fetchTaskCounts({ workspace_id, startDate, endDate }) {
         console.error(error);
         throw error;
     }
-
-    console.log(data);
 
     // data comes back as [{ day: "2025-05-05", count: "4" }, …]
     return data.reduce((acc, { day, count }) => {

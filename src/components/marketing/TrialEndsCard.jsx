@@ -27,7 +27,7 @@ function TrialEndsCard() {
             <Card
                 shadow="none"
                 isPressable
-                className={`bg-gradient-to-b from-secondary-50 to-content2 border-1 border-default-300 shadow-none hover:scale-105 cursor-pointer`}
+                className={`bg-gradient-to-b from-secondary-100 to-content1 border-1 border-secondary-300 shadow-none hover:scale-105 cursor-pointer`}
                 onPress={handleClick}
             >
                 <CardBody className="text-center">

@@ -97,7 +97,6 @@ function DashboardPage() {
 
     const handleFiltersChange = useCallback((newFilters) => {
         setFilters(newFilters);
-        // Any other logic you have...
     }, []);
 
     // Handle dismissing the task overload alert

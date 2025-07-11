@@ -393,8 +393,8 @@ export default {
                             700: '#bab8e9',
                             800: '#d3d3f2',
                             900: '#e7e8f8',
-                            foreground: '#f2f2fb',
-                            DEFAULT: '#725cad',
+                            foreground: '#000',
+                            DEFAULT: '#8f81d3',
                         },
                         indigo: {
                             50: '#312e81',

@@ -11,11 +11,20 @@ import ky from 'ky';
 import DayColumn from './DayColumn.jsx';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import TasksFilters from './TasksFilters.jsx';
 
 // Extend dayjs with the plugins
 dayjs.extend(utc);
 
 const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanResponse }) => {
+    const [filters, setFilters] = useState({
+        project_id: null,
+        milestone_id: null,
+        tags: null,
+        integration_source: null,
+        priority: null,
+        assignees: null,
+    });
     const queryClient = useQueryClient();
     const [currentWorkspace] = useCurrentWorkspace();
     const {
@@ -28,6 +37,7 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
     const { mutateAsync: updateMultipleTasks } = useUpdateMultipleTasks(currentWorkspace);
 
     // Array of loading messages to display
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const loadingMessages = [
         'Optimizing plan...',
         'Finding the smartest schedule...',
@@ -207,8 +217,10 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
         onLoadingClose,
     ]);
 
-    // ✅ CORRECTED: This effect now correctly depends on the memoized
-    // `autoPlan` and `handleRollback` functions.
+    const handleFiltersChange = useCallback((newFilters) => {
+        setFilters(newFilters);
+    }, []);
+    
     useEffect(() => {
         if (onAutoPlan && currentWorkspace) {
             onAutoPlan.current = autoPlan;
@@ -234,6 +246,11 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                 </ModalContent>
             </Modal>
             <div className="flex justify-between mb-2">
+                <TasksFilters
+                    defaultToAllUsers
+                    onFiltersChange={handleFiltersChange}
+                    initialFilters={filters}
+                />
                 <p className="text-sm text-default-600">
                     {dayjs(startDate).format('MMM D')} - {dayjs(endDate).format('MMM D')}
                 </p>
@@ -257,7 +274,7 @@ const UpcomingTasks = ({ onAutoPlan, onRollback, lastPlanResponse, setLastPlanRe
                 <div className="basis-2/3 grow flex gap-4 overflow-x-auto snap-x">
                     {days.map((day) => {
                         const dateStr = day.format('YYYY-MM-DD');
-                        return <DayColumn key={dateStr} day={day} />;
+                        return <DayColumn key={dateStr} day={day} filters={filters} />;
                     })}
                 </div>
                 <BacklogPanel isBacklogCollapsed={isBacklogCollapsed} />
