@@ -51,7 +51,7 @@ const NewTaskModal = ({ isOpen, onOpenChange, defaultDate, defaultProject, defau
                             ? parseInt(selectedPriority.value)
                             : null,
                     status: 'pending',
-                    assignee: selectedUser?.value || null,
+                    assignee: selectedUser || null,
                     creator: user?.id,
                 },
             });

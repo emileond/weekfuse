@@ -205,8 +205,7 @@ const TaskDetailModal = ({ isOpen, onOpenChange, task, onAction }) => {
                     selectedPriority?.value !== null && selectedPriority?.value !== undefined
                         ? parseInt(selectedPriority.value)
                         : null,
-                assignee: selectedUser?.value || null,
-                // Attachments are now managed separately through the useTasksAttachments hook
+                assignee: selectedUser || null,
             };
 
             // Check if the data has actually changed
